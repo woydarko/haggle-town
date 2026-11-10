@@ -16,7 +16,7 @@ local Toast = remotes:WaitForChild("Toast") :: RemoteEvent
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaggleTownUI"
 gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = false
+gui.IgnoreGuiInset = true -- HUD sits in the topbar row, clear of the chat window
 gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local hud = Hud.mount(gui)

@@ -7,6 +7,12 @@ local Ui = require(script.Parent.Ui)
 
 local HagglePanel = {}
 
+local EXAMPLES = {
+	woodcutter = "e.g. sell 3 wood for 120, or 2 wood at 40",
+	fishmonger = "e.g. 2 fish for 150, or sell 3 fish for 200",
+	smith = "e.g. 1 iron at 140, or sell 2 iron for 260",
+}
+
 export type Handlers = {
 	send: (merchant: string, text: string) -> any,
 	accept: (dealId: string) -> any,
@@ -174,6 +180,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		line.Text = `"Welcome! What can I do for you?"`
 		reasoning.Text = ""
 		input.Text = ""
+		input.PlaceholderText = EXAMPLES[name] or "Make an offer"
 		setCounter(nil)
 		setPatience(3)
 		setBusy(false)

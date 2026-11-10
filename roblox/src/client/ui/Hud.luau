@@ -11,8 +11,9 @@ function Hud.mount(gui: ScreenGui)
 	local bar = Ui.new("Frame", {
 		Name = "Hud",
 		Parent = gui,
-		Position = UDim2.fromOffset(16, 16),
-		Size = UDim2.fromOffset(440, 48),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 8),
+		Size = UDim2.fromOffset(440, 44),
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center }) })
 
@@ -29,11 +30,11 @@ function Hud.mount(gui: ScreenGui)
 		})
 	end
 
-	local toast = Ui.text({ Parent = gui, Position = UDim2.fromOffset(16, 72), Size = UDim2.fromOffset(440, 28), TextColor3 = Theme.muted, Text = "", TextStrokeTransparency = 0.8 })
+	local toast = Ui.text({ Parent = gui, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 58), Size = UDim2.fromOffset(440, 28), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Theme.muted, Text = "", TextStrokeTransparency = 0.8 })
 	local offline = Ui.text({
 		Parent = gui,
 		Visible = false,
-		Position = UDim2.new(0.5, -220, 0, 16),
+		Position = UDim2.new(0.5, -220, 0, 90),
 		Size = UDim2.fromOffset(440, 40),
 		BackgroundTransparency = 0,
 		BackgroundColor3 = Theme.error,
