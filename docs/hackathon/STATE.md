@@ -42,7 +42,7 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 - AI: provider kenari.id OpenAI-compatible gateway, model minimax-m2-7-highspeed, key from user (spend-capped by user), set in .env + Railway 2026-11-10. NEAR AI Cloud not used (sign-in failed); switchable via env.
 
 ## Phase cursor and clock
-Current phase: 4 build (core complete) -> 5 verify next
+Current phase: 4 build v2 (plan docs/superpowers/plans/2026-11-11-haggle-town-v2.md, ledger .superpowers/sdd/2026-11-11-haggle-town-v2/progress.md)
 Last updated: 2026-11-10 20:14 +0700 (design + docs approved by user)
 
 | Phase | Status | Budget | Planned start -> end | Actual end | Notes |
@@ -93,6 +93,7 @@ Over-budget warnings sent: none
 | 2026-11-10 21:14 +0700 | ~98 h | 6 / 13 (economy, contract core, deals+tick, testnet deploy, server scaffold, chain module) | none; ahead of plan |
 | 2026-11-10 21:55 +0700 | ~97 h | 12 / 13 (all but T11 deploy/publish); T8 eval + Studio golden path wait on user | none; stretch T14/T15 possible |
 | 2026-11-10 23:45 +0700 | ~91 h | 13 / 13 core done (Railway live, Studio golden path passed, LLM live, restock + personas, town dressed) | stretch T14/T15 optional; next: Phase 5 verify + Roblox publish |
+| 2026-11-11 01:26 +0700 | ~86 h | v2 plan 3 / 12 (economy v2, contract v2, deployed haggletown-v2.testnet) | none; production still v1 until v2 Task 12 |
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
