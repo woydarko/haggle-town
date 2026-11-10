@@ -39,7 +39,7 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 - Roblox Studio: installed (detected in %LOCALAPPDATA%\Roblox\Versions)
 - Accounts, keys (names only), hosting, repo access: Open - NEAR testnet account, NEAR mainnet payout account, NEAR AI Cloud key (`NEAR_AI_API_KEY`), Railway (backend), Vercel (web), GitHub repo
 - Web3: faucet funds requested at [pending - after near CLI install], balances in DEPLOYMENTS.md: Open
-- AI: provider NEAR AI Cloud ($10 credits via nearbuilders.org) - key tested: Open, spend cap: $10 credits
+- AI: provider kenari.id OpenAI-compatible gateway, model minimax-m2-7-highspeed, key from user (spend-capped by user), set in .env + Railway 2026-11-10. NEAR AI Cloud not used (sign-in failed); switchable via env.
 
 ## Phase cursor and clock
 Current phase: 4 build
@@ -94,7 +94,7 @@ Over-budget warnings sent: none
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
-- LLM_API_KEY (NEAR AI Cloud) not in .env yet -> eval + model choice blocked - owner: nabil
+- LLM: DONE 2026-11-10 (minimax-m2-7-highspeed via kenari.id, eval 14/15)
 - Railway: DONE 2026-11-10 (https://backend-production-fccb03fb.up.railway.app). Still open: OK to publish Roblox experience - owner: nabil
 - Roblox Studio golden path not run yet (needs user in Studio) - owner: nabil
 - NEAR mainnet payout account name - owner: nabil
