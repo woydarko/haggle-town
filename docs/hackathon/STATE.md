@@ -78,9 +78,11 @@ Over-budget warnings sent: none
 
 ## Scope
 - Product: **Haggle Town** (spec: docs/superpowers/specs/2026-11-10-haggle-town-design.md)
-- Ship now (core): contract (NEP-245 + merchants + settle_deal + day tick), backend (haggle agent, relayer, LLM proxy), Roblox game (public), web dashboard, fast-forward. Task IDs in Phase 3.
-- Stretch (auto-cut if behind, in this order): 1. web playable fallback, 2. player stalls (P2P)
-- Post-hackathon: TBD
+- Plan: docs/superpowers/plans/2026-11-10-haggle-town.md
+- Ship now (core): Tasks 1-13 (economy, contract core, deals+tick, testnet deploy, server scaffold, chain module, haggle engine, LLM, Roblox place, Roblox polish, skeleton deploy, dashboard, sim/fast-forward)
+- Walking skeleton (Tasks 1-7, 9, 11, fallback-only haggle) deployed by 2026-11-12 09:00 +0700
+- Stretch (auto-cut if behind, in this order): 1. Task 15 web playable fallback, 2. Task 14 player stalls (P2P)
+- Post-hackathon: real social/email login, player-owned NEAR accounts (claim), NPC-to-NPC trading, multisig/timelock for keys, NEAR Intents
 
 ## Hourly checkpoints (lead consolidates from `docs/hackathon/log/*.md`; solo: write here)
 | Time | Time left | Core done / total | Cut decision |
