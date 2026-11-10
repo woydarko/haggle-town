@@ -12,3 +12,5 @@ server/data/
 .superpowers/
 roblox/build.rbxl
 web/dist/
+roblox/local.project.json
+roblox/build-local.rbxl
