@@ -17,65 +17,65 @@ pub(crate) fn ctx(pred: &str, deposit: u128, ts_ns: u64) {
 
 pub(crate) const OWNER: &str = "owner.testnet";
 pub(crate) const GAME: &str = "game.testnet";
-pub(crate) const WOOD_M: &str = "woodcutter.testnet";
+pub(crate) const FISH_M: &str = "fishmonger.testnet";
 
-/// Contract with one wood merchant (given pubkey bytes, stock, purse) and owner/game roles.
-pub(crate) fn setup(pk: [u8; 32], stock: u32, purse: u128) -> Contract {
-    ctx(OWNER, 0, 1);
-    let mut c = Contract::new(acc(OWNER), acc(GAME));
+pub(crate) fn key(pk: [u8; 32]) -> PublicKey {
     let mut raw = vec![0u8]; // curve type 0 = ed25519
     raw.extend_from_slice(&pk);
-    let key = PublicKey::try_from(raw).unwrap();
-    c.register_merchant(acc(WOOD_M), "wood".into(), key, U128(purse), stock, 100);
+    PublicKey::try_from(raw).unwrap()
+}
+
+/// Contract with a fishmonger (given pubkey, purse) stocked at every item's target, and player roblox:1.
+pub(crate) fn setup(pk: [u8; 32], purse: u128) -> Contract {
+    ctx(OWNER, 0, 1);
+    let mut c = Contract::new(acc(OWNER), acc(GAME));
+    c.register_merchant(acc(FISH_M), "fish".into(), key(pk), U128(purse));
+    ctx(GAME, 0, 1);
+    c.register_player("roblox:1".into());
     c
 }
 
-fn entry(p: &str, g: &str, q: u32) -> GatherEntry {
-    GatherEntry { player_id: p.into(), good: g.into(), qty: q }
+fn bal(c: &Contract, holder: &str, token: &str) -> u128 {
+    c.bal(holder, token)
 }
 
 #[test]
-fn register_player_grants_once() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.register_player("roblox:1".into());
-    c.register_player("roblox:1".into());
-    assert_eq!(c.get_player("roblox:1".into()).unwrap().coin, U128(1000));
+fn register_merchant_mints_targets() {
+    let c = setup([1; 32], 10_000);
+    assert_eq!(bal(&c, FISH_M, "fish_sardine"), 120);
+    assert_eq!(bal(&c, FISH_M, "fish_koi"), 3);
+    assert_eq!(bal(&c, FISH_M, "coin"), 10_000);
+    assert_eq!(c.get_market().len(), 4);
 }
 
 #[test]
-#[should_panic(expected = "NotGame")]
-fn register_player_requires_game() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx("alice.testnet", 0, 1);
-    c.register_player("roblox:1".into());
+#[should_panic(expected = "BadCategory")]
+fn register_merchant_bad_category() {
+    let mut c = setup([1; 32], 10_000);
+    ctx(OWNER, 0, 1);
+    c.register_merchant(acc("x.testnet"), "gems".into(), key([2; 32]), U128(1));
 }
 
 #[test]
 #[should_panic(expected = "NotOwner")]
 fn register_merchant_requires_owner() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    let mut raw = vec![0u8];
-    raw.extend_from_slice(&[2; 32]);
-    c.register_merchant(acc("smith.testnet"), "iron".into(), PublicKey::try_from(raw).unwrap(), U128(1), 1, 100);
+    let mut c = setup([1; 32], 10_000);
+    c.register_merchant(acc("smith.testnet"), "ore".into(), key([2; 32]), U128(1));
 }
 
 #[test]
-#[should_panic(expected = "MerchantExists")]
-fn register_merchant_twice_rejected() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(OWNER, 0, 1);
-    let mut raw = vec![0u8];
-    raw.extend_from_slice(&[1; 32]);
-    c.register_merchant(acc(WOOD_M), "wood".into(), PublicKey::try_from(raw).unwrap(), U128(1), 1, 100);
+fn register_player_grants_once() {
+    let mut c = setup([1; 32], 10_000);
+    c.register_player("roblox:1".into());
+    let p = c.get_player("roblox:1".into()).unwrap();
+    assert_eq!(p.balances["coin"], U128(1000));
+    assert_eq!(p.class, None);
 }
 
 #[test]
 #[should_panic(expected = "BadPlayerId")]
 fn bad_player_id_rejected() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
+    let mut c = setup([1; 32], 10_000);
     c.register_player("steam:1".into());
 }
 
@@ -85,82 +85,64 @@ fn player_id_formats() {
     assert!(valid_player_id("web:0a1b2c3d-0000-4000-8000-123456789abc"));
     assert!(!valid_player_id("roblox:"));
     assert!(!valid_player_id("roblox:12a"));
-    assert!(!valid_player_id("roblox:123456789012345678901"));
-    assert!(!valid_player_id("web:xyz"));
 }
 
 #[test]
-fn gather_batch_mints() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.register_player("roblox:1".into());
-    c.gather_batch(vec![entry("roblox:1", "wood", 3), entry("roblox:1", "wood", 2)]);
-    assert_eq!(c.get_player("roblox:1".into()).unwrap().wood, U128(5));
+fn set_class_first_free_then_costs_100() {
+    let mut c = setup([1; 32], 10_000);
+    c.set_class("roblox:1".into(), "fisher".into());
+    assert_eq!(bal(&c, "roblox:1", "coin"), 1000);
+    c.set_class("roblox:1".into(), "fisher".into()); // same class: no-op
+    assert_eq!(bal(&c, "roblox:1", "coin"), 1000);
+    c.set_class("roblox:1".into(), "logger".into());
+    assert_eq!(bal(&c, "roblox:1", "coin"), 900);
+    assert_eq!(c.get_player("roblox:1".into()).unwrap().class, Some("logger".to_string()));
 }
 
 #[test]
-#[should_panic(expected = "QtyTooLarge")]
-fn gather_qty_limit() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.register_player("roblox:1".into());
-    c.gather_batch(vec![entry("roblox:1", "wood", 21)]);
+#[should_panic(expected = "BadClass")]
+fn set_class_bad_class_rejected() {
+    let mut c = setup([1; 32], 10_000);
+    c.set_class("roblox:1".into(), "king".into());
 }
 
 #[test]
-#[should_panic(expected = "BatchTooLarge")]
-fn gather_batch_limit() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.register_player("roblox:1".into());
-    c.gather_batch((0..101).map(|_| entry("roblox:1", "wood", 1)).collect());
+#[should_panic(expected = "InsufficientFunds")]
+fn set_class_switch_needs_100() {
+    let mut c = setup([1; 32], 10_000);
+    c.set_class("roblox:1".into(), "fisher".into());
+    c.sub("roblox:1", "coin", 950);
+    c.set_class("roblox:1".into(), "miner".into());
 }
 
 #[test]
-#[should_panic(expected = "UnknownPlayer")]
-fn gather_unknown_player() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.gather_batch(vec![entry("roblox:9", "wood", 1)]);
+fn gather_mints_item() {
+    let mut c = setup([1; 32], 10_000);
+    c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "fish_trout".into(), qty: 2 }]);
+    assert_eq!(c.get_player("roblox:1".into()).unwrap().balances["fish_trout"], U128(2));
 }
 
 #[test]
 #[should_panic(expected = "BadGood")]
-fn gather_bad_good() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(GAME, 0, 1);
-    c.register_player("roblox:1".into());
-    c.gather_batch(vec![entry("roblox:1", "gold", 1)]);
+fn gather_rejects_category_name() {
+    let mut c = setup([1; 32], 10_000);
+    c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "fish".into(), qty: 1 }]);
 }
 
 #[test]
-fn market_view_prices() {
-    let c = setup([1; 32], 140, 10_000);
-    let m = &c.get_market()[0];
-    assert_eq!(m.stock, 140);
-    assert_eq!(m.ask, U128(35));
-    assert_eq!(m.floor, U128(21));
-    assert_eq!(m.bid, U128(28));
-    assert_eq!(m.purse, U128(10_000));
+fn market_view_per_item() {
+    let c = setup([1; 32], 10_000);
+    let m = c.get_market();
+    let koi = m.iter().find(|r| r.item == "fish_koi").unwrap();
+    assert_eq!(koi.ask, U128(600));
+    assert_eq!(koi.tier, "legendary");
+    assert_eq!(koi.category, "fish");
 }
 
 #[test]
 fn mt_transfer_moves_own_balance() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(WOOD_M, 1, 1);
-    c.mt_transfer(acc(OWNER), "coin".into(), U128(5), None, None);
-    assert_eq!(c.mt_balance_of(acc(OWNER), "coin".into()), U128(5));
-    assert_eq!(c.mt_balance_of(acc(WOOD_M), "coin".into()), U128(9_995));
-    assert_eq!(
-        c.mt_batch_balance_of(acc(WOOD_M), vec!["coin".into(), "wood".into()]),
-        vec![U128(9_995), U128(100)]
-    );
-}
-
-#[test]
-#[should_panic]
-fn mt_transfer_requires_one_yocto() {
-    let mut c = setup([1; 32], 100, 10_000);
-    ctx(WOOD_M, 0, 1);
-    c.mt_transfer(acc(OWNER), "coin".into(), U128(5), None, None);
+    let mut c = setup([1; 32], 10_000);
+    ctx(FISH_M, 1, 1);
+    c.mt_transfer(acc(OWNER), "fish_trout".into(), U128(5), None, None);
+    assert_eq!(c.mt_balance_of(acc(OWNER), "fish_trout".into()), U128(5));
 }

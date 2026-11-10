@@ -30,7 +30,7 @@ pub(crate) fn emit_transfer(from: &str, to: &str, tokens: &[&str], amts: &[u128]
 }
 
 fn token_ok(t: &str) {
-    if !TOKENS.contains(&t) {
+    if !is_token(t) {
         env::panic_str("BadToken");
     }
 }

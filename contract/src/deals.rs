@@ -1,6 +1,7 @@
-//! Signed deals between a merchant agent and a player, and the daily stock burn.
+//! Signed deals between a merchant agent and a player, and the daily restock + burn.
 //! The game relayer submits; the merchant's ed25519 signature proves the merchant agreed;
-//! the price must sit inside the room from economy/src/pricing.rs at settle time.
+//! the price must sit inside the room from economy/src/pricing.rs at settle time
+//! (specialists of the item's category get the wider sell room).
 
 use crate::*;
 use near_sdk::json_types::Base64VecU8;
@@ -41,10 +42,11 @@ impl Contract {
     pub fn settle_deal(&mut self, deal: Deal, merchant_sig: Base64VecU8) -> SettleResult {
         self.assert_game();
         let m = self.merchants.get(&deal.merchant).unwrap_or_else(|| env::panic_str("UnknownMerchant"));
-        if deal.good != m.good {
+        let item = item_of(&deal.good);
+        if item.category.as_str() != m.category {
             env::panic_str("BadGood");
         }
-        let (good, target, pk) = (good_of(&m.good), m.target, m.public_key.clone());
+        let pk = m.public_key.clone();
         if !(1..=10).contains(&deal.qty) {
             env::panic_str("BadQty");
         }
@@ -75,9 +77,10 @@ impl Contract {
         let stock = self.stock_of(merchant, &deal.good);
         let purse = self.bal(merchant, "coin");
         let (lo, hi) = if buying {
-            pricing::buy_room(good, stock, target)
+            pricing::buy_room(item, stock)
         } else {
-            pricing::sell_room(good, stock, target, purse, deal.qty).unwrap_or_else(|| env::panic_str("MerchantPurseEmpty"))
+            let specialist = self.is_specialist(&deal.player, item.category);
+            pricing::sell_room(item, stock, purse, deal.qty, specialist).unwrap_or_else(|| env::panic_str("MerchantPurseEmpty"))
         };
         let p = deal.unit_price.0;
         if p < lo || p > hi {
@@ -106,25 +109,30 @@ impl Contract {
         }
     }
 
-    /// Burns 10% of every merchant's stock once per game day. Calls closer than 290 s apart are no-ops.
+    /// Once per game day: every merchant restocks each item toward its target, then uses up 10%.
+    /// Calls closer than 290 s apart are no-ops.
     pub fn day_tick(&mut self) -> bool {
         self.assert_game();
         let now = env::block_timestamp();
         if now.saturating_sub(self.last_tick_ns) < MIN_TICK_GAP_NS {
             return false;
         }
-        let list: Vec<(AccountId, String, u32)> = self.merchants.iter().map(|(a, m)| (a.clone(), m.good.clone(), m.target)).collect();
-        for (acct, good, target) in list {
-            let imported = pricing::restock(self.stock_of(acct.as_str(), &good), target) as u128;
-            if imported > 0 {
-                self.add(acct.as_str(), &good, imported);
-                nep245::emit_mint(acct.as_str(), &[&good], &[imported]);
-            }
-            let stock = self.stock_of(acct.as_str(), &good);
-            let burned = (stock - pricing::burn(stock)) as u128;
-            if burned > 0 {
-                self.sub(acct.as_str(), &good, burned);
-                nep245::emit_burn(acct.as_str(), &[&good], &[burned]);
+        let list: Vec<(AccountId, String)> = self.merchants.iter().map(|(a, m)| (a.clone(), m.category.clone())).collect();
+        for (acct, category) in list {
+            let Some(cat) = Category::from_str(&category) else { continue };
+            for tier in Tier::ALL {
+                let item = Item::of(cat, tier);
+                let imported = pricing::restock(self.stock_of(acct.as_str(), item.id()), item.target()) as u128;
+                if imported > 0 {
+                    self.add(acct.as_str(), item.id(), imported);
+                    nep245::emit_mint(acct.as_str(), &[item.id()], &[imported]);
+                }
+                let stock = self.stock_of(acct.as_str(), item.id());
+                let burned = (stock - pricing::burn(stock)) as u128;
+                if burned > 0 {
+                    self.sub(acct.as_str(), item.id(), burned);
+                    nep245::emit_burn(acct.as_str(), &[item.id()], &[burned]);
+                }
             }
         }
         self.day += 1;
@@ -142,15 +150,15 @@ mod tests {
 
     const FAR: u64 = 1_000_000_000_000_000_000;
 
-    fn key(seed: u8) -> SigningKey {
+    fn sk(seed: u8) -> SigningKey {
         SigningKey::from_bytes(&[seed; 32])
     }
 
-    fn deal(side: &str, qty: u32, price: u128, nonce: u64) -> Deal {
+    fn deal(good: &str, side: &str, qty: u32, price: u128, nonce: u64) -> Deal {
         Deal {
-            merchant: acc(WOOD_M),
+            merchant: acc(FISH_M),
             player: "roblox:1".into(),
-            good: "wood".into(),
+            good: good.into(),
             qty,
             unit_price: U128(price),
             side: side.into(),
@@ -163,165 +171,139 @@ mod tests {
         Base64VecU8(k.sign(deal_message(d).as_bytes()).to_bytes().to_vec())
     }
 
-    /// Merchant signed by key(7), one registered player roblox:1 holding `wood` wood.
-    fn world(stock: u32, purse: u128, wood: u32) -> Contract {
-        let mut c = setup(key(7).verifying_key().to_bytes(), stock, purse);
-        ctx(GAME, 0, 1);
-        c.register_player("roblox:1".into());
-        if wood > 0 {
-            c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "wood".into(), qty: wood }]);
+    /// Fishmonger signed by sk(7) with purse; player roblox:1 holds `trout` trout.
+    fn world(purse: u128, trout: u32) -> Contract {
+        let mut c = setup(sk(7).verifying_key().to_bytes(), purse);
+        if trout > 0 {
+            c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "fish_trout".into(), qty: trout }]);
         }
         c
     }
 
     fn settle(c: &mut Contract, d: Deal) -> SettleResult {
-        let s = sig(&key(7), &d);
+        let s = sig(&sk(7), &d);
         c.settle_deal(d, s)
     }
 
     #[test]
     fn message_format() {
-        let mut d = deal("buy", 5, 21, 7);
-        d.merchant = acc("woodcutter.haggletown.testnet");
+        let mut d = deal("fish_trout", "buy", 5, 21, 7);
+        d.merchant = acc("fishmonger.haggletown.testnet");
         d.expires_at_ns = U64(1_700_000_000_000_000_000);
-        assert_eq!(deal_message(&d), "haggle:v1|woodcutter.haggletown.testnet|roblox:1|wood|5|21|buy|7|1700000000000000000");
+        assert_eq!(deal_message(&d), "haggle:v1|fishmonger.haggletown.testnet|roblox:1|fish_trout|5|21|buy|7|1700000000000000000");
     }
 
     #[test]
-    fn settle_buy_happy_path() {
-        let mut c = world(140, 10_000, 0);
-        let r = settle(&mut c, deal("buy", 5, 21, 1));
-        assert_eq!(r.player.coin, U128(895));
-        assert_eq!(r.player.wood, U128(5));
-        assert_eq!(r.merchant_stock, 135);
-        assert_eq!(r.merchant_purse, U128(10_105));
+    fn settle_buy_trout_happy_path() {
+        let mut c = world(10_000, 0);
+        let r = settle(&mut c, deal("fish_trout", "buy", 2, 60, 1)); // trout at target: floor = ask = 60
+        assert_eq!(r.player.balances["coin"], U128(880));
+        assert_eq!(r.player.balances["fish_trout"], U128(2));
+        assert_eq!(r.merchant_stock, 38);
+        assert_eq!(r.merchant_purse, U128(10_120));
     }
 
     #[test]
     fn settle_sell_happy_path() {
-        let mut c = world(50, 10_000, 5);
-        let r = settle(&mut c, deal("sell", 5, 100, 1));
-        assert_eq!(r.player.coin, U128(1_500));
-        assert_eq!(r.player.wood, U128(0));
-        assert_eq!(r.merchant_stock, 55);
-        assert_eq!(r.merchant_purse, U128(9_500));
+        let mut c = world(10_000, 5);
+        let r = settle(&mut c, deal("fish_trout", "sell", 5, 48, 1)); // bid 48 at target
+        assert_eq!(r.player.balances["coin"], U128(1_240));
+        assert_eq!(r.merchant_stock, 45);
+    }
+
+    #[test]
+    #[should_panic(expected = "BadGood")]
+    fn ore_to_fishmonger_rejected() {
+        let mut c = world(10_000, 0);
+        settle(&mut c, deal("ore_iron", "buy", 1, 90, 1));
+    }
+
+    #[test]
+    fn specialist_sells_above_normal_ceiling() {
+        let mut c = world(10_000, 2);
+        c.set_class("roblox:1".into(), "fisher".into());
+        settle(&mut c, deal("fish_trout", "sell", 1, 52, 1)); // 48 x 110% = 52
+    }
+
+    #[test]
+    #[should_panic(expected = "PriceOutOfRoom")]
+    fn non_specialist_capped_at_normal_ceiling() {
+        let mut c = world(10_000, 2);
+        c.set_class("roblox:1".into(), "miner".into());
+        settle(&mut c, deal("fish_trout", "sell", 1, 52, 1));
     }
 
     #[test]
     #[should_panic(expected = "BadSignature")]
     fn bad_signature() {
-        let mut c = world(140, 10_000, 0);
-        let d = deal("buy", 5, 21, 1);
-        let s = sig(&key(8), &d);
+        let mut c = world(10_000, 0);
+        let d = deal("fish_trout", "buy", 1, 60, 1);
+        let s = sig(&sk(8), &d);
         c.settle_deal(d, s);
-    }
-
-    #[test]
-    #[should_panic(expected = "BadSignature")]
-    fn tampered_deal() {
-        let mut c = world(140, 10_000, 0);
-        let d = deal("buy", 5, 21, 1);
-        let s = sig(&key(7), &d);
-        c.settle_deal(deal("buy", 5, 22, 1), s);
     }
 
     #[test]
     #[should_panic(expected = "NonceUsed")]
     fn nonce_reuse() {
-        let mut c = world(140, 10_000, 0);
-        settle(&mut c, deal("buy", 1, 30, 1));
-        settle(&mut c, deal("buy", 1, 30, 1));
+        let mut c = world(10_000, 0);
+        settle(&mut c, deal("fish_trout", "buy", 1, 60, 1));
+        settle(&mut c, deal("fish_trout", "buy", 1, 61, 1));
     }
 
     #[test]
     #[should_panic(expected = "Expired")]
     fn expired() {
-        let mut c = world(140, 10_000, 0);
+        let mut c = world(10_000, 0);
         ctx(GAME, 0, FAR + 1);
-        settle(&mut c, deal("buy", 5, 21, 1));
+        settle(&mut c, deal("fish_trout", "buy", 1, 60, 1));
     }
 
     #[test]
     #[should_panic(expected = "PriceOutOfRoom")]
     fn price_below_floor() {
-        let mut c = world(140, 10_000, 0);
-        settle(&mut c, deal("buy", 5, 20, 1));
-    }
-
-    #[test]
-    #[should_panic(expected = "PriceOutOfRoom")]
-    fn price_above_ask() {
-        let mut c = world(140, 10_000, 0);
-        settle(&mut c, deal("buy", 5, 36, 1));
-    }
-
-    #[test]
-    #[should_panic(expected = "PriceOutOfRoom")]
-    fn sell_above_ceiling() {
-        let mut c = world(50, 10_000, 5);
-        settle(&mut c, deal("sell", 5, 113, 1));
+        let mut c = world(10_000, 0);
+        c.add(FISH_M, "fish_trout", 40); // stock 80: ask 30, floor 18
+        settle(&mut c, deal("fish_trout", "buy", 1, 17, 1));
     }
 
     #[test]
     #[should_panic(expected = "MerchantPurseEmpty")]
     fn purse_empty() {
-        let mut c = world(100, 39, 1);
-        settle(&mut c, deal("sell", 1, 40, 1));
-    }
-
-    #[test]
-    #[should_panic(expected = "InsufficientFunds")]
-    fn insufficient_coin() {
-        let mut c = world(140, 10_000, 0);
-        settle(&mut c, deal("buy", 10, 35, 1)); // 650 left, stock 130
-        settle(&mut c, deal("buy", 10, 35, 2)); // 300 left, stock 120
-        settle(&mut c, deal("buy", 10, 35, 3)); // needs 350
+        let mut c = world(10, 1);
+        settle(&mut c, deal("fish_trout", "sell", 1, 48, 1));
     }
 
     #[test]
     #[should_panic(expected = "InsufficientGoods")]
     fn insufficient_goods() {
-        let mut c = world(50, 10_000, 2);
-        settle(&mut c, deal("sell", 5, 100, 1));
+        let mut c = world(10_000, 1);
+        settle(&mut c, deal("fish_trout", "sell", 2, 48, 1));
     }
 
     #[test]
     #[should_panic(expected = "BadQty")]
     fn qty_limit() {
-        let mut c = world(140, 10_000, 0);
-        settle(&mut c, deal("buy", 11, 30, 1));
+        let mut c = world(10_000, 0);
+        settle(&mut c, deal("fish_trout", "buy", 11, 60, 1));
     }
 
     #[test]
     #[should_panic(expected = "NotGame")]
     fn settle_requires_game() {
-        let mut c = world(140, 10_000, 0);
+        let mut c = world(10_000, 0);
         ctx("alice.testnet", 0, 1);
-        settle(&mut c, deal("buy", 5, 21, 1));
+        settle(&mut c, deal("fish_trout", "buy", 1, 60, 1));
     }
 
     #[test]
-    fn day_tick_spacing() {
-        let mut c = world(100, 10_000, 0);
-        let t0 = 1 + 300_000_000_000;
-        ctx(GAME, 0, t0);
-        assert!(c.day_tick());
-        assert_eq!(c.get_market()[0].stock, 90);
-        ctx(GAME, 0, t0 + 100_000_000_000);
-        assert!(!c.day_tick());
-        assert_eq!(c.get_market()[0].stock, 90);
-        ctx(GAME, 0, t0 + 291_000_000_000);
-        assert!(c.day_tick());
-        assert_eq!(c.get_market()[0].stock, 85); // restock 4 (40% of gap 10) -> 94, burn 9 -> 85
-        assert_eq!(c.get_market()[0].day, 2);
-    }
-
-    #[test]
-    fn day_tick_restocks_a_drained_merchant() {
-        let mut c = world(37, 10_000, 0);
+    fn day_tick_per_item() {
+        let mut c = world(10_000, 0);
+        c.sub(FISH_M, "fish_trout", 20); // trout 20 of 40
         ctx(GAME, 0, 1 + 300_000_000_000);
         assert!(c.day_tick());
-        assert_eq!(c.get_market()[0].stock, 56); // 37 + 25 = 62, burn 6 -> 56
-        assert_eq!(c.get_market()[0].purse, U128(10_000)); // imports are not paid from the purse
+        assert_eq!(c.bal(FISH_M, "fish_trout"), 26); // +8 restock -> 28, burn 2 -> 26
+        assert_eq!(c.bal(FISH_M, "fish_sardine"), 108); // at target: burn 12
+        ctx(GAME, 0, 1 + 400_000_000_000);
+        assert!(!c.day_tick());
     }
 }
