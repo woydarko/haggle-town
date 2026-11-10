@@ -84,6 +84,7 @@ Over-budget warnings sent: none
 - Ship now (core): Tasks 1-13 (economy, contract core, deals+tick, testnet deploy, server scaffold, chain module, haggle engine, LLM, Roblox place, Roblox polish, skeleton deploy, dashboard, sim/fast-forward)
 - Walking skeleton (Tasks 1-7, 9, 11, fallback-only haggle) deployed by 2026-11-12 09:00 +0700
 - Stretch (auto-cut if behind, in this order): 1. Task 15 web playable fallback, 2. Task 14 player stalls (P2P)
+- v2 scope (user, 2026-11-11): spec docs/superpowers/specs/2026-11-11-haggle-town-v2-design.md - economy tiers + classes, gather minigames, lobby, mountain-lake map with cave. Build order: economy v2 -> minigames -> classes+lobby -> map -> sim/docs. Cut first: legendary visuals/double drop, second cave zone, chopping combo, free assets, per-item fast-forward. Roblox publish postponed by user until map is done.
 - Post-hackathon: real social/email login, player-owned NEAR accounts (claim), NPC-to-NPC trading, multisig/timelock for keys, NEAR Intents
 
 ## Hourly checkpoints (lead consolidates from `docs/hackathon/log/*.md`; solo: write here)
