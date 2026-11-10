@@ -2,7 +2,14 @@
 
 All game code lives here and is synced into Roblox Studio with [Rojo](https://rojo.space) 7.7. The town (ground, stalls, merchants, gather spots, boards) is built by `src/server/World.luau` at runtime, so there is no binary place file to keep in sync.
 
-## Run in Studio
+## Live sync (recommended)
+
+1. Once: `rojo plugin install` (adds the Rojo plugin to Studio) and `bash scripts/roblox-local.sh` (writes the gitignored `roblox/local.project.json` with the server config).
+2. `rojo serve roblox/local.project.json` and keep it running.
+3. Open `roblox/build-local.rbxl` in Studio once, Plugins tab > **Rojo** > **Connect** (localhost:34872).
+4. From then on every code change appears in Studio immediately. Stop and press Play again to run the new code.
+
+## Run in Studio (manual)
 
 1. Start the backend (see the root README) and note its URL, e.g. `http://localhost:8080` for Studio Play or the Railway URL.
 2. `rojo serve roblox/default.project.json`, open Studio, connect with the Rojo plugin.
