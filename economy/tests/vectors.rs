@@ -5,27 +5,41 @@ use economy::pricing::*;
 #[test]
 #[ignore]
 fn write_vectors() {
-    let mut rows = Vec::new();
-    for good in [Good::Wood, Good::Fish, Good::Iron] {
-        for stock in [0u32, 1, 9, 15, 50, 99, 100, 101, 140, 200, 1000] {
-            for purse in [39u128, 500, 10_000] {
-                for qty in [1u32, 5, 10] {
-                    let (f, a) = buy_room(good, stock, TARGET);
-                    let sell = match sell_room(good, stock, TARGET, purse, qty) {
-                        Some((b, c)) => format!("[{b},{c}]"),
-                        None => "null".to_string(),
-                    };
-                    rows.push(format!(
-                        "{{\"good\":\"{}\",\"stock\":{stock},\"target\":{TARGET},\"purse\":{purse},\"qty\":{qty},\"ask\":{},\"bid\":{},\"buy_room\":[{f},{a}],\"sell_room\":{sell},\"burn\":{}}}",
-                        good.as_str(),
-                        ask(good, stock, TARGET),
-                        bid(good, stock, TARGET),
-                        burn(stock)
-                    ));
+    let mut prices = Vec::new();
+    for item in Item::all() {
+        for stock in [0u32, 1, 3, 12, 40, 100, 120, 200] {
+            for purse in [50u128, 10_000] {
+                for qty in [1u32, 5] {
+                    for specialist in [false, true] {
+                        let (f, a) = buy_room(item, stock);
+                        let sell = match sell_room(item, stock, purse, qty, specialist) {
+                            Some((b, c)) => format!("[{b},{c}]"),
+                            None => "null".to_string(),
+                        };
+                        prices.push(format!(
+                            "{{\"item\":\"{}\",\"stock\":{stock},\"purse\":{purse},\"qty\":{qty},\"specialist\":{specialist},\"ask\":{},\"bid\":{},\"buy_room\":[{f},{a}],\"sell_room\":{sell},\"burn\":{},\"restock\":{}}}",
+                            item.id(),
+                            ask(item, stock),
+                            bid(item, stock),
+                            burn(stock),
+                            restock(stock, item.target())
+                        ));
+                    }
                 }
             }
         }
     }
+    let mut rolls = Vec::new();
+    for roll in [0u32, 4999, 5000, 6999, 7000, 9099, 9100, 9699, 9700, 9899, 9900, 9999] {
+        for specialist in [false, true] {
+            for quality in [0u32, 50, 100] {
+                rolls.push(format!(
+                    "{{\"roll\":{roll},\"specialist\":{specialist},\"quality\":{quality},\"tier\":\"{}\"}}",
+                    roll_tier(roll, specialist, quality).as_str()
+                ));
+            }
+        }
+    }
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/test-vectors.json");
-    std::fs::write(path, format!("[\n{}\n]\n", rows.join(",\n"))).unwrap();
+    std::fs::write(path, format!("{{\"prices\":[\n{}\n],\"rolls\":[\n{}\n]}}\n", prices.join(",\n"), rolls.join(",\n"))).unwrap();
 }
