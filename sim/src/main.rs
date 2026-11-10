@@ -95,7 +95,7 @@ pub fn run(seed: u64, days: u32, bots: usize) -> Run {
         }
         if (tick + 1) % TICKS_PER_DAY == 0 {
             for m in merchants.iter_mut() {
-                m.stock = pricing::burn(m.stock);
+                m.stock = pricing::burn(m.stock + pricing::restock(m.stock, TARGET));
             }
         }
         for (i, good) in GOODS.iter().enumerate() {

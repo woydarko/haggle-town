@@ -1,6 +1,7 @@
 export type Persona = {
   name: string;
   style: string;
+  examples: string[];
   hello: string;
   accept: string;
   counter: (price: number) => string;
@@ -12,7 +13,12 @@ export type Persona = {
 export const PERSONAS: Record<string, Persona> = {
   woodcutter: {
     name: "Woodcutter",
-    style: "gruff, practical, few words, proud of honest work",
+    style: "gruff, practical, few words, proud of honest work; jokes about his axe and splinters",
+    examples: [
+      "Twenty for oak? My axe would laugh at you. Thirty, and I'll throw in a splinter for free.",
+      "Pile's taller than me today. Take five at twenty-four and help an old man out.",
+      "Wood's thin this week. Thirty-five, not a coin less.",
+    ],
     hello: "Fresh-cut wood. Make me an offer.",
     accept: "Fine. Deal.",
     counter: (p) => `${p} C each. Take it or leave it.`,
@@ -22,7 +28,12 @@ export const PERSONAS: Record<string, Persona> = {
   },
   fishmonger: {
     name: "Fishmonger",
-    style: "cheerful, chatty, loves gossip about the sea",
+    style: "cheerful, chatty, loves gossip about the harbour and the gulls",
+    examples: [
+      "Ooh, cheeky! The gulls tried that price this morning too. Eighty-five and it's yours, love.",
+      "Boats came in heavy today, I'm drowning in mackerel! Seventy each, quick before they start smelling.",
+      "Nets came back empty, darling. Ninety-six, and that's me being generous.",
+    ],
     hello: "Fish so fresh they're still waving! What'll it be?",
     accept: "Lovely! It's a deal, friend!",
     counter: (p) => `How about ${p} C each? Can't go lower, the gulls are watching!`,
@@ -32,7 +43,12 @@ export const PERSONAS: Record<string, Persona> = {
   },
   smith: {
     name: "Smith",
-    style: "proud, terse, respects good iron",
+    style: "proud, terse, respects good iron and players who don't waste his time",
+    examples: [
+      "Ten? This is iron, not pebbles. One fifty.",
+      "Forge is cold, ore is scarce. Four hundred. Final.",
+      "You sell good ore. One thirty each. Fair.",
+    ],
     hello: "Iron. Good iron. Speak.",
     accept: "Agreed.",
     counter: (p) => `${p} C each.`,

@@ -113,8 +113,13 @@ impl Contract {
         if now.saturating_sub(self.last_tick_ns) < MIN_TICK_GAP_NS {
             return false;
         }
-        let list: Vec<(AccountId, String)> = self.merchants.iter().map(|(a, m)| (a.clone(), m.good.clone())).collect();
-        for (acct, good) in list {
+        let list: Vec<(AccountId, String, u32)> = self.merchants.iter().map(|(a, m)| (a.clone(), m.good.clone(), m.target)).collect();
+        for (acct, good, target) in list {
+            let imported = pricing::restock(self.stock_of(acct.as_str(), &good), target) as u128;
+            if imported > 0 {
+                self.add(acct.as_str(), &good, imported);
+                nep245::emit_mint(acct.as_str(), &[&good], &[imported]);
+            }
             let stock = self.stock_of(acct.as_str(), &good);
             let burned = (stock - pricing::burn(stock)) as u128;
             if burned > 0 {
@@ -307,7 +312,16 @@ mod tests {
         assert_eq!(c.get_market()[0].stock, 90);
         ctx(GAME, 0, t0 + 291_000_000_000);
         assert!(c.day_tick());
-        assert_eq!(c.get_market()[0].stock, 81);
+        assert_eq!(c.get_market()[0].stock, 85); // restock 4 (40% of gap 10) -> 94, burn 9 -> 85
         assert_eq!(c.get_market()[0].day, 2);
+    }
+
+    #[test]
+    fn day_tick_restocks_a_drained_merchant() {
+        let mut c = world(37, 10_000, 0);
+        ctx(GAME, 0, 1 + 300_000_000_000);
+        assert!(c.day_tick());
+        assert_eq!(c.get_market()[0].stock, 56); // 37 + 25 = 62, burn 6 -> 56
+        assert_eq!(c.get_market()[0].purse, U128(10_000)); // imports are not paid from the purse
     }
 }

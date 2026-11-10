@@ -54,7 +54,7 @@ export function createLlm(config: Config, db: Db, opts: LlmOpts = {}): LlmLike {
           model: config.LLM_MODEL,
           messages,
           temperature: 0.3,
-          max_tokens: 150,
+          max_tokens: 400, // some models reason silently first; 150 cut the JSON off
           response_format: { type: "json_object" },
         }),
         signal: AbortSignal.timeout(timeoutMs),

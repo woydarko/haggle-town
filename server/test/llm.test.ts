@@ -81,12 +81,28 @@ test("client sends model, low temperature, token cap, json mode and bearer", asy
   assert.equal(seen.url, "https://cloud-api.near.ai/v1/chat/completions");
   assert.equal(seen.init.headers.authorization, "Bearer k");
   assert.equal(seen.body.model, "m");
-  assert.equal(seen.body.max_tokens, 150);
+  assert.equal(seen.body.max_tokens, 400); // room for hidden reasoning before the JSON
   assert.ok(seen.body.temperature <= 0.3);
   assert.deepEqual(seen.body.response_format, { type: "json_object" });
   const system = seen.body.messages[0].content;
   assert.match(system, /between 21 and 35/);
   assert.match(system, /untrusted/);
+});
+
+test("prompt gives the merchant a voice and the stock situation", async () => {
+  let system = "";
+  const llm = createLlm(cfg(), openDb(":memory:"), {
+    fetchImpl: async (_u: any, init: any) => {
+      system = JSON.parse(init.body).messages[0].content;
+      return completion('{"line":"Hi","mood":"neutral","unit_price":30,"accept":false}');
+    },
+  });
+  await llm.reply(CTX); // woodcutter, stock 140 of 100
+  assert.match(system, /Lines in your voice/);
+  assert.match(system, /axe/i); // one of the woodcutter's example lines
+  assert.match(system, /too much/i); // overstocked situation
+  await llm.reply({ ...CTX, stock: 30 });
+  assert.match(system, /scarce/i);
 });
 
 test("no key -> throws without calling fetch", async () => {

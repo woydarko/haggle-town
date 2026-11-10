@@ -42,7 +42,7 @@ Cut order if behind: web playable fallback first, then player stalls (P2P). Robl
 ### 3.2 Merchants (3)
 - Woodcutter (buys/sells Wood), Fishmonger (Fish), Smith (Iron). Each has its own NEAR sub-account holding Coin and its good inside the contract.
 - Start: 10000 Coin and stock = target stock (proposal: 100) each.
-- Each game day (5 real minutes) every merchant "uses up" 10% of its stock (burn). That keeps demand alive: stock falls, prices rise, merchants want to buy again.
+- Each game day (5 real minutes) a merchant below target first brings in 40% of the gap from outside town (restock), then every merchant "uses up" 10% of its stock (burn). A quiet market settles near 78% of target instead of running dry. That keeps demand alive: stock falls, prices rise, merchants want to buy again.
 - A merchant with too little Coin cannot buy. Its stall shows "Closed for buying - empty purse". It reopens when players buy from it.
 
 ### 3.3 Pricing rules (one file, deterministic)
