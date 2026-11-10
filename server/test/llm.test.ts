@@ -101,6 +101,7 @@ test("prompt gives the merchant a voice and the stock situation", async () => {
   assert.match(system, /Lines in your voice/);
   assert.match(system, /axe/i); // one of the woodcutter's example lines
   assert.match(system, /too much/i); // overstocked situation
+  assert.match(system, /price per unit/);
   await llm.reply({ ...CTX, stock: 30 });
   assert.match(system, /scarce/i);
 });
