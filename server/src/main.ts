@@ -7,6 +7,8 @@ import { MarketCache } from "./chain/market.ts";
 import { Gather } from "./game/gather.ts";
 import { Players } from "./game/players.ts";
 import { rbxRoutes } from "./routes/rbx.ts";
+import { haggleRoutes } from "./routes/haggle.ts";
+import { HaggleEngine } from "./haggle/engine.ts";
 import { startJobs } from "./jobs.ts";
 
 const config = loadConfig();
@@ -17,7 +19,18 @@ const market = new MarketCache(chain);
 const gather = new Gather(db, chain, queue);
 const players = new Players(db, chain, queue, gather);
 
-const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market })] });
+const engine = new HaggleEngine({
+  db,
+  chain,
+  queue,
+  market,
+  players,
+  contractId: config.CONTRACT_ID,
+  merchantKeys: { woodcutter: config.WOODCUTTER_PRIVATE_KEY, fishmonger: config.FISHMONGER_PRIVATE_KEY, smith: config.SMITH_PRIVATE_KEY },
+  dayLengthMs: config.DAY_LENGTH_MS,
+});
+
+const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market }), haggleRoutes(engine)] });
 
 await market.refresh();
 startJobs({ chain, queue, market, gather, dayLengthMs: config.DAY_LENGTH_MS, log: app.log });

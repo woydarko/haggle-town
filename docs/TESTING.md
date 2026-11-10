@@ -64,5 +64,7 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 12 passed (config, schema, health, HMAC auth 401/200, error shape, HMAC vector).
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 31 passed (adds tx queue, gather cooldown/batch/failure/restart, rbx join/gather/state routes).
 - 2026-11-10 testnet smoke `cd server && node --env-file=../.env scripts/smoke.ts` -> join roblox:999001 (1000 coin), gather wood, batch tx FV5tFh4qFz6vqBFoGBYH5HyYyevAExa9anVCpTumEBZS, get_player wood 1. Passed.
+- 2026-11-10 `cd server && NODE_ENV=test npm test` -> 56 passed (adds pricing port vs 297 Rust vectors, offer parser, deal message/signature, haggle engine: clamp on injection, lowball patience, rate limit, empty purse, signed accept, 403 foreign deal, requote on PriceOutOfRoom/Expired/stale quote, 409 double accept).
+- 2026-11-10 testnet smoke `node --env-file=../.env scripts/smoke.ts 999002` -> haggle woodcutter (fallback) 'sell 1 wood for 40', accept settled on chain with merchant ed25519 signature, tx 6rdt28AiRGi3uEwky34vg8RF5AKPjU6veZsakTrZVheh, coin 1000 -> 1040, wood 1 -> 0. Passed.
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.
