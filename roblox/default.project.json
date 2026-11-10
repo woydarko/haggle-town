@@ -1,0 +1,20 @@
+{
+  "name": "HaggleTown",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "Shared": { "$path": "src/shared" }
+    },
+    "ServerScriptService": {
+      "HaggleServer": { "$path": "src/server" }
+    },
+    "StarterPlayer": {
+      "StarterPlayerScripts": {
+        "HaggleClient": { "$path": "src/client" }
+      }
+    },
+    "Lighting": {
+      "$properties": { "ClockTime": 15.5, "Brightness": 2 }
+    }
+  }
+}

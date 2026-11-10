@@ -8,7 +8,7 @@ export function reasoningLine(v: MarketView, side: "buy" | "sell", room: [number
       const off = Math.round((1 - room![0] / room![1]) * 100);
       return `${stock} - I want it gone: up to ${off}% off.`;
     }
-    return `${stock} - running low, no discounts today.`;
+    return v.stock < v.target ? `${stock} - running low, no discounts today.` : `${stock} - fair price, no discounts today.`;
   }
   if (!room) return "Purse is empty - not buying today.";
   if (v.stock < v.target) return `${stock} - I'll pay up to ${room[1]} C each.`;

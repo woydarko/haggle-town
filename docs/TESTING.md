@@ -50,6 +50,7 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 - Reset/isolation: sandbox is fresh per test file; SQLite uses `:memory:` in tests; testnet contract can be redeployed to a fresh sub-account.
 
 ## Verified commands
+- Luau: `lute run roblox/tests/Hmac.spec.luau` and `lute run roblox/tests/Validate.spec.luau` (Lute via `winget install Luau.Lute`)
 - Unit/integration: `cd server && NODE_ENV=test npm test` (Node 24 test runner, native TS); `cargo test -p economy`; `cargo test -p haggle-contract --lib` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
 - End-to-end: Not configured
 - Build/type check: `cd server && npm run typecheck`
@@ -66,5 +67,9 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-10 testnet smoke `cd server && node --env-file=../.env scripts/smoke.ts` -> join roblox:999001 (1000 coin), gather wood, batch tx FV5tFh4qFz6vqBFoGBYH5HyYyevAExa9anVCpTumEBZS, get_player wood 1. Passed.
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 56 passed (adds pricing port vs 297 Rust vectors, offer parser, deal message/signature, haggle engine: clamp on injection, lowball patience, rate limit, empty purse, signed accept, 403 foreign deal, requote on PriceOutOfRoom/Expired/stale quote, 409 double accept).
 - 2026-11-10 testnet smoke `node --env-file=../.env scripts/smoke.ts 999002` -> haggle woodcutter (fallback) 'sell 1 wood for 40', accept settled on chain with merchant ed25519 signature, tx 6rdt28AiRGi3uEwky34vg8RF5AKPjU6veZsakTrZVheh, coin 1000 -> 1040, wood 1 -> 0. Passed.
+- 2026-11-10 `lute run roblox/tests/Hmac.spec.luau` -> SHA-256 vectors + shared HMAC vector match server. `lute run roblox/tests/Validate.spec.luau` -> passed (far player, unknown good, foreign dealId, 201-char text rejected).
+- 2026-11-10 `rojo build roblox/default.project.json -o roblox/build.rbxl` -> built (15.6 KB). Policy grep of roblox/src: no banned words in user-facing strings.
+- 2026-11-10 local backend `node --env-file=../.env src/main.ts` + signed HTTP: /rbx/join 200 (1000 coin), /rbx/haggle smith 200 (fallback line, counter 150), /rbx/state 200 (board from testnet), bad merchant 400. Passed.
+- Not run yet: golden path inside Roblox Studio Play (needs the user in Studio; steps in roblox/README.md).
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.

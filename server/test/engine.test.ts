@@ -70,6 +70,13 @@ test("reasoning comes from the numbers", async () => {
   assert.match(r.reasoning, /140\/100/);
 });
 
+test("reasoning at target stock does not claim it is running low", async () => {
+  const { say } = await setup({ stock: 100 });
+  const r = await say("roblox:1", "hi");
+  assert.doesNotMatch(r.reasoning, /running low/);
+  assert.match(r.reasoning, /100\/100/);
+});
+
 test("three lowballs -> refused until next day", async () => {
   const { say } = await setup();
   for (let i = 0; i < 3; i++) {
