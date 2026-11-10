@@ -70,7 +70,7 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-10 `lute run roblox/tests/Hmac.spec.luau` -> SHA-256 vectors + shared HMAC vector match server. `lute run roblox/tests/Validate.spec.luau` -> passed (far player, unknown good, foreign dealId, 201-char text rejected).
 - 2026-11-10 `rojo build roblox/default.project.json -o roblox/build.rbxl` -> built (15.6 KB). Policy grep of roblox/src: no banned words in user-facing strings.
 - 2026-11-10 local backend `node --env-file=../.env src/main.ts` + signed HTTP: /rbx/join 200 (1000 coin), /rbx/haggle smith 200 (fallback line, counter 150), /rbx/state 200 (board from testnet), bad merchant 400. Passed.
-- Not run yet: golden path inside Roblox Studio Play (needs the user in Studio; steps in roblox/README.md).
+- 2026-11-10 ~23:00 user ran golden path in Roblox Studio Play against Railway: HUD balances, gather, haggle with Fishmonger, accept -> Deal done (coin 1000 -> 704, fish 3), patience drop, Accept disabled after deal. Passed. Follow-ups fixed: HUD hidden by chat window, generic offer placeholder.
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 88 passed (adds leaderboard, /api config/feed/market/leaderboard/history: display names only, no secrets).
 - 2026-11-10 `cd web && npm run build` -> built (JS 92.9 KB gzip). Dashboard served by backend at :8080 against testnet: merchant cards, chart, empty states render; 390 px viewport no horizontal overflow. Contrast not measured yet (Phase 5).
 - 2026-11-10 `cargo test -p sim` -> 4 passed (prices move on >=3 days per good, no dead merchant, deterministic per seed, JSON shape). `cargo run -p sim -- --seed 42` -> 1260 points; day-end asks wood 56-62, fish 89-96, iron 168-182; purses end 9470/8530/6766.
