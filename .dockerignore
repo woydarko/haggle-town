@@ -1,0 +1,14 @@
+.env
+.env.*
+.git
+.superpowers
+.claude
+**/node_modules
+**/dist
+target
+server/data
+roblox
+contract
+sim
+docs
+*.sqlite
