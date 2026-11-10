@@ -9,6 +9,7 @@ import { Players } from "./game/players.ts";
 import { rbxRoutes } from "./routes/rbx.ts";
 import { haggleRoutes } from "./routes/haggle.ts";
 import { HaggleEngine } from "./haggle/engine.ts";
+import { createLlm } from "./llm/client.ts";
 import { startJobs } from "./jobs.ts";
 
 const config = loadConfig();
@@ -28,6 +29,7 @@ const engine = new HaggleEngine({
   contractId: config.CONTRACT_ID,
   merchantKeys: { woodcutter: config.WOODCUTTER_PRIVATE_KEY, fishmonger: config.FISHMONGER_PRIVATE_KEY, smith: config.SMITH_PRIVATE_KEY },
   dayLengthMs: config.DAY_LENGTH_MS,
+  llm: createLlm(config, db),
 });
 
 const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market }), haggleRoutes(engine)] });
