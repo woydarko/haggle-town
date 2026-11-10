@@ -1,0 +1,73 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { buildApp } from "../src/app.ts";
+import { openDb } from "../src/db/db.ts";
+import { loadConfig } from "../src/config.ts";
+import { MarketCache } from "../src/chain/market.ts";
+import { apiRoutes } from "../src/routes/api.ts";
+import { recordPrices } from "../src/game/history.ts";
+import { FakeChain, marketView } from "./fakes.ts";
+import { TEST_ENV } from "./app.test.ts";
+
+async function setup() {
+  const chain = new FakeChain();
+  chain.views.get_market = () => marketView();
+  const market = new MarketCache(chain);
+  await market.refresh();
+  const db = openDb(":memory:");
+  db.prepare("INSERT INTO player_profile (player_id, display_name, first_seen, last_seen) VALUES ('roblox:42', 'Rina', 1, 1)").run();
+  db.prepare("INSERT INTO haggle_session (id, player_id, merchant, opened_at) VALUES ('s1', 'roblox:42', 'smith', 1)").run();
+  db.prepare(
+    "INSERT INTO deal (id, session_id, merchant, player_id, good, side, qty, unit_price, nonce, expires_at, status, tx_hash, created_at) VALUES ('d1', 's1', 'smith', 'roblox:42', 'iron', 'buy', 2, 140, 1, 9, 'settled', 'TXHASH', 1000)",
+  ).run();
+  db.prepare(
+    "INSERT INTO deal (id, session_id, merchant, player_id, good, side, qty, unit_price, nonce, expires_at, status, created_at) VALUES ('d2', 's1', 'smith', 'roblox:42', 'iron', 'buy', 1, 150, 2, 9, 'quoted', 1001)",
+  ).run();
+  db.prepare(
+    "INSERT INTO chat_turn (session_id, role, text, mood, source, reasoning, created_at) VALUES ('s1', 'merchant', 'Ten? I have 3 iron left.', 'amused', 'llm', 'Stock 3/100 - running low.', 1002)",
+  ).run();
+  const app = buildApp({
+    config: loadConfig(TEST_ENV),
+    db,
+    routes: [apiRoutes({ db, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV) })],
+  });
+  return { app, db, market };
+}
+
+test("/api/config exposes only public values", async () => {
+  const { app } = await setup();
+  const r = await app.inject({ method: "GET", url: "/api/config" });
+  assert.deepEqual(r.json(), { contractId: "haggle.testnet", network: "testnet", explorerBase: "https://testnet.nearblocks.io" });
+  assert.doesNotMatch(r.body, /PRIVATE|SECRET|ed25519:/i);
+});
+
+test("/api/feed shows settled deals with display names, never player ids", async () => {
+  const { app } = await setup();
+  const r = await app.inject({ method: "GET", url: "/api/feed" });
+  const j = r.json();
+  assert.equal(j.deals.length, 1);
+  assert.deepEqual(j.deals[0], { at: 1000, player: "Rina", merchant: "smith", good: "iron", qty: 2, unitPrice: 140, side: "buy", txHash: "TXHASH" });
+  assert.doesNotMatch(r.body, /roblox:42/);
+  assert.equal(j.chat[0].line, "Ten? I have 3 iron left.");
+  assert.equal(j.chat[0].reasoning, "Stock 3/100 - running low.");
+});
+
+test("/api/market and /api/leaderboard", async () => {
+  const { app } = await setup();
+  assert.equal((await app.inject({ method: "GET", url: "/api/market" })).json().length, 3);
+  assert.deepEqual((await app.inject({ method: "GET", url: "/api/leaderboard" })).json(), [{ name: "Rina", netWorth: 1200 }]);
+});
+
+test("/api/history groups minute points by merchant", async () => {
+  const { app, db, market } = await setup();
+  const base = Math.floor(Date.now() / 60_000) * 60_000 - 10 * 60_000;
+  recordPrices(db, market.get(), base);
+  recordPrices(db, market.get(), base + 60_000);
+  recordPrices(db, market.get(), base + 60_500); // same minute bucket -> replaces
+  const j = (await app.inject({ method: "GET", url: "/api/history?minutes=60" })).json();
+  assert.equal(j.length, 3);
+  const wood = j.find((m: any) => m.merchant === "woodcutter.h.testnet");
+  assert.equal(wood.good, "wood");
+  assert.equal(wood.points.length, 2);
+  assert.deepEqual(Object.keys(wood.points[0]).sort(), ["ask", "bid", "purse", "stock", "ts"]);
+});

@@ -12,6 +12,11 @@ import { HaggleEngine } from "./haggle/engine.ts";
 import { createLlm } from "./llm/client.ts";
 import { startJobs } from "./jobs.ts";
 import { Leaderboard } from "./game/leaderboard.ts";
+import { apiRoutes } from "./routes/api.ts";
+import { recordPrices } from "./game/history.ts";
+import fastifyStatic from "@fastify/static";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
 const config = loadConfig();
 const db = openDb(config.DB_PATH);
@@ -34,7 +39,11 @@ const engine = new HaggleEngine({
   llm: createLlm(config, db),
 });
 
-const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market, leaderboard: () => leaderboard.get() }), haggleRoutes(engine)] });
+const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market, leaderboard: () => leaderboard.get() }), haggleRoutes(engine), apiRoutes({ db, market, leaderboard: () => leaderboard.get(), config })] });
+
+const webDist = fileURLToPath(new URL("../../web/dist", import.meta.url));
+if (existsSync(webDist)) app.register(fastifyStatic, { root: webDist });
+market.onRefresh = (rows) => recordPrices(db, rows);
 
 await market.refresh();
 startJobs({ chain, queue, market, gather, dayLengthMs: config.DAY_LENGTH_MS, log: app.log });

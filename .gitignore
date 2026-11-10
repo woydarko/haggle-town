@@ -11,3 +11,4 @@ server/data/
 .DS_Store
 .superpowers/
 roblox/build.rbxl
+web/dist/

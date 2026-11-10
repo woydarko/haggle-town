@@ -42,7 +42,8 @@
 - No chain words in Roblox strings; tokens only for colors.
 
 ## Verified commands
-- Format: Not configured (no project files yet)
+- Web build + typecheck: `cd web && npm run build` (tsc --noEmit + vite build)
+- Format: Not configured
 - Lint: Not configured
 - Type check: `cd server && npm run typecheck` (tsc 7, strict, noEmit)
 Never invent commands or claim checks passed without running them.
