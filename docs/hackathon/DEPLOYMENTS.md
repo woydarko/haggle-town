@@ -17,6 +17,11 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 | --- | --- | --- | --- | --- |
 | Haggle Town market (NEP-245 + merchants + deals + day tick) | `haggletown.testnet` | [4QYjA8ET5tabFC1Tr7XVixmhFGdHzzd7912pQGzBLW25](https://testnet.nearblocks.io/txns/4QYjA8ET5tabFC1Tr7XVixmhFGdHzzd7912pQGzBLW25) (deploy + init, 2026-11-10) | No (plain cargo build; reproducible cargo-near build not available on dev box) | `contract/` |
 
+## v2 contract (2026-11-11)
+- `haggletown-v2.testnet` (fresh account; v1 `haggletown.testnet` keeps running for the live v1 backend until Task 12 switches Railway).
+- Merchants `woodcutter|fishmonger|smith.haggletown-v2.testnet` registered by category (wood/fish/ore), 20000 coin each, every item at target stock; game relayer `game.haggletown-v2.testnet`.
+- get_market: 12 rows; asks pine 15, oak 45, maple 120, redwood 450, sardine 20, trout 60, salmon 160, koi 600, copper 30, iron 90, gold 240, crystal 900.
+
 ## Roles and keys (names only)
 | Role | Address | Key storage |
 | --- | --- | --- |

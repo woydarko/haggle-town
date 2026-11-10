@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Registers the 3 merchants (10000 coin, stock 100, target 100) and writes their keys + the game key into .env.
+# Registers the 3 merchants (v2: one category each, 20000 coin, every item at its target stock) and writes their keys + the game key into .env.
 # Usage: CONTRACT_ID=haggletown.testnet bash scripts/seed.sh   (run after deploy.sh)
 # Private keys are read from ~/.near-credentials/testnet/*.json and written only to .env (gitignored); never printed.
 set -euo pipefail
@@ -10,13 +10,13 @@ CREDS="$HOME/.near-credentials/$NET"
 
 field() { python -c "import json,sys; print(json.load(open(sys.argv[1]))[sys.argv[2]])" "$CREDS/$1.json" "$2"; }
 
-registered=$(near contract call-function as-read-only "$CONTRACT_ID" get_market json-args '{}' network-config $NET now 2>/dev/null | grep -o '"account_id": *"[^"]*"' || true)
+registered=$(near contract call-function as-read-only "$CONTRACT_ID" get_market json-args '{}' network-config $NET now 2>/dev/null | grep -o '"merchant": *"[^"]*"' || true)
 
-for pair in woodcutter:wood fishmonger:fish smith:iron; do
+for pair in woodcutter:wood fishmonger:fish smith:ore; do
   name="${pair%%:*}"; good="${pair##*:}"; acct="$name.$CONTRACT_ID"
   if grep -q "\"$acct\"" <<<"$registered"; then echo "$acct already registered"; continue; fi
   pk=$(field "$acct" public_key)
-  args="{\"account_id\":\"$acct\",\"good\":\"$good\",\"public_key\":\"$pk\",\"coin\":\"10000\",\"stock\":100,\"target\":100}"
+  args="{\"account_id\":\"$acct\",\"category\":\"$good\",\"public_key\":\"$pk\",\"coin\":\"20000\"}"
   near contract call-function as-transaction "$CONTRACT_ID" register_merchant json-args "$args" \
     prepaid-gas '30 Tgas' attached-deposit '0 NEAR' sign-as "$CONTRACT_ID" network-config $NET \
     sign-with-legacy-keychain send >/dev/null
