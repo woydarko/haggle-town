@@ -1,15 +1,14 @@
 {
-  "name": "server",
+  "name": "haggle-town-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Haggle Town backend",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node --env-file-if-exists=../.env src/main.ts",
+    "test": "node --test \"test/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "license": "MIT",
+  "type": "module",
   "dependencies": {
     "@fastify/rate-limit": "^11.2.2",
     "@fastify/static": "^10.1.10",
@@ -19,5 +18,9 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "typescript": "^7.0.2"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=24"
   }
 }

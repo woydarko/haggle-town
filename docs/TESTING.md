@@ -50,9 +50,9 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 - Reset/isolation: sandbox is fresh per test file; SQLite uses `:memory:` in tests; testnet contract can be redeployed to a fresh sub-account.
 
 ## Verified commands
-- Unit/integration: `cargo test -p economy` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
+- Unit/integration: `cd server && NODE_ENV=test npm test` (Node 24 test runner, native TS); `cargo test -p economy`; `cargo test -p haggle-contract --lib` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
 - End-to-end: Not configured
-- Build/type check: Not configured
+- Build/type check: `cd server && npm run typecheck`
 
 ## Release criteria
 All "Must" rows above Passed (or a written, user-approved exception), eval pass rate >= 90% on 15 cases with 100% of prices in room, golden path rehearsed 5 times on testnet, secret and policy greps clean. Owner: nabil.
@@ -61,5 +61,6 @@ All "Must" rows above Passed (or a written, user-approved exception), eval pass 
 Every run records: command, result, failures, untested limitations. Not run stays distinct from Passed.
 - 2026-11-10 `cargo test -p economy` -> 12 passed.
 - 2026-11-10 `cargo test -p haggle-contract --lib` -> 30 passed (roles, NEP-245, gather limits, signed deals, nonce, expiry, room, purse, day tick).
+- 2026-11-10 `cd server && NODE_ENV=test npm test` -> 12 passed (config, schema, health, HMAC auth 401/200, error shape, HMAC vector).
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.

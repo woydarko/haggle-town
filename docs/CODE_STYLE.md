@@ -44,5 +44,5 @@
 ## Verified commands
 - Format: Not configured (no project files yet)
 - Lint: Not configured
-- Type check: Not configured
+- Type check: `cd server && npm run typecheck` (tsc 7, strict, noEmit)
 Never invent commands or claim checks passed without running them.
