@@ -90,9 +90,13 @@ Over-budget warnings sent: none
 | Time | Time left | Core done / total | Cut decision |
 | --- | --- | --- | --- |
 | 2026-11-10 21:14 +0700 | ~98 h | 6 / 13 (economy, contract core, deals+tick, testnet deploy, server scaffold, chain module) | none; ahead of plan |
+| 2026-11-10 21:55 +0700 | ~97 h | 12 / 13 (all but T11 deploy/publish); T8 eval + Studio golden path wait on user | none; stretch T14/T15 possible |
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
+- LLM_API_KEY (NEAR AI Cloud) not in .env yet -> eval + model choice blocked - owner: nabil
+- Railway account/service + OK to deploy; OK to publish Roblox experience - owner: nabil
+- Roblox Studio golden path not run yet (needs user in Studio) - owner: nabil
 - NEAR mainnet payout account name - owner: nabil
 - Roblox HttpService blocks localhost? (unverified; plan uses cloudflared tunnel anyway) - owner: agent
 
