@@ -7,7 +7,7 @@ const GOODS = ["wood", "fish", "iron"];
 const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /** Ask price per good over time. A data table below is the accessible alternative. */
-export function PriceChart({ series, xLabel = "time" }: { series: Series[]; xLabel?: "time" | "day" }) {
+export function PriceChart({ series, xLabel = "time", yLabel = "ask (C)" }: { series: Series[]; xLabel?: "time" | "day"; yLabel?: string }) {
   const box = useRef<HTMLDivElement>(null);
   const plot = useRef<uPlot | null>(null);
 
@@ -28,7 +28,7 @@ export function PriceChart({ series, xLabel = "time" }: { series: Series[]; xLab
       scales: { x: { time: xLabel === "time" } },
       axes: [
         { stroke: cssVar("--muted"), grid: { stroke: cssVar("--border") }, label: xLabel === "day" ? "day" : undefined },
-        { stroke: cssVar("--muted"), grid: { stroke: cssVar("--border") }, label: "ask (C)" },
+        { stroke: cssVar("--muted"), grid: { stroke: cssVar("--border") }, label: yLabel },
       ],
       series: [{}, ...GOODS.map((g) => ({ label: g, stroke: cssVar(`--${g}`), width: 2, spanGaps: true }))],
       legend: { show: false },
@@ -42,7 +42,7 @@ export function PriceChart({ series, xLabel = "time" }: { series: Series[]; xLab
       plot.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [xLabel]);
+  }, [xLabel, yLabel]);
 
   useEffect(() => {
     plot.current?.setData(data);

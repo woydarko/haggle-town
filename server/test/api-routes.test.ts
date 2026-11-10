@@ -26,13 +26,42 @@ async function setup() {
   db.prepare(
     "INSERT INTO chat_turn (session_id, role, text, mood, source, reasoning, created_at) VALUES ('s1', 'merchant', 'Ten? I have 3 iron left.', 'amused', 'llm', 'Stock 3/100 - running low.', 1002)",
   ).run();
+  db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at, batch_tx) VALUES ('roblox:42', 'wood', 1, 900, 'BATCH1')").run();
+  db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at) VALUES ('roblox:42', 'wood', 1, 950)").run();
+  chain.views.get_player = ({ player_id }: any) => (player_id === "roblox:42" ? { coin: "860", wood: "2", fish: "0", iron: "2" } : null);
   const app = buildApp({
     config: loadConfig(TEST_ENV),
     db,
-    routes: [apiRoutes({ db, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV) })],
+    routes: [apiRoutes({ db, chain, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV) })],
   });
   return { app, db, market };
 }
+
+test("/api/players lists players with deal counts, newest first", async () => {
+  const { app } = await setup();
+  const j = (await app.inject({ method: "GET", url: "/api/players" })).json();
+  assert.deepEqual(j, [{ id: "roblox:42", name: "Rina", lastSeen: 1, deals: 1 }]);
+});
+
+test("/api/players/:id shows on-chain balances, deals and gathers with tx hashes", async () => {
+  const { app } = await setup();
+  const j = (await app.inject({ method: "GET", url: "/api/players/roblox:42" })).json();
+  assert.equal(j.name, "Rina");
+  assert.deepEqual(j.balances, { coin: 860, wood: 2, fish: 0, iron: 2 });
+  assert.equal(j.deals.length, 2); // settled and still-quoted deals, newest first
+  assert.equal(j.deals[1].txHash, "TXHASH");
+  assert.equal(j.deals[1].status, "settled");
+  assert.deepEqual(j.gathers, [
+    { at: 950, good: "wood", qty: 1, batchTx: null },
+    { at: 900, good: "wood", qty: 1, batchTx: "BATCH1" },
+  ]);
+});
+
+test("/api/players/:id rejects bad ids and 404s unknown players", async () => {
+  const { app } = await setup();
+  assert.equal((await app.inject({ method: "GET", url: "/api/players/steam:1" })).statusCode, 400);
+  assert.equal((await app.inject({ method: "GET", url: "/api/players/roblox:7" })).statusCode, 404);
+});
 
 test("/api/config exposes only public values", async () => {
   const { app } = await setup();

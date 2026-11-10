@@ -39,7 +39,7 @@ const engine = new HaggleEngine({
   llm: createLlm(config, db),
 });
 
-const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market, leaderboard: () => leaderboard.get() }), haggleRoutes(engine), apiRoutes({ db, market, leaderboard: () => leaderboard.get(), config })] });
+const app = buildApp({ config, db, routes: [rbxRoutes({ players, gather, market, leaderboard: () => leaderboard.get() }), haggleRoutes(engine), apiRoutes({ db, chain, market, leaderboard: () => leaderboard.get(), config })] });
 
 const webDist = fileURLToPath(new URL("../../web/dist", import.meta.url));
 if (existsSync(webDist)) app.register(fastifyStatic, { root: webDist });

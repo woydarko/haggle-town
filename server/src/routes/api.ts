@@ -3,16 +3,35 @@ import type { Db } from "../db/db.ts";
 import type { Config } from "../config.ts";
 import type { MarketCache } from "../chain/market.ts";
 import { history } from "../game/history.ts";
+import type { Chain } from "../chain/near.ts";
+import { HttpError } from "../errors.ts";
+
+const PLAYER_ID = /^(roblox:[0-9]{1,20}|web:[0-9a-f-]{36})$/;
 
 export interface ApiDeps {
   db: Db;
+  chain: Chain;
   market: MarketCache;
   leaderboard: () => unknown[];
   config: Config;
 }
 
-/** Public read-only routes for the web dashboard. Display names only, never player ids or secrets. */
+/** Public read-only routes for the web dashboard. Never secrets. Player ids appear only on the players
+ *  routes; they are already public on chain as settle_deal / gather_batch arguments. */
 export function apiRoutes(d: ApiDeps) {
+  const players = d.db.prepare(
+    `SELECT p.player_id AS id, p.display_name AS name, p.last_seen AS lastSeen,
+            (SELECT COUNT(*) FROM deal d WHERE d.player_id = p.player_id AND d.status = 'settled') AS deals
+     FROM player_profile p ORDER BY p.last_seen DESC LIMIT 100`,
+  );
+  const profile = d.db.prepare("SELECT display_name AS name, first_seen AS firstSeen, last_seen AS lastSeen FROM player_profile WHERE player_id = ?");
+  const playerDeals = d.db.prepare(
+    `SELECT created_at AS at, merchant, good, qty, unit_price AS unitPrice, side, status, tx_hash AS txHash
+     FROM deal WHERE player_id = ? AND status IN ('settled', 'quoted', 'failed') ORDER BY created_at DESC, rowid DESC LIMIT 100`,
+  );
+  const playerGathers = d.db.prepare(
+    "SELECT created_at AS at, good, qty, batch_tx AS batchTx FROM pending_gather WHERE player_id = ? ORDER BY id DESC LIMIT 100",
+  );
   const deals = d.db.prepare(
     `SELECT d.created_at AS at, COALESCE(p.display_name, 'Trader') AS player, d.merchant, d.good, d.qty, d.unit_price AS unitPrice, d.side, d.tx_hash AS txHash
      FROM deal d LEFT JOIN player_profile p ON p.player_id = d.player_id
@@ -33,6 +52,22 @@ export function apiRoutes(d: ApiDeps) {
     app.get("/api/market", async () => d.market.get());
     app.get("/api/leaderboard", async () => d.leaderboard());
     app.get("/api/feed", async () => ({ deals: deals.all(), chat: chat.all() }));
+    app.get("/api/players", async () => players.all());
+    app.get<{ Params: { id: string } }>("/api/players/:id", async (req) => {
+      const id = req.params.id;
+      if (!PLAYER_ID.test(id)) throw new HttpError(400, "bad_player_id", "Unknown player id format.");
+      const p = profile.get(id) as { name: string; firstSeen: number; lastSeen: number } | undefined;
+      if (!p) throw new HttpError(404, "no_player", "No such player.");
+      const v = await d.chain.view<Record<string, string> | null>("get_player", { player_id: id });
+      const n = (k: string) => Number(v?.[k] ?? 0);
+      return {
+        id,
+        ...p,
+        balances: { coin: n("coin"), wood: n("wood"), fish: n("fish"), iron: n("iron") },
+        deals: playerDeals.all(id),
+        gathers: playerGathers.all(id),
+      };
+    });
     app.get<{ Querystring: { minutes?: number } }>(
       "/api/history",
       { schema: { querystring: { type: "object", properties: { minutes: { type: "integer", minimum: 1, maximum: 1440 } } } } },

@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { api, MERCHANT_NAME, merchantKey, type Config, type Feed, type History, type Leader, type Market } from "./api.ts";
 import { PriceChart } from "./PriceChart.tsx";
 import { FastForward } from "./FastForward.tsx";
+import { Players } from "./Players.tsx";
 
-type Data = { market: Market[]; feed: Feed; leaders: Leader[]; history: History };
+type Data = { market: Market[]; feed: Feed; leaders: Leader[] };
+const RANGES: [number, string][] = [[60, "1 h"], [360, "6 h"], [1440, "24 h"]];
+const tabFromHash = () => (location.hash.startsWith("#/players") ? "players" : "market");
 
 const ago = (t: number) => {
   const s = Math.max(0, Math.round((Date.now() - t) / 1000));
@@ -14,15 +17,36 @@ export function App() {
   const [config, setConfig] = useState<Config | null>(null);
   const [data, setData] = useState<Data | null>(null);
   const [offline, setOffline] = useState(false);
+  const [tab, setTab] = useState(tabFromHash);
+  const [range, setRange] = useState(60);
+  const [metric, setMetric] = useState<"ask" | "stock">("ask");
+  const [hist, setHist] = useState<History>([]);
+
+  useEffect(() => {
+    const on = () => setTab(tabFromHash());
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = () => api.history(range).then((h) => alive && setHist(h)).catch(() => undefined);
+    load();
+    const id = setInterval(load, 15_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, [range]);
 
   useEffect(() => {
     let alive = true;
     api.config().then(setConfig).catch(() => undefined);
     const load = async () => {
       try {
-        const [market, feed, leaders, history] = await Promise.all([api.market(), api.feed(), api.leaderboard(), api.history(60)]);
+        const [market, feed, leaders] = await Promise.all([api.market(), api.feed(), api.leaderboard()]);
         if (alive) {
-          setData({ market, feed, leaders, history });
+          setData({ market, feed, leaders });
           setOffline(false);
         }
       } catch {
@@ -51,9 +75,16 @@ export function App() {
         </div>
       </header>
 
+      <nav className="tabs" aria-label="Views">
+        <a href="#/" aria-current={tab === "market" ? "page" : undefined}>Market</a>
+        <a href="#/players" aria-current={tab === "players" ? "page" : undefined}>Players & transactions</a>
+      </nav>
+
       {offline && <div className="banner" role="status">Can't reach the market. Retrying in 5 s.</div>}
 
-      {!data ? (
+      {tab === "players" ? (
+        <Players config={config} />
+      ) : !data ? (
         <div className="grid">
           <div className="skeleton" />
           <div className="skeleton" />
@@ -103,9 +134,22 @@ export function App() {
 
           <div className="grid" style={{ marginTop: "var(--s4)" }}>
             <section className="card">
-              <h2>Prices, last hour</h2>
-              {data.history.length ? (
-                <PriceChart series={data.history.map((h) => ({ good: h.good, points: h.points.map((p) => ({ ts: p.ts / 1000, ask: p.ask })) }))} />
+              <h2>{metric === "ask" ? "Prices" : "Merchant stock"}</h2>
+              <div className="controls" role="group" aria-label="Chart range and metric">
+                {RANGES.map(([m, label]) => (
+                  <button key={m} className="chip" aria-pressed={range === m} onClick={() => setRange(m)}>
+                    {label}
+                  </button>
+                ))}
+                <span className="muted"> | </span>
+                <button className="chip" aria-pressed={metric === "ask"} onClick={() => setMetric("ask")}>ask price</button>
+                <button className="chip" aria-pressed={metric === "stock"} onClick={() => setMetric("stock")}>stock</button>
+              </div>
+              {hist.length ? (
+                <PriceChart
+                  yLabel={metric === "ask" ? "ask (C)" : "stock"}
+                  series={hist.map((h) => ({ good: h.good, points: h.points.map((p) => ({ ts: p.ts / 1000, ask: p[metric] })) }))}
+                />
               ) : (
                 <p className="muted">Collecting prices... the first points appear within a minute.</p>
               )}
