@@ -73,5 +73,7 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - Not run yet: golden path inside Roblox Studio Play (needs the user in Studio; steps in roblox/README.md).
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 88 passed (adds leaderboard, /api config/feed/market/leaderboard/history: display names only, no secrets).
 - 2026-11-10 `cd web && npm run build` -> built (JS 92.9 KB gzip). Dashboard served by backend at :8080 against testnet: merchant cards, chart, empty states render; 390 px viewport no horizontal overflow. Contrast not measured yet (Phase 5).
+- 2026-11-10 `cargo test -p sim` -> 4 passed (prices move on >=3 days per good, no dead merchant, deterministic per seed, JSON shape). `cargo run -p sim -- --seed 42` -> 1260 points; day-end asks wood 56-62, fish 89-96, iron 168-182; purses end 9470/8530/6766.
+- 2026-11-10 dashboard fast-forward clicked in browser pane: animates ~1.2 days per 10 s (~60 s per week). Passed.
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.

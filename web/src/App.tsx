@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, MERCHANT_NAME, merchantKey, type Config, type Feed, type History, type Leader, type Market } from "./api.ts";
 import { PriceChart } from "./PriceChart.tsx";
+import { FastForward } from "./FastForward.tsx";
 
 type Data = { market: Market[]; feed: Feed; leaders: Leader[]; history: History };
 
@@ -90,6 +91,14 @@ export function App() {
                 </article>
               );
             })}
+          </section>
+
+          <section className="card" style={{ marginTop: "var(--s4)" }}>
+            <h2>A week in Haggle Town</h2>
+            <p className="muted" style={{ marginTop: 0 }}>
+              Same pricing rules as the contract, ten bot traders, seven game days in one minute. Simulated, not on chain.
+            </p>
+            <FastForward />
           </section>
 
           <div className="grid" style={{ marginTop: "var(--s4)" }}>
