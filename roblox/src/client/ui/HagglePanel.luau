@@ -99,7 +99,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		setPatience(r.patience)
 		if r.refused then
 			setCounter(nil)
-			local secs = math.max(0, math.floor((r.refused.until - DateTime.now().UnixTimestampMillis) / 1000))
+			local secs = math.max(0, math.floor((r.refused["until"] - DateTime.now().UnixTimestampMillis) / 1000))
 			showError(string.format("Come back tomorrow (in %d:%02d).", secs // 60, secs % 60))
 		else
 			setCounter(r.counter)
