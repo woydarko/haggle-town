@@ -7,7 +7,9 @@ use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap, LookupSet};
 use near_sdk::{env, near, AccountId, BorshStorageKey, PanicOnDefault, PublicKey};
 
+mod deals;
 mod nep245;
+pub use deals::{deal_message, Deal, SettleResult};
 
 pub const TOKENS: [&str; 4] = ["coin", "wood", "fish", "iron"];
 const MAX_BATCH: usize = 100;
