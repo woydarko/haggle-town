@@ -6,10 +6,13 @@ local TextService = game:GetService("TextService")
 
 local Backend = require(script.Parent.Backend)
 local World = require(script.Parent.World)
+local Boards = require(script.Parent.Boards)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Validate = require(Shared:WaitForChild("Validate"))
 
 local world = World.build()
+Boards.renderPrices(world.priceBoard, nil)
+Boards.renderLeaders(world.leaderBoard, nil)
 
 local remotes = Instance.new("Folder")
 remotes.Name = "Remotes"
@@ -138,6 +141,10 @@ task.spawn(function()
 					StateChanged:FireClient(p, { offline = true })
 				end
 			end)
+		end
+		if lastState then
+			Boards.renderPrices(world.priceBoard, lastState.board)
+			Boards.renderLeaders(world.leaderBoard, lastState.leaderboard)
 		end
 	end
 end)
