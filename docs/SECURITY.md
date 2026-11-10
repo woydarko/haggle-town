@@ -45,6 +45,7 @@
 - Rate limits/abuse: gather cooldowns enforced server-side (Wood 3 s, Fish 6 s, Iron 10 s, proposal); haggle max 1 message per 2 s per player and 5 rounds per session; patience system; LLM max 150 output tokens and response cache; `/api/*` 60 req/min per IP; guest creation 1 per IP per 10 min; contract caps qty per gather entry (20) and per deal (10); merchant cannot buy beyond its purse.
 
 ## Privacy
+- Player ids (`roblox:<UserId>`) are shown on the dashboard players view; they are already public on chain in `settle_deal` / `gather_batch` arguments and Roblox UserIds are public on Roblox.
 - Data collected and purpose: Roblox UserId and display name (identity, leaderboard), chat text with merchants (gameplay, public feed, replay), deals (economy). No email, no real names, no payments, no location.
 - Retention, deletion, access: see DATABASE.md; SQLite purged after 2026-12-31; on-chain data is public and permanent (only ids, numbers, no chat text on chain).
 - Logging redaction: never log private keys, HMAC secret, `LLM_API_KEY`, full request headers; chat text logged only at debug level locally.

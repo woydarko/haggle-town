@@ -74,7 +74,7 @@ Roblox routes (HMAC required):
 - `POST /rbx/haggle` {userId, merchant, message} -> {line, mood, patience, reasoning, counter:{side, good, qty, unitPrice, total, dealId, expiresAt}} | {refused:true, line, until}
 - `POST /rbx/accept` {userId, dealId} -> {status:"settled", balances, txHash} | {status:"requoted", counter, line} | {status:"failed", reason}
 - `GET /rbx/state?userId=` -> {balances, board, leaderboard}
-Public routes (read-only, no auth): `GET /api/config`, `/api/market`, `/api/feed`, `/api/leaderboard`, `/api/history`, static `/` (dashboard) and `/sim/week.json`.
+Public routes (read-only, no auth): `GET /api/config`, `/api/market`, `/api/feed`, `/api/leaderboard`, `/api/history?minutes=1..1440`, `/api/players`, `/api/players/:id` (on-chain balances via `get_player`, deals, gathers with batch tx), static `/` (dashboard) and `/sim/week.json`.
 Stretch web game routes (guest token): `POST /api/guest`, `/api/gather`, `/api/haggle`, `/api/accept`.
 Error shape: `{error: string_code, message: string}` with 400 validation, 401 auth, 409 conflict (deal expired/used), 429 rate limit, 502 chain/LLM upstream.
 
