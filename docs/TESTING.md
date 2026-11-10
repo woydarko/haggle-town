@@ -58,4 +58,8 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 All "Must" rows above Passed (or a written, user-approved exception), eval pass rate >= 90% on 15 cases with 100% of prices in room, golden path rehearsed 5 times on testnet, secret and policy greps clean. Owner: nabil.
 
 ## Results
-No executions yet. Every run will record: command, result, failures, untested limitations. Not run stays distinct from Passed.
+Every run records: command, result, failures, untested limitations. Not run stays distinct from Passed.
+- 2026-11-10 `cargo test -p economy` -> 12 passed.
+- 2026-11-10 `cargo test -p haggle-contract --lib` -> 30 passed (roles, NEP-245, gather limits, signed deals, nonce, expiry, room, purse, day tick).
+- 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
+- Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.

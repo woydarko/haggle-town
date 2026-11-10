@@ -15,21 +15,21 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 ## Contracts / programs
 | Name | Address / program ID | Deploy tx | Verified on explorer | Source path |
 | --- | --- | --- | --- | --- |
-| Haggle Town market (NEP-245 + merchants + stalls) | Not deployed | - | No | `contract/` |
+| Haggle Town market (NEP-245 + merchants + deals + day tick) | `haggletown.testnet` | [4QYjA8ET5tabFC1Tr7XVixmhFGdHzzd7912pQGzBLW25](https://testnet.nearblocks.io/txns/4QYjA8ET5tabFC1Tr7XVixmhFGdHzzd7912pQGzBLW25) (deploy + init, 2026-11-10) | No (plain cargo build; reproducible cargo-near build not available on dev box) | `contract/` |
 
 ## Roles and keys (names only)
 | Role | Address | Key storage |
 | --- | --- | --- |
-| Deployer / owner | Not created (proposal: `haggletown.testnet`) | near-cli-rs keychain on dev machine; burner, testnet only |
-| Game relayer (acts for players, gather mint, stalls, day tick) | Not created (proposal: `game.haggletown.testnet`) | `GAME_PRIVATE_KEY` env var on backend only |
-| Merchant: Woodcutter | Not created (proposal: `woodcutter.haggletown.testnet`) | `WOODCUTTER_PRIVATE_KEY` env var on backend only |
-| Merchant: Fishmonger | Not created (proposal: `fishmonger.haggletown.testnet`) | `FISHMONGER_PRIVATE_KEY` env var on backend only |
-| Merchant: Smith | Not created (proposal: `smith.haggletown.testnet`) | `SMITH_PRIVATE_KEY` env var on backend only |
+| Deployer / owner | `haggletown.testnet` (faucet, created 2026-11-10, tx HeXjR4svTQ2awrNasXRDtv8JMT1fLifLqHbqbtDaR8Hi) | near-cli-rs keychain on dev machine; burner, testnet only |
+| Game relayer (acts for players, gather mint, stalls, day tick) | `game.haggletown.testnet` (0.5 NEAR) | `GAME_PRIVATE_KEY` env var on backend only |
+| Merchant: Woodcutter | `woodcutter.haggletown.testnet` (0.5 NEAR) | `WOODCUTTER_PRIVATE_KEY` env var on backend only |
+| Merchant: Fishmonger | `fishmonger.haggletown.testnet` (0.5 NEAR) | `FISHMONGER_PRIVATE_KEY` env var on backend only |
+| Merchant: Smith | `smith.haggletown.testnet` (0.5 NEAR) | `SMITH_PRIVATE_KEY` env var on backend only |
 | Demo players | Not NEAR accounts: contract-internal ids `roblox:<UserId>`, `web:<uuid>` | n/a |
 
 ## Demo state
-- Pre-funded wallets: Not done
-- Seed data already on-chain: Not done (plan: 3 merchants with 10000 Coin + target stock each)
+- Pre-funded wallets: haggletown.testnet 7.97 NEAR (storage 256 KB), 4 sub-accounts 0.5 NEAR each (2026-11-10 21:10)
+- Seed data already on-chain: 3 merchants registered (woodcutter/wood, fishmonger/fish, smith/iron), 10000 coin, stock 100, target 100; get_market shows ask 50/80/150, bid 40/64/120
 - Reference transactions for the demo script: Not done
 - Fallback if RPC or chain is down: switch to fallback RPC; recorded demo video; LLM replay mode for merchant replies
 
