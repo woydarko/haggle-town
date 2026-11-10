@@ -95,7 +95,7 @@ Over-budget warnings sent: none
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
 - LLM_API_KEY (NEAR AI Cloud) not in .env yet -> eval + model choice blocked - owner: nabil
-- Railway account/service + OK to deploy; OK to publish Roblox experience - owner: nabil
+- Railway: DONE 2026-11-10 (https://backend-production-fccb03fb.up.railway.app). Still open: OK to publish Roblox experience - owner: nabil
 - Roblox Studio golden path not run yet (needs user in Studio) - owner: nabil
 - NEAR mainnet payout account name - owner: nabil
 - Roblox HttpService blocks localhost? (unverified; plan uses cloudflared tunnel anyway) - owner: agent

@@ -33,6 +33,12 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 - Reference transactions for the demo script: Not done
 - Fallback if RPC or chain is down: switch to fallback RPC; recorded demo video; LLM replay mode for merchant replies
 
+## Backend + dashboard hosting
+- Railway project `haggle-town`, service `backend` (Dockerfile), volume `/data` for SQLite.
+- Public URL: https://backend-production-fccb03fb.up.railway.app (dashboard at `/`, `/health`, `/api/*`; Roblox calls `/rbx/*` with HMAC).
+- Deployed 2026-11-10 ~22:30 +0700; verified /health, /api/config, /api/market, /sim/week.json 200; unsigned /rbx 401; signed join + haggle 200 against testnet.
+- NEAR Builders project: `haggle-town` (id proj_1794324838912_9twhgjb, private, owner goatdarko.near).
+
 ## Frontend config
 - Env var names (not values): `NEAR_NETWORK`, `NEAR_RPC_URL`, `CONTRACT_ID` (backend); web reads config from backend `/api/config`, no keys in the bundle
 - Network switch / add-network prompt tested with a fresh wallet: n/a (no player wallets; relayer signs)
