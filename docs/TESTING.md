@@ -62,5 +62,7 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-10 `cargo test -p economy` -> 12 passed.
 - 2026-11-10 `cargo test -p haggle-contract --lib` -> 30 passed (roles, NEP-245, gather limits, signed deals, nonce, expiry, room, purse, day tick).
 - 2026-11-10 `cd server && NODE_ENV=test npm test` -> 12 passed (config, schema, health, HMAC auth 401/200, error shape, HMAC vector).
+- 2026-11-10 `cd server && NODE_ENV=test npm test` -> 31 passed (adds tx queue, gather cooldown/batch/failure/restart, rbx join/gather/state routes).
+- 2026-11-10 testnet smoke `cd server && node --env-file=../.env scripts/smoke.ts` -> join roblox:999001 (1000 coin), gather wood, batch tx FV5tFh4qFz6vqBFoGBYH5HyYyevAExa9anVCpTumEBZS, get_player wood 1. Passed.
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.
