@@ -1,0 +1,96 @@
+# Hackathon State
+
+Single source of truth for `/hackaton`. Update at every phase change and checkpoint. Read this first when resuming a session.
+
+## Event
+- Name: NEAR HACKATHON (online) - https://nearhackathon.com/
+- Lead (sole editor of this file in team mode): nabil (solo - assumed, confirm)
+- Tracks / prizes targeted: `games` (Games With Real Economies: 1st $10K / 2nd $3K / 3rd $2K, grand prize $55K eligible) + `agents` (Agent Economy)
+- Deadline: 2026-11-14 23:59 UTC = 2026-11-15 06:59 +0700
+- Internal submit target: 2026-11-15 06:29 +0700
+- Submission format: form https://nearhackathon.com/#apply (or POST /api/applications): public repo link + X demo post (tag @NEARProtocol #NEARHackathon, demo video attached) + "What did you build?" 20-2000 chars + mainnet NEAR payout wallet. Edits only via /request-changes.
+
+## Judging criteria
+| Criterion | Weight (if known) | Feature / evidence that covers it |
+| --- | --- | --- |
+| Game loop (track: "judged on the game loop, not the token") | Primary | TBD after idea lock |
+| Chain invisible to players (track bonus) | Bonus | Relayer + Roblox UserId -> sub-account, meta-tx |
+| Technical implementation | Unknown (past NEAR criteria) | Contract + tests, relayer, Roblox client |
+| Design | Unknown | Roblox UX + web dashboard |
+| Impact | Unknown | PITCH.md |
+| Originality | Unknown | NPC agents with wallets, economy evolves without patch |
+| Sustainability | Unknown | PITCH.md business model |
+| AI pre-screen (Claude Code / Codex): reproducibility, feature verification | Screening only | README run in <5 commands, headless tests + web fallback |
+
+## Hackathon rules (binding points from the official rules page)
+- Rules page: https://nearhackathon.com/HACKATHON.md
+- Code origin: code written since 2026-10-19 counts; earlier commits are baseline (Q-001)
+- AI tools / models allowed and disclosure required: allowed; libraries and AI-generated code must be listed in README (Q-005)
+- Team size, tracks per project, eligibility: solo or team; max 2 projects per person (disclose in README); multiple tracks per submission allowed
+- License / open-source requirement, IP ownership: any license, add LICENSE (Q-014); team keeps rights, organizers get non-exclusive promo rights (Q-013)
+- Required or forbidden APIs / SDKs: no mandatory integrations; own NEAR contract fitting track is enough (Q-011). Testnet OK (Q-010). NEAR Intents has no testnet (Q-007)
+- Submission language and limits: repo public by deadline; one submission per repo; local-only demo OK if README reproducible (Q-012); hosted demo is a plus, keep up until 2026-11-18 (ideally 11-25)
+- Platform risk (Roblox): Community Standards bar real-money / Robux exchange and target NFTs -> user decided 2026-11-10: **publish publicly**, with no chain wording inside Roblox (only "Coin"), testnet only, Coin never exchangeable; chain shown only on web dashboard
+
+## Environment readiness
+- check-env.sh run at: 2026-11-10 19:26 +0700 - missing then: near CLI, rojo, cloudflared. Now: near-cli-rs 0.31.1 OK (install via PowerShell; Git Bash tar breaks npm install), Rojo 7.7.1 OK, cloudflared installed via winget (on PATH after new shell)
+- Roblox Studio: installed (detected in %LOCALAPPDATA%\Roblox\Versions)
+- Accounts, keys (names only), hosting, repo access: Open - NEAR testnet account, NEAR mainnet payout account, NEAR AI Cloud key (`NEAR_AI_API_KEY`), Railway (backend), Vercel (web), GitHub repo
+- Web3: faucet funds requested at [pending - after near CLI install], balances in DEPLOYMENTS.md: Open
+- AI: provider NEAR AI Cloud ($10 credits via nearbuilders.org) - key tested: Open, spend cap: $10 credits
+
+## Phase cursor and clock
+Current phase: 3 plan
+Last updated: 2026-11-10 20:14 +0700 (design + docs approved by user)
+
+| Phase | Status | Budget | Planned start -> end | Actual end | Notes |
+| --- | --- | --- | --- | --- | --- |
+| 1 Intake | Done | 1h | 11-10 19:26 -> 11-10 20:30 | 11-10 19:35 | Rumor Mill locked |
+| 2 Design + docs | Done | 10h | 11-10 20:30 -> 11-11 06:30 | 11-10 20:14 | started early 19:35; spec + 8 docs + DEPLOYMENTS drafted 20:10 |
+| 3 Plan | In progress | 5h | 11-11 06:30 -> 11-11 11:30 | | |
+| 4 Build | Not started | 54h | 11-11 11:30 -> 11-13 17:30 | | |
+| 5 Verify + audit | Not started | 16h | 11-13 17:30 -> 11-14 09:30 | | |
+| 6 Demo and submit | Not started | 21h | 11-14 09:30 -> 11-15 06:29 | | |
+
+All times +0700. Split: web3 mode 15/50/15/20 of ~107h.
+
+Over-budget warnings sent: none
+
+## Idea filter result
+- Chosen idea: **Haggle Town** (user, 2026-11-10 ~19:55 +0700; pivot from Rumor Mill, which the user found too complex). History: Rumor Mill picked 19:35, rejected for complexity; Hungry Hollow and Hostile Takeover rejected earlier.
+- One-sentence pitch: In-game economies feel dead because NPC prices are static tables devs must patch -> Haggle Town makes merchants AI agents with their own NEAR wallets whose prices follow supply and demand and who haggle with players in plain chat, inside on-chain limits -> for Roblox players (fun) and game devs who want living economies.
+- Measurable impact claim (estimate): 0 dev patches over a simulated week while every good's price changes on >= 3 of 7 days; 0 deals outside the pricing room (contract-enforced).
+- Existing APIs/tools combined: Roblox (HttpService, public experience), NEAR (NEP-245 contract, merchant sub-accounts, ed25519 deal signatures), NEAR AI Cloud (merchant replies).
+- Visible output for judges: public Roblox game link + web dashboard (prices, merchant purses, deal feed with explorer links, fast-forward week).
+- Not a wrapper: LLM only writes the merchant's line and proposes a number; price room comes from pricing.rs and is enforced on-chain; merchant signs each deal.
+- Hair on fire: devs hand-tune and patch economies; players exploit static NPC prices; web3 games show wallets and gas. Why now: cheap fast LLM inference + NEAR relayer pattern make per-NPC wallets invisible to players.
+- Fits the clock: golden path = join -> gather -> haggle -> accept -> settles on testnet -> prices move. Yes.
+- Passed filter: Yes
+
+## Web3 (if applicable)
+- Ecosystem / chain: NEAR
+- Network: testnet
+- Testnet deploys pre-approved: Yes (user, 2026-11-10) (mainnet always needs per-action approval)
+- Sponsor protocols or bounty tracks: none required; hints AGENT NPCS, SOCIAL LOGIN, NEAR INTENTS, NEP-245
+- Contract language: Rust (near-sdk-rs)
+- Audit gate: x-ray Not run | solidity-auditor n/a (Rust) | fizz Not run | tests Not run
+- Deployments file: docs/hackathon/DEPLOYMENTS.md
+
+## Scope
+- Product: **Haggle Town** (spec: docs/superpowers/specs/2026-11-10-haggle-town-design.md)
+- Ship now (core): contract (NEP-245 + merchants + settle_deal + day tick), backend (haggle agent, relayer, LLM proxy), Roblox game (public), web dashboard, fast-forward. Task IDs in Phase 3.
+- Stretch (auto-cut if behind, in this order): 1. web playable fallback, 2. player stalls (P2P)
+- Post-hackathon: TBD
+
+## Hourly checkpoints (lead consolidates from `docs/hackathon/log/*.md`; solo: write here)
+| Time | Time left | Core done / total | Cut decision |
+| --- | --- | --- | --- |
+
+## Unresolved
+- Solo or team? (assumed solo) - owner: nabil
+- NEAR mainnet payout account name - owner: nabil
+- Roblox HttpService blocks localhost? (unverified; plan uses cloudflared tunnel anyway) - owner: agent
+
+## Track prompt notes (09-games.md, read 2026-11-10)
+- Official template idea = market-town, NPC merchants with wallets, price from stock+demand, broke merchant closes until invested. Expect many clones -> we need a distinct twist.
+- Asks: items NEP-245 (one contract), social/email login with no seed/popup/gas in loop, merchant pricing rules in one readable file, merchant reasoning in tooltip, fast-forward mode (1 week in ~1 min), design 30s / 5min / session loop on paper before code.
