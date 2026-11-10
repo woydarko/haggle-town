@@ -65,7 +65,7 @@ SQLite (tables `STRICT`, timestamps INTEGER unix ms):
 
 ## Migrations and seed data
 - Migration tool: `server/src/db/schema.sql` applied with `CREATE TABLE IF NOT EXISTS` at boot; hackathon changes add tables/columns only. Contract: no migrations; a breaking change redeploys to a fresh sub-account and re-seeds.
-- Seed data (synthetic): 3 merchants (Woodcutter/wood, Fishmonger/fish, Smith/iron), each 1000 coin and stock = target 100, via `scripts/seed.sh`. Demo players: Roblox test accounts or `web:demo-*` ids.
+- Seed data (synthetic): 3 merchants (Woodcutter/wood, Fishmonger/fish, Smith/iron), each 10000 coin and stock = target 100, via `scripts/seed.sh`. Demo players: Roblox test accounts or `web:demo-*` ids.
 - Rollback/backups: SQLite can be deleted and rebuilt (history lost, no value lost); on-chain state is the source of truth for balances.
 
 ## Data validation

@@ -36,12 +36,12 @@ Cut order if behind: web playable fallback first, then player stalls (P2P). Robl
 
 ### 3.1 Goods and money
 - Goods: Wood, Fish, Iron. Money: Coin. All four are token ids in one NEP-245 multi-token contract.
-- Gathering: Wood fast, Fish medium, Iron slow (cooldowns), so base prices differ (proposal: Wood 5, Fish 8, Iron 15 coins).
-- New player gets 100 Coin once.
+- Gathering: Wood fast, Fish medium, Iron slow (cooldowns), so base prices differ (Wood 50, Fish 80, Iron 150 coins; x10 of the first proposal so integer haggling has room).
+- New player gets 1000 Coin once.
 
 ### 3.2 Merchants (3)
 - Woodcutter (buys/sells Wood), Fishmonger (Fish), Smith (Iron). Each has its own NEAR sub-account holding Coin and its good inside the contract.
-- Start: 1000 Coin and stock = target stock (proposal: 100) each.
+- Start: 10000 Coin and stock = target stock (proposal: 100) each.
 - Each game day (5 real minutes) every merchant "uses up" 10% of its stock (burn). That keeps demand alive: stock falls, prices rise, merchants want to buy again.
 - A merchant with too little Coin cannot buy. Its stall shows "Closed for buying - empty purse". It reopens when players buy from it.
 
@@ -106,7 +106,7 @@ Player lowballs the Smith: "10 coins for iron?" Smith: "Ten? I have 3 iron left,
 - **Deal consent in one transaction.** The game relayer submits `settle_deal(deal, merchant_sig)`. `deal` = {merchant, player, good, qty, unit_price, side, nonce, expires_at}. The merchant agent signs the deal bytes with its own ed25519 key; the contract checks the signature with `env::ed25519_verify` against the merchant's registered public key, checks the relayer is the caller (player consent), checks `unit_price` against the current room from `pricing.rs`, checks `nonce` unused and not expired. So "the agent signs its own deal" is literally true, and a leaked merchant key alone cannot move player funds.
 - **Multi-unit deals.** One unit price for the whole deal, `qty` capped at 10. Room is computed from stock before the trade. Quote valid 30 s. If the room moved (another trade, day tick) the contract rejects; the backend re-quotes automatically and the merchant says "prices just moved, now it's X".
 - **Agents track fit.** The `agents` brief is "agents that earn, spend, negotiate". Merchants negotiate, earn and spend from their own wallets; no NPC-to-NPC trading added. Secondary track, not driving scope.
-- **Web login.** Roblox players are logged in by their Roblox account (that is the social login). Web fallback uses a guest id, rate limited: max 1 new guest per IP per 10 min, 100 Coin each; merchants cannot be drained below their buy limit anyway. Real social login = post-hackathon.
+- **Web login.** Roblox players are logged in by their Roblox account (that is the social login). Web fallback uses a guest id, rate limited: max 1 new guest per IP per 10 min, 1000 Coin each; merchants cannot be drained below their buy limit anyway. Real social login = post-hackathon.
 - **LLM provider.** Any OpenAI-compatible endpoint via `LLM_BASE_URL` / `LLM_MODEL`. Start with NEAR AI Cloud (`https://cloud-api.near.ai/v1`); candidates from its catalog (checked 2026-11-10): `Qwen/Qwen3.6-35B-A3B-FP8` and `z-ai/glm-5.3-flash` (both TEE-verifiable, structured output), `anthropic/claude-haiku-5-5` as fallback. Pick by a 15-case eval.
 
 ## 7. Left to the builder

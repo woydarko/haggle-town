@@ -24,7 +24,7 @@ Constraints: solo, ~54 h build budget, deadline 2026-11-14 23:59 UTC, NEAR testn
 - **Roblox client owns:** rendering, input, UI states (HUD, haggle panel, boards). Sends intents to the Roblox server via RemoteEvents. Trusts nothing it computes about balances.
 - **Roblox server owns:** player session, gather cooldown display, rate limiting per player, forwarding intents to the backend with HMAC; it never holds chain keys.
 - **Backend owns:** authentication (HMAC / guest token), validation, gather cooldown enforcement, haggle sessions, patience, calling the LLM, clamping prices into the room, merchant signing of deals, the per-signer tx queue, gather batching, the day tick timer, read models for the dashboard.
-- **Contract owns (trust + settlement):** balances of all four NEP-245 tokens, player registration and the one-time 100 Coin, merchant registry (account, good, public key, purse, stock), pricing room checks at settle, nonce/expiry replay protection, day tick burn, stall escrow (stretch). Access control: owner and game relayer roles.
+- **Contract owns (trust + settlement):** balances of all four NEP-245 tokens, player registration and the one-time 1000 Coin, merchant registry (account, good, public key, purse, stock), pricing room checks at settle, nonce/expiry replay protection, day tick burn, stall escrow (stretch). Access control: owner and game relayer roles.
 - **External services own:** NEAR testnet RPC (fastnear primary, near.org fallback) - failure: retry with backoff, then "Market offline - your goods are safe"; NEAR AI Cloud - failure: rule-based reply; Roblox - hosting the experience.
 - **Out of scope:** NEAR Intents, mainnet, player-owned NEAR accounts, NPC-to-NPC trading, Robux, indexer service (backend keeps its own history).
 
@@ -56,7 +56,7 @@ Token ids: `"coin"`, `"wood"`, `"fish"`, `"iron"`. Holders are strings: NEAR acc
 | --- | --- | --- | --- |
 | `new(owner, game)` | init | deployer | set roles |
 | `register_merchant(account_id, good, public_key, coin, stock, target)` | change | owner | create merchant; error if exists |
-| `register_player(player_id)` | change | game | grant 100 coin once; no-op if exists |
+| `register_player(player_id)` | change | game | grant 1000 coin once; no-op if exists |
 | `gather_batch(entries: [{player_id, good, qty}])` | change | game | mint goods; qty per entry <= 20; max 100 entries |
 | `settle_deal(deal, merchant_sig)` | change | game | see flow step 5; errors `BadSignature`, `NonceUsed`, `Expired`, `PriceOutOfRoom`, `InsufficientFunds`, `InsufficientGoods`, `MerchantPurseEmpty` |
 | `day_tick()` | change | game | burn 10% stock per merchant if >= 290 s since last tick; else no-op |

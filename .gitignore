@@ -9,3 +9,4 @@ dist/
 *.sqlite-*
 server/data/
 .DS_Store
+.superpowers/

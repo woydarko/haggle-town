@@ -78,7 +78,7 @@ Design owner: nabil. Source of truth: this file + docs/superpowers/specs/2026-11
 | Web game (stretch) | J6 / F-12 | Play without Roblox | Gather buttons, haggle panel (same as W3), HUD | same as Roblox | W5 |
 
 ### 2. Flow
-Golden path: join -> HUD shows 100 C -> walk to forest -> ProximityPrompt "Chop" x3 -> walk to Woodcutter -> ProximityPrompt "Haggle" -> panel opens -> type offer -> bubble with counter -> Accept -> "Settling..." -> "Deal done" -> HUD updates -> price board arrow moves.
+Golden path: join -> HUD shows 1000 C -> walk to forest -> ProximityPrompt "Chop" x3 -> walk to Woodcutter -> ProximityPrompt "Haggle" -> panel opens -> type offer -> bubble with counter -> Accept -> "Settling..." -> "Deal done" -> HUD updates -> price board arrow moves.
 Main failure branch: Accept -> settle rejected (price moved) -> bubble "Prices just moved, now it's X" -> Accept again or Leave.
 
 ### 3. Wireframes (ASCII; to be redrawn in Roblox Studio and the web build)

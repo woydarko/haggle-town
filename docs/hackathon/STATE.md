@@ -34,6 +34,8 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 
 ## Environment readiness
 - check-env.sh run at: 2026-11-10 19:26 +0700 - missing then: near CLI, rojo, cloudflared. Now: near-cli-rs 0.31.1 OK (install via PowerShell; Git Bash tar breaks npm install), Rojo 7.7.1 OK, cloudflared installed via winget (on PATH after new shell)
+- Rust: wasm32 target added; host toolchain override stable-x86_64-pc-windows-gnu (no MSVC Build Tools). cargo-near: source build failed (OpenSSL needs perl); prebuilt installer pending user OK
+- Server deps: fastify 5.12.8, @fastify/rate-limit, @fastify/static 10.1.10, near-api-js 7.4.0, typescript 7.0.2, @types/node 26.6.6
 - Roblox Studio: installed (detected in %LOCALAPPDATA%\Roblox\Versions)
 - Accounts, keys (names only), hosting, repo access: Open - NEAR testnet account, NEAR mainnet payout account, NEAR AI Cloud key (`NEAR_AI_API_KEY`), Railway (backend), Vercel (web), GitHub repo
 - Web3: faucet funds requested at [pending - after near CLI install], balances in DEPLOYMENTS.md: Open

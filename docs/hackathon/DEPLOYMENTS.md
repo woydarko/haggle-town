@@ -29,7 +29,7 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 
 ## Demo state
 - Pre-funded wallets: Not done
-- Seed data already on-chain: Not done (plan: 3 merchants with 1000 Coin + target stock each)
+- Seed data already on-chain: Not done (plan: 3 merchants with 10000 Coin + target stock each)
 - Reference transactions for the demo script: Not done
 - Fallback if RPC or chain is down: switch to fallback RPC; recorded demo video; LLM replay mode for merchant replies
 

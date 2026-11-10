@@ -9,7 +9,7 @@
   2. Forged Roblox requests to the backend (someone calls `/rbx/*` directly).
   3. Client exploits in Roblox (fire RemoteEvents with fake goods, qty, prices).
   4. Replay of a signed deal; accepting another player's deal.
-  5. Gather farming / bots minting goods; guest farming 100 Coin (stretch web).
+  5. Gather farming / bots minting goods; guest farming 1000 Coin (stretch web).
   6. Leaked merchant key signing unfair deals; leaked game key.
   7. Draining merchants until the economy dies.
   8. LLM cost blow-up from spam.
@@ -21,7 +21,7 @@
 - Roles and permissions:
 | Action | Player (via Roblox server) | Backend game key | Merchant key | Owner key | Public |
 | --- | --- | --- | --- | --- | --- |
-| Register player / grant 100 Coin | request | call `register_player` | - | - | - |
+| Register player / grant 1000 Coin | request | call `register_player` | - | - | - |
 | Gather | request | call `gather_batch` | - | - | - |
 | Haggle / quote | request | compute + sign quote | sign deal message | - | - |
 | Settle deal | accept own deal only | call `settle_deal` | signature required | - | - |

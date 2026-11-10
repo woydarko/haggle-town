@@ -14,7 +14,7 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 ## Acceptance test matrix
 | Feature/risk | Scenario | Expected result | Layer | Status |
 | --- | --- | --- | --- | --- |
-| F-01 | New UserId joins | 100 coin once; second join no grant | Unit + integration | Not run |
+| F-01 | New UserId joins | 1000 coin once; second join no grant | Unit + integration | Not run |
 | F-01 | `register_player` from non-game caller | Panics, no change | Unit | Not run |
 | F-02 | Gather with cooldown ready | +1 pending, minted in next batch | Integration | Not run |
 | F-02 | Gather during cooldown | 429, nothing credited | Integration | Not run |
@@ -50,7 +50,7 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 - Reset/isolation: sandbox is fresh per test file; SQLite uses `:memory:` in tests; testnet contract can be redeployed to a fresh sub-account.
 
 ## Verified commands
-- Unit/integration: Not configured (no project files yet)
+- Unit/integration: `cargo test -p economy` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
 - End-to-end: Not configured
 - Build/type check: Not configured
 
