@@ -42,15 +42,15 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 - AI: provider NEAR AI Cloud ($10 credits via nearbuilders.org) - key tested: Open, spend cap: $10 credits
 
 ## Phase cursor and clock
-Current phase: 3 plan
+Current phase: 4 build
 Last updated: 2026-11-10 20:14 +0700 (design + docs approved by user)
 
 | Phase | Status | Budget | Planned start -> end | Actual end | Notes |
 | --- | --- | --- | --- | --- | --- |
 | 1 Intake | Done | 1h | 11-10 19:26 -> 11-10 20:30 | 11-10 19:35 | Rumor Mill locked |
 | 2 Design + docs | Done | 10h | 11-10 20:30 -> 11-11 06:30 | 11-10 20:14 | started early 19:35; spec + 8 docs + DEPLOYMENTS drafted 20:10 |
-| 3 Plan | In progress | 5h | 11-11 06:30 -> 11-11 11:30 | | |
-| 4 Build | Not started | 54h | 11-11 11:30 -> 11-13 17:30 | | |
+| 3 Plan | Done | 5h | 11-11 06:30 -> 11-11 11:30 | | |
+| 4 Build | In progress | 54h | 11-11 11:30 -> 11-13 17:30 | | |
 | 5 Verify + audit | Not started | 16h | 11-13 17:30 -> 11-14 09:30 | | |
 | 6 Demo and submit | Not started | 21h | 11-14 09:30 -> 11-15 06:29 | | |
 
@@ -89,6 +89,7 @@ Over-budget warnings sent: none
 ## Hourly checkpoints (lead consolidates from `docs/hackathon/log/*.md`; solo: write here)
 | Time | Time left | Core done / total | Cut decision |
 | --- | --- | --- | --- |
+| 2026-11-10 21:14 +0700 | ~98 h | 6 / 13 (economy, contract core, deals+tick, testnet deploy, server scaffold, chain module) | none; ahead of plan |
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
