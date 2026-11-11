@@ -15,11 +15,13 @@ import { TEST_ENV } from "./app.test.ts";
 const CTX: HaggleContext = {
   merchant: "woodcutter",
   persona: "gruff",
-  good: "wood",
+  item: "wood_pine",
+  itemName: "Pine",
+  tier: "common",
   side: "buy",
   qty: 1,
   stock: 140,
-  target: 100,
+  target: 120,
   purse: 10_000,
   room: [21, 35],
   currentCounter: 35,
@@ -97,7 +99,7 @@ test("prompt gives the merchant a voice and the stock situation", async () => {
       return completion('{"line":"Hi","mood":"neutral","unit_price":30,"accept":false}');
     },
   });
-  await llm.reply(CTX); // woodcutter, stock 140 of 100
+  await llm.reply(CTX); // woodcutter, stock 140 of 120
   assert.match(system, /Lines in your voice/);
   assert.match(system, /axe/i); // one of the woodcutter's example lines
   assert.match(system, /too much/i); // overstocked situation
@@ -131,7 +133,7 @@ test("record then replay serves cache without fetch", async () => {
 test("timeout -> engine falls back fast", async () => {
   const chain = new FakeChain();
   chain.views.get_player = () => PLAYER_VIEW;
-  chain.views.get_market = () => marketView([{ stock: 140 }]);
+  chain.views.get_market = () => marketView({ wood_pine: { stock: 168 } });
   const db = openDb(":memory:");
   const queue = createQueue();
   const market = new MarketCache(chain);
@@ -146,8 +148,8 @@ test("timeout -> engine falls back fast", async () => {
     dayLengthMs: 300_000,
   });
   const t0 = Date.now();
-  const r = await engine.haggle("roblox:1", "woodcutter", "25 for 1 wood");
+  const r = await engine.haggle("roblox:1", "woodcutter", "8 for 1 wood");
   assert.equal(r.source, "fallback");
-  assert.equal(r.counter?.unitPrice, 25);
+  assert.equal(r.counter?.unitPrice, 8);
   assert.ok(Date.now() - t0 < 5_000);
 });

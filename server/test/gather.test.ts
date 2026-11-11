@@ -8,81 +8,145 @@ import { createQueue } from "../src/chain/queue.ts";
 import { Gather } from "../src/game/gather.ts";
 import { FakeChain } from "./fakes.ts";
 
-function setup(path = ":memory:", clock = { t: 1_000_000 }) {
+/** rand() returns the given values in order (then repeats the last). */
+const seq = (...xs: number[]) => () => (xs.length > 1 ? xs.shift()! : xs[0]);
+
+function setup(o: { path?: string; rand?: () => number; cls?: string } = {}) {
   const chain = new FakeChain();
-  const db = openDb(path);
-  const g = new Gather(db, chain, createQueue(), () => clock.t);
-  return { chain, db, g, clock };
+  const db = openDb(o.path ?? ":memory:");
+  const clock = { t: 1_000_000 };
+  const g = new Gather(db, chain, createQueue(), () => clock.t, { rand: o.rand ?? seq(0.5), classOf: () => o.cls ?? null });
+  /** start, wait `ms`, finish */
+  const play = (node: string, quality = 0.5, ms = 7_000, player = "roblox:1") => {
+    const s = g.start(player, node);
+    clock.t += ms;
+    return g.finish(player, s.sessionId, quality);
+  };
+  return { chain, db, g, clock, play };
 }
 
-test("gather respects cooldown", () => {
+const code = (status: number, c: string) => (e: any) => e.statusCode === status && e.code === c;
+
+test("finish faster than the minigame minimum -> 422", () => {
   const { g, clock } = setup();
-  const a = g.request("roblox:1", "wood");
-  assert.ok(!("error" in a));
-  const b = g.request("roblox:1", "wood");
-  assert.ok("error" in b && b.error === "cooldown" && b.cooldownMs > 0);
-  clock.t += 3_000;
-  assert.ok(!("error" in g.request("roblox:1", "wood")));
+  const s = g.start("roblox:1", "fish");
+  assert.equal(s.params.minMs, 6_000);
+  clock.t += 2_000;
+  assert.throws(() => g.finish("roblox:1", s.sessionId, 1), code(422, "too_fast"));
 });
 
-test("cooldowns differ per good and player", () => {
+test("unknown or foreign session -> 404", () => {
   const { g, clock } = setup();
-  g.request("roblox:1", "iron");
-  clock.t += 6_000;
-  assert.ok("error" in g.request("roblox:1", "iron"), "iron cooldown 10s");
-  assert.ok(!("error" in g.request("roblox:1", "fish")));
-  assert.ok(!("error" in g.request("roblox:2", "iron")));
+  const s = g.start("roblox:1", "wood");
+  clock.t += 4_000;
+  assert.throws(() => g.finish("roblox:2", s.sessionId, 1), code(404, "no_session"));
+  assert.throws(() => g.finish("roblox:1", "nope", 1), code(404, "no_session"));
 });
 
-test("pending counts are returned", () => {
+test("double finish and expired sessions -> 409", () => {
   const { g, clock } = setup();
-  g.request("roblox:1", "wood");
-  clock.t += 3_000;
-  const r = g.request("roblox:1", "wood");
-  assert.ok(!("error" in r));
-  assert.equal(r.pending.wood, 2);
+  const s = g.start("roblox:1", "wood");
+  clock.t += 4_000;
+  g.finish("roblox:1", s.sessionId, 1);
+  assert.throws(() => g.finish("roblox:1", s.sessionId, 1), code(409, "session_closed"));
+  const late = g.start("roblox:1", "wood");
+  clock.t += 61_000;
+  assert.throws(() => g.finish("roblox:1", late.sessionId, 1), code(409, "session_closed"));
 });
 
-test("flush batches pending and marks them", async () => {
-  const { g, chain, db, clock } = setup();
-  g.request("roblox:1", "wood");
-  clock.t += 3_000;
-  g.request("roblox:1", "wood");
-  g.request("roblox:2", "fish");
+test("a new start closes the earlier open session", () => {
+  const { g, clock } = setup();
+  const a = g.start("roblox:1", "wood");
+  g.start("roblox:1", "fish");
+  clock.t += 7_000;
+  assert.throws(() => g.finish("roblox:1", a.sessionId, 1), code(409, "session_closed"));
+});
+
+test("quality is clamped to 0..1 (NaN counts as 0)", () => {
+  // roll 6900: q0 -> common (cum 7000), q100 -> rare (cum 5000, 8400)
+  const tierAt = (quality: number) => setup({ rand: seq(0.69) }).play("fish", quality).item;
+  assert.equal(tierAt(NaN), "fish_sardine");
+  assert.equal(tierAt(-1), "fish_sardine");
+  assert.equal(tierAt(0), "fish_sardine");
+  assert.equal(tierAt(5), "fish_trout");
+  assert.equal(tierAt(1), "fish_trout");
+});
+
+test("cave mouth never yields crystal; deep cave can", () => {
+  assert.equal(setup({ rand: seq(0.9999) }).play("ore_mouth", 1).item, "ore_gold");
+  assert.equal(setup({ rand: seq(0.9999) }).play("ore_deep", 0).item, "ore_crystal");
+});
+
+test("specialist: bigger zone and 15% double drop; others never double", () => {
+  const spec = setup({ cls: "logger", rand: seq(0.5, 0.1) });
+  assert.equal(spec.g.start("roblox:9", "fish").params.zoneScale, 1, "logger is not a fish specialist");
+  const s = spec.g.start("roblox:1", "wood");
+  assert.equal(s.params.zoneScale, 1.3);
+  spec.clock.t += 4_000;
+  assert.equal(spec.g.finish("roblox:1", s.sessionId, 0.5).qty, 2);
+  assert.equal(setup({ cls: "logger", rand: seq(0.5, 0.2) }).play("wood").qty, 1);
+  assert.equal(setup({ rand: seq(0.5, 0.01) }).play("wood").qty, 1);
+});
+
+test("fish speed grows with the hidden roll", () => {
+  assert.equal(setup({ rand: seq(0) }).g.start("roblox:1", "fish").params.fishSpeed, 1);
+  assert.equal(setup({ rand: seq(0.99) }).g.start("roblox:1", "fish").params.fishSpeed, 1.99);
+  assert.throws(() => setup().g.start("roblox:1", "lava"), code(400, "bad_node"));
+});
+
+test("catches are pending until flushed in one batch per item", async () => {
+  const { g, chain, play } = setup({ rand: seq(0) });
+  play("wood");
+  play("wood");
+  play("fish", 0.5, 7_000, "roblox:2");
+  assert.deepEqual(g.pending("roblox:1"), { wood_pine: 2 });
   await g.flush();
   assert.equal(chain.calls.length, 1);
   assert.equal(chain.calls[0].method, "gather_batch");
-  const entries = chain.calls[0].args.entries;
   assert.deepEqual(
-    entries.sort((x: any, y: any) => x.player_id.localeCompare(y.player_id)),
-    [{ player_id: "roblox:1", good: "wood", qty: 2 }, { player_id: "roblox:2", good: "fish", qty: 1 }],
+    chain.calls[0].args.entries.sort((x: any, y: any) => x.player_id.localeCompare(y.player_id)),
+    [{ player_id: "roblox:1", good: "wood_pine", qty: 2 }, { player_id: "roblox:2", good: "fish_sardine", qty: 1 }],
   );
-  assert.equal((db.prepare("SELECT COUNT(*) n FROM pending_gather WHERE batch_tx IS NULL").get() as any).n, 0);
-  assert.equal(g.pending("roblox:1").wood, 0);
+  assert.deepEqual(g.pending("roblox:1"), {});
   await g.flush();
   assert.equal(chain.calls.length, 1, "nothing left to flush");
 });
 
-test("flush failure keeps rows pending", async () => {
-  const { g, chain } = setup();
-  g.request("roblox:1", "wood");
-  chain.failNext = new Error("rpc down");
+test("v1 pending rows are parked, not sent to the v2 contract", async () => {
+  const { g, db, chain } = setup();
+  db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at) VALUES ('roblox:1', 'wood', 1, 1)").run();
   await g.flush();
-  assert.equal(g.pending("roblox:1").wood, 1);
-  await g.flush();
-  assert.equal(chain.calls.length, 2);
-  assert.equal(g.pending("roblox:1").wood, 0);
+  assert.equal(chain.calls.length, 0);
+  assert.equal((db.prepare("SELECT batch_tx FROM pending_gather").get() as any).batch_tx, "invalid");
 });
 
-test("pending survives restart", async () => {
+test("flush failure keeps rows pending", async () => {
+  const { g, chain, play } = setup({ rand: seq(0) });
+  play("wood");
+  chain.failNext = new Error("rpc down");
+  await g.flush();
+  assert.deepEqual(g.pending("roblox:1"), { wood_pine: 1 });
+  await g.flush();
+  assert.equal(chain.calls.length, 2);
+  assert.deepEqual(g.pending("roblox:1"), {});
+});
+
+test("pending survives restart without double mint", async () => {
   const path = join(mkdtempSync(join(tmpdir(), "haggle-")), "db.sqlite");
-  const first = setup(path);
-  first.g.request("roblox:1", "wood");
+  const first = setup({ path, rand: seq(0) });
+  first.play("wood");
   first.db.close();
-  const second = setup(path);
+  const second = setup({ path });
+  await second.g.flush();
+  assert.deepEqual(second.chain.calls[0].args.entries, [{ player_id: "roblox:1", good: "wood_pine", qty: 1 }]);
   await second.g.flush();
   assert.equal(second.chain.calls.length, 1);
-  assert.deepEqual(second.chain.calls[0].args.entries, [{ player_id: "roblox:1", good: "wood", qty: 1 }]);
-  await second.g.flush();
-  assert.equal(second.chain.calls.length, 1, "no double mint");
+});
+
+test("best catch is the most valuable item ever caught", () => {
+  const { g, play } = setup({ rand: seq(0.75) }); // roll 7500 -> rare at q0 and q0.5
+  assert.equal(g.bestCatch("roblox:1"), null);
+  play("fish", 0.5);
+  play("ore_mouth", 0);
+  assert.deepEqual(g.bestCatch("roblox:1"), { item: "ore_iron", name: "Iron", tier: "rare" });
 });

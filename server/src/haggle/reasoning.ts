@@ -1,8 +1,9 @@
 import type { MarketView } from "../types.ts";
+import { itemById } from "../items.ts";
 
 /** The tooltip under a merchant line. Built from the numbers only, so it is always true. */
 export function reasoningLine(v: MarketView, side: "buy" | "sell", room: [number, number] | null): string {
-  const stock = `Stock ${v.stock}/${v.target}`;
+  const stock = `${itemById(v.item)?.name ?? v.item} (${v.tier}) stock ${v.stock}/${v.target}`;
   if (side === "buy") {
     if (v.stock > v.target) {
       const off = Math.round((1 - room![0] / room![1]) * 100);

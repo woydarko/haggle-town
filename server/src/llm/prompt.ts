@@ -6,7 +6,8 @@ export type Message = { role: "system" | "user" | "assistant"; content: string }
 /** System prompt + quoted history. No secrets; the price room is enforced again in code and on chain. */
 export function buildMessages(c: HaggleContext): Message[] {
   const p = PERSONAS[c.merchant];
-  const action = c.side === "buy" ? `sell ${c.good} to the customer` : `buy ${c.good} from the customer`;
+  const goods = `${c.itemName} (${c.tier})`;
+  const action = c.side === "buy" ? `sell ${goods} to the customer` : `buy ${goods} from the customer`;
   const situation =
     c.stock > c.target * 1.1
       ? "You have too much stock and want it gone; be warm and eager to deal."

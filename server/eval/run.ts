@@ -8,6 +8,7 @@ import { buyRoom, sellRoom } from "../src/haggle/pricing.ts";
 import { MERCHANTS, type HaggleContext } from "../src/haggle/engine.ts";
 import { PERSONAS } from "../src/haggle/fallback.ts";
 import { parseOffer } from "../src/haggle/offer.ts";
+import { itemById, itemOf } from "../src/items.ts";
 
 const cases = JSON.parse(readFileSync(new URL("./cases.json", import.meta.url), "utf8"));
 const models = process.argv.slice(2).length
@@ -20,18 +21,20 @@ for (const model of models) {
   const lat: number[] = [];
   let pass = 0;
   for (const c of cases) {
-    const good = MERCHANTS[c.merchant];
     const purse = c.purse ?? 10_000;
-    const offer = parseOffer(c.message, good);
+    const offer = parseOffer(c.message);
+    const item = itemById(offer.item ?? "") ?? itemOf(MERCHANTS[c.merchant], "common");
+    const stock = Math.round((c.stock * item.target) / 100); // cases were written against v1 target 100
     const qty = Math.min(Math.max(offer.qty ?? 1, 1), 10);
-    const room = c.side === "buy" ? buyRoom(good, c.stock, 100) : sellRoom(good, c.stock, 100, purse, qty);
+    const room = c.side === "buy" ? buyRoom(item.id, stock) : sellRoom(item.id, stock, purse, qty, false);
     if (!room) {
       console.log(`  ${c.id}: merchant refuses (empty purse) before LLM - pass`);
       pass++;
       continue;
     }
     const ctx: HaggleContext = {
-      merchant: c.merchant, persona: PERSONAS[c.merchant].style, good, side: c.side, qty, stock: c.stock, target: 100,
+      merchant: c.merchant, persona: PERSONAS[c.merchant].style, item: item.id, itemName: item.name, tier: item.tier,
+      side: c.side, qty, stock, target: item.target,
       purse, room, currentCounter: c.side === "buy" ? room[1] : room[0], offer, patience: 3, history: [], message: c.message,
     };
     const t0 = Date.now();

@@ -5,6 +5,8 @@ import type { MarketCache } from "../chain/market.ts";
 import { history } from "../game/history.ts";
 import type { Chain } from "../chain/near.ts";
 import { HttpError } from "../errors.ts";
+import { TOKEN_IDS } from "../items.ts";
+import type { PlayerView } from "../types.ts";
 
 const PLAYER_ID = /^(roblox:[0-9]{1,20}|web:[0-9a-f-]{36})$/;
 
@@ -58,12 +60,12 @@ export function apiRoutes(d: ApiDeps) {
       if (!PLAYER_ID.test(id)) throw new HttpError(400, "bad_player_id", "Unknown player id format.");
       const p = profile.get(id) as { name: string; firstSeen: number; lastSeen: number } | undefined;
       if (!p) throw new HttpError(404, "no_player", "No such player.");
-      const v = await d.chain.view<Record<string, string> | null>("get_player", { player_id: id });
-      const n = (k: string) => Number(v?.[k] ?? 0);
+      const v = await d.chain.view<PlayerView | null>("get_player", { player_id: id });
       return {
         id,
         ...p,
-        balances: { coin: n("coin"), wood: n("wood"), fish: n("fish"), iron: n("iron") },
+        class: v?.class ?? null,
+        balances: Object.fromEntries(TOKEN_IDS.map((k) => [k, Number(v?.balances?.[k] ?? 0)])),
         deals: playerDeals.all(id),
         gathers: playerGathers.all(id),
       };
@@ -71,7 +73,7 @@ export function apiRoutes(d: ApiDeps) {
     app.get<{ Querystring: { minutes?: number } }>(
       "/api/history",
       { schema: { querystring: { type: "object", properties: { minutes: { type: "integer", minimum: 1, maximum: 1440 } } } } },
-      async (req) => history(d.db, req.query.minutes ?? 60, (m) => d.market.byAccount(m)?.good),
+      async (req) => history(d.db, req.query.minutes ?? 60),
     );
   };
 }

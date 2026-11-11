@@ -94,6 +94,7 @@ Over-budget warnings sent: none
 | 2026-11-10 21:55 +0700 | ~97 h | 12 / 13 (all but T11 deploy/publish); T8 eval + Studio golden path wait on user | none; stretch T14/T15 possible |
 | 2026-11-10 23:45 +0700 | ~91 h | 13 / 13 core done (Railway live, Studio golden path passed, LLM live, restock + personas, town dressed) | stretch T14/T15 optional; next: Phase 5 verify + Roblox publish |
 | 2026-11-11 01:26 +0700 | ~86 h | v2 plan 3 / 12 (economy v2, contract v2, deployed haggletown-v2.testnet) | none; production still v1 until v2 Task 12 |
+| 2026-11-11 15:11 +0700 | ~64 h | v2 plan 5 / 12 (backend v2: items, gather sessions, classes, stats, haggle items; smoke on v2 testnet) | none; Roblox v2 (Tasks 6-9) next; production still v1 |
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil

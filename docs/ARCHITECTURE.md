@@ -46,7 +46,7 @@ Golden path (haggle + accept):
 5. Contract checks: caller == game; merchant registered; `ed25519_verify(sig, message, merchant_pubkey)`; nonce unused; `expires_at >= block_timestamp`; unit_price within the room computed from current stock/purse; buyer has funds/goods; moves balances atomically; emits NEP-297 `mt_transfer` events; records nonce.
 6. Backend gets the outcome: success -> updates read model, feed, history, returns new balances; `PriceOutOfRoom` -> re-quotes and returns `requoted` with the new counter; other failure -> `failed`, nothing changed. Roblox UI shows "Deal done" / "Prices just moved..." / "Deal failed, try again".
 
-Gather: `/rbx/gather` -> backend checks cooldown, credits a pending +1 (returned immediately) -> every ~10 s one `gather_batch` tx mints all pending entries -> confirmed balances replace pending ones.
+Gather (v2): `/rbx/gather/start` opens a session (hidden tier roll, minigame params) -> client plays the minigame -> `/rbx/gather/finish` checks min duration/TTL, rolls the tier with class + quality luck, credits a pending item (returned immediately) -> every ~10 s one `gather_batch` tx mints all pending entries -> confirmed balances replace pending ones.
 Day tick: backend timer every 5 min -> `day_tick()`; contract ignores calls earlier than 290 s after the last tick.
 
 ## Interfaces
@@ -70,7 +70,10 @@ Events: NEP-297 `nep245` standard `mt_mint`, `mt_burn`, `mt_transfer`.
 ### Backend HTTP (`server/`)
 Roblox routes (HMAC required):
 - `POST /rbx/join` {userId, name} -> {balances}
-- `POST /rbx/gather` {userId, good} -> {balances, pending, cooldownMs} | 429 {error:"cooldown"}
+- `POST /rbx/gather/start` {userId, node: fish|wood|ore_mouth|ore_deep} -> {sessionId, node, params: {zoneScale, fishSpeed, minMs}}
+- `POST /rbx/gather/finish` {userId, sessionId, quality 0..1} -> {catch: {item, name, tier, qty}, balances} | 404 no_session | 409 session_closed | 422 too_fast
+- `POST /rbx/class` {userId, class: fisher|logger|miner} -> {class, fee, balances} | 429 cooldown | 409 insufficient_funds
+- `GET /rbx/stats?userId=` -> {class, balances, netWorth, bestCatch, deals, rank}
 - `POST /rbx/haggle` {userId, merchant, message} -> {line, mood, patience, reasoning, counter:{side, good, qty, unitPrice, total, dealId, expiresAt}} | {refused:true, line, until}
 - `POST /rbx/accept` {userId, dealId} -> {status:"settled", balances, txHash} | {status:"requoted", counter, line} | {status:"failed", reason}
 - `GET /rbx/state?userId=` -> {balances, board, leaderboard}

@@ -78,3 +78,33 @@ CREATE TABLE IF NOT EXISTS llm_cache (
   reply_json TEXT NOT NULL,
   created_at INTEGER NOT NULL
 ) STRICT;
+
+-- v2 (2026-11-11): one row per gather minigame; item/qty set on finish (also the catch log for stats).
+CREATE TABLE IF NOT EXISTS gather_session (
+  id TEXT PRIMARY KEY,
+  player_id TEXT NOT NULL,
+  node TEXT NOT NULL,
+  roll_bp INTEGER NOT NULL,
+  started_at INTEGER NOT NULL,
+  closed_at INTEGER,
+  item TEXT,
+  qty INTEGER
+) STRICT;
+CREATE INDEX IF NOT EXISTS gather_session_player ON gather_session(player_id, started_at);
+
+CREATE TABLE IF NOT EXISTS player_class (
+  player_id TEXT PRIMARY KEY,
+  class TEXT NOT NULL,
+  changed_at INTEGER NOT NULL
+) STRICT;
+
+-- v2 price history per item (v1 price_point was per merchant).
+CREATE TABLE IF NOT EXISTS item_price (
+  item TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  ask INTEGER NOT NULL,
+  bid INTEGER NOT NULL,
+  stock INTEGER NOT NULL,
+  purse INTEGER NOT NULL,
+  PRIMARY KEY (item, ts)
+) STRICT;

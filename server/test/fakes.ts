@@ -1,5 +1,7 @@
 import type { Chain } from "../src/chain/near.ts";
 import { ChainError } from "../src/chain/near.ts";
+import { ITEMS } from "../src/items.ts";
+import { ask, bid, buyRoom } from "../src/haggle/pricing.ts";
 
 export type Call = { method: string; args: any };
 
@@ -30,13 +32,27 @@ export class FakeChain implements Chain {
   }
 }
 
-export const PLAYER_VIEW = { coin: "1000", wood: "0", fish: "0", iron: "0" };
+export const PLAYER_VIEW = { class: null, balances: { coin: "1000" } };
 
-export function marketView(over: Partial<Record<string, any>>[] = []) {
-  const base = [
-    { account_id: "woodcutter.h.testnet", good: "wood", stock: 100, purse: "10000", target: 100, ask: "50", bid: "40", floor: "50", ceiling_one: "40", day: 0, last_tick_ns: "0" },
-    { account_id: "fishmonger.h.testnet", good: "fish", stock: 100, purse: "10000", target: 100, ask: "80", bid: "64", floor: "80", ceiling_one: "64", day: 0, last_tick_ns: "0" },
-    { account_id: "smith.h.testnet", good: "iron", stock: 100, purse: "10000", target: 100, ask: "150", bid: "120", floor: "150", ceiling_one: "120", day: 0, last_tick_ns: "0" },
-  ];
-  return base.map((m, i) => ({ ...m, ...(over[i] ?? {}) }));
+const ACCOUNT = { fish: "fishmonger.h.testnet", wood: "woodcutter.h.testnet", ore: "smith.h.testnet" };
+
+/** v2 get_market rows (strings like the contract). Every item at its target stock unless overridden by item id. */
+export function marketView(over: Record<string, { stock?: number; purse?: string }> = {}) {
+  return ITEMS.map((it) => {
+    const stock = over[it.id]?.stock ?? it.target;
+    return {
+      merchant: ACCOUNT[it.category],
+      category: it.category,
+      item: it.id,
+      tier: it.tier,
+      stock,
+      purse: over[it.id]?.purse ?? "10000",
+      ask: String(ask(it.id, stock)),
+      bid: String(bid(it.id, stock)),
+      floor: String(buyRoom(it.id, stock)[0]),
+      ceiling_one: String(bid(it.id, stock)),
+      day: 0,
+      last_tick_ns: "0",
+    };
+  });
 }

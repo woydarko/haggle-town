@@ -9,11 +9,11 @@ const NOW = 1_700_000_000_000;
 
 async function setup() {
   const chain = new FakeChain();
-  chain.views.get_market = () => marketView(); // bids: wood 40, fish 64, iron 120
+  chain.views.get_market = () => marketView(); // bids at target: pine 12, iron 72
   const wallets: Record<string, any> = {
-    "roblox:1": { coin: "1000", wood: "0", fish: "0", iron: "0" }, // 1000
-    "roblox:2": { coin: "900", wood: "5", fish: "0", iron: "1" }, // 900 + 200 + 120 = 1220
-    "roblox:3": { coin: "5000", wood: "0", fish: "0", iron: "0" }, // inactive
+    "roblox:1": { class: null, balances: { coin: "1000" } }, // 1000
+    "roblox:2": { class: "logger", balances: { coin: "900", wood_pine: "5", ore_iron: "1" } }, // 900 + 60 + 72 = 1032
+    "roblox:3": { class: null, balances: { coin: "5000" } }, // inactive
   };
   chain.views.get_player = ({ player_id }) => wallets[player_id] ?? null;
   const db = openDb(":memory:");
@@ -31,7 +31,7 @@ test("ranks active players by net worth at current bid", async () => {
   const { lb } = await setup();
   await lb.refresh();
   assert.deepEqual(lb.get(), [
-    { name: "Budi", netWorth: 1220 },
+    { name: "Budi", netWorth: 1032 },
     { name: "Ana", netWorth: 1000 },
   ]);
 });
@@ -56,4 +56,12 @@ test("a failing view keeps the previous board", async () => {
   };
   await lb.refresh().catch(() => undefined);
   assert.equal(lb.get().length, 2);
+});
+
+test("rank is 1-based and null for unknown players", async () => {
+  const { lb } = await setup();
+  await lb.refresh();
+  assert.equal(lb.rank("roblox:2"), 1);
+  assert.equal(lb.rank("roblox:1"), 2);
+  assert.equal(lb.rank("roblox:3"), null);
 });

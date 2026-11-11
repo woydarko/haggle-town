@@ -28,7 +28,7 @@ async function setup() {
   ).run();
   db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at, batch_tx) VALUES ('roblox:42', 'wood', 1, 900, 'BATCH1')").run();
   db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at) VALUES ('roblox:42', 'wood', 1, 950)").run();
-  chain.views.get_player = ({ player_id }: any) => (player_id === "roblox:42" ? { coin: "860", wood: "2", fish: "0", iron: "2" } : null);
+  chain.views.get_player = ({ player_id }: any) => (player_id === "roblox:42" ? { class: "miner", balances: { coin: "860", wood_pine: "2", ore_iron: "2" } } : null);
   const app = buildApp({
     config: loadConfig(TEST_ENV),
     db,
@@ -47,7 +47,10 @@ test("/api/players/:id shows on-chain balances, deals and gathers with tx hashes
   const { app } = await setup();
   const j = (await app.inject({ method: "GET", url: "/api/players/roblox:42" })).json();
   assert.equal(j.name, "Rina");
-  assert.deepEqual(j.balances, { coin: 860, wood: 2, fish: 0, iron: 2 });
+  assert.equal(j.class, "miner");
+  assert.equal(j.balances.coin, 860);
+  assert.equal(j.balances.ore_iron, 2);
+  assert.equal(j.balances.fish_koi, 0);
   assert.equal(j.deals.length, 2); // settled and still-quoted deals, newest first
   assert.equal(j.deals[1].txHash, "TXHASH");
   assert.equal(j.deals[1].status, "settled");
@@ -83,20 +86,21 @@ test("/api/feed shows settled deals with display names, never player ids", async
 
 test("/api/market and /api/leaderboard", async () => {
   const { app } = await setup();
-  assert.equal((await app.inject({ method: "GET", url: "/api/market" })).json().length, 3);
+  assert.equal((await app.inject({ method: "GET", url: "/api/market" })).json().length, 12);
   assert.deepEqual((await app.inject({ method: "GET", url: "/api/leaderboard" })).json(), [{ name: "Rina", netWorth: 1200 }]);
 });
 
-test("/api/history groups minute points by merchant", async () => {
+test("/api/history groups minute points by item", async () => {
   const { app, db, market } = await setup();
   const base = Math.floor(Date.now() / 60_000) * 60_000 - 10 * 60_000;
   recordPrices(db, market.get(), base);
   recordPrices(db, market.get(), base + 60_000);
   recordPrices(db, market.get(), base + 60_500); // same minute bucket -> replaces
   const j = (await app.inject({ method: "GET", url: "/api/history?minutes=60" })).json();
-  assert.equal(j.length, 3);
-  const wood = j.find((m: any) => m.merchant === "woodcutter.h.testnet");
-  assert.equal(wood.good, "wood");
+  assert.equal(j.length, 12);
+  const wood = j.find((m: any) => m.item === "wood_pine");
+  assert.equal(wood.name, "Pine");
+  assert.equal(wood.tier, "common");
   assert.equal(wood.points.length, 2);
   assert.deepEqual(Object.keys(wood.points[0]).sort(), ["ask", "bid", "purse", "stock", "ts"]);
 });

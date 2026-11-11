@@ -4,15 +4,17 @@ import { ChainError, type Chain } from "../chain/near.ts";
 import type { Queue } from "../chain/queue.ts";
 import type { MarketCache } from "../chain/market.ts";
 import type { Players } from "../game/players.ts";
-import type { Balances, Good, MarketView } from "../types.ts";
+import type { Balances, MarketView } from "../types.ts";
 import { HttpError } from "../errors.ts";
 import { buyRoom, sellRoom } from "./pricing.ts";
 import { parseOffer, type Offer } from "./offer.ts";
 import { signDeal, newNonce, type ChainDeal } from "./deal.ts";
 import { reasoningLine } from "./reasoning.ts";
 import { fallbackReply, PERSONAS } from "./fallback.ts";
+import { CLASS_CATEGORY, ITEMS, MERCHANT_CATEGORY, itemById, itemOf, type Tier } from "../items.ts";
 
-export const MERCHANTS: Record<string, Good> = { woodcutter: "wood", fishmonger: "fish", smith: "iron" };
+export const MERCHANTS = MERCHANT_CATEGORY;
+const WHO: Record<string, string> = { fish: "Fishmonger", wood: "Woodcutter", ore: "Smith" };
 const QUOTE_TTL_MS = 30_000;
 const MIN_GAP_MS = 2_000;
 const MAX_ROUNDS = 5;
@@ -23,7 +25,9 @@ export type LlmReply = { line: string; mood: string; unitPrice: number; accept: 
 export type HaggleContext = {
   merchant: string;
   persona: string;
-  good: Good;
+  item: string;
+  itemName: string;
+  tier: Tier;
   side: Side;
   qty: number;
   stock: number;
@@ -39,7 +43,7 @@ export type HaggleContext = {
 export interface LlmLike {
   reply(ctx: HaggleContext): Promise<LlmReply>;
 }
-export type Counter = { side: Side; good: Good; qty: number; unitPrice: number; total: number; dealId: string; expiresAt: number };
+export type Counter = { side: Side; item: string; itemName: string; qty: number; unitPrice: number; total: number; dealId: string; expiresAt: number };
 export type HaggleReply = {
   line: string;
   mood: string;
@@ -59,7 +63,7 @@ type DealRow = {
   session_id: string;
   merchant: string;
   player_id: string;
-  good: Good;
+  good: string; // item id
   side: Side;
   qty: number;
   unit_price: number;
@@ -79,6 +83,8 @@ export interface EngineDeps {
   dayLengthMs: number;
   llm?: LlmLike;
   now?: () => number;
+  /** Player class (fisher/logger/miner) for the specialist sell room. */
+  classOf?: (playerId: string) => string | null;
 }
 
 export class HaggleEngine {
@@ -94,20 +100,27 @@ export class HaggleEngine {
   async haggle(playerId: string, merchant: string, message: string): Promise<HaggleReply> {
     const text = message.replace(/[\u0000-\u001f\u007f]/g, " ").trim();
     if (!text || text.length > 200) throw new HttpError(400, "bad_message", "Say something (1-200 characters).");
-    const good = MERCHANTS[merchant];
-    if (!good) throw new HttpError(400, "bad_merchant", "No such merchant.");
+    const category = MERCHANTS[merchant];
+    if (!category) throw new HttpError(400, "bad_merchant", "No such merchant.");
+    const offer = parseOffer(text);
+    const asked = offer.item ? itemById(offer.item)! : undefined;
+    if (asked && asked.category !== category) {
+      throw new HttpError(400, "wrong_merchant", `I don't trade ${asked.name}. Try the ${WHO[asked.category]}.`);
+    }
     const t = this.now();
     if (t - (this.lastMsg.get(playerId) ?? -Infinity) < MIN_GAP_MS) throw new HttpError(429, "slow_down", "One message every 2 seconds.");
     this.lastMsg.set(playerId, t);
 
     const persona = PERSONAS[merchant];
-    const view = this.view(merchant);
-    let patience = this.patience(playerId, merchant, view.day);
     const session = this.session(playerId, merchant);
-    const offer = parseOffer(text, good);
     const side: Side = offer.side ?? "buy";
     const qty = Math.min(Math.max(offer.qty ?? 1, 1), 10);
-    const room = this.room(view, side, qty);
+    // Item: named in this message, else the one being haggled in this session, else (selling) the rarest one held, else common.
+    const itemId = asked?.id ?? this.lastItem(session.id) ?? (side === "sell" ? await this.rarestHeld(playerId, category) : itemOf(category, "common").id);
+    const item = itemById(itemId)!;
+    const view = this.view(merchant, itemId);
+    let patience = this.patience(playerId, merchant, view.day);
+    const room = this.room(view, side, qty, playerId);
     const reasoning = reasoningLine(view, side, room);
 
     if (patience <= 0) {
@@ -136,7 +149,9 @@ export class HaggleEngine {
       const r = await this.d.llm.reply({
         merchant,
         persona: persona.style,
-        good,
+        item: item.id,
+        itemName: item.name,
+        tier: item.tier,
         side,
         qty,
         stock: view.stock,
@@ -159,7 +174,7 @@ export class HaggleEngine {
 
     this.chat(session.id, text, reply.line, reply.mood, reply.source, reasoning);
     this.d.db.prepare("UPDATE haggle_session SET rounds = rounds + 1 WHERE id = ?").run(session.id);
-    const counter = this.quote(session.id, playerId, merchant, good, side, qty, price);
+    const counter = this.quote(session.id, playerId, merchant, item.id, side, qty, price);
     return { line: reply.line, mood: reply.mood, patience, reasoning, source: reply.source, counter };
   }
 
@@ -200,14 +215,14 @@ export class HaggleEngine {
 
   private requote(row: DealRow, reason: string): AcceptResult {
     this.d.db.prepare("UPDATE deal SET status = 'requoted', error = ? WHERE id = ?").run(reason, row.id);
-    const room = this.room(this.view(row.merchant), row.side, row.qty);
+    const room = this.room(this.view(row.merchant, row.good), row.side, row.qty, row.player_id);
     if (!room) return { status: "failed", reason: "MerchantPurseEmpty" };
     const price = clamp(row.unit_price, room);
     const counter = this.quote(row.session_id, row.player_id, row.merchant, row.good, row.side, row.qty, price);
     return { status: "requoted", counter, line: `Prices just moved. New price ${price} C.` };
   }
 
-  private quote(sessionId: string, playerId: string, merchant: string, good: Good, side: Side, qty: number, price: number): Counter {
+  private quote(sessionId: string, playerId: string, merchant: string, good: string, side: Side, qty: number, price: number): Counter {
     const id = randomUUID();
     const expiresAt = this.now() + QUOTE_TTL_MS;
     this.d.db
@@ -215,21 +230,36 @@ export class HaggleEngine {
         "INSERT INTO deal (id, session_id, merchant, player_id, good, side, qty, unit_price, nonce, expires_at, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'quoted', ?)",
       )
       .run(id, sessionId, merchant, playerId, good, side, qty, price, newNonce(), expiresAt, this.now());
-    return { side, good, qty, unitPrice: price, total: price * qty, dealId: id, expiresAt };
+    return counterOf({ side, good, qty, unit_price: price, id, expires_at: expiresAt });
   }
 
-  private room(v: MarketView, side: Side, qty: number): [number, number] | null {
-    return side === "buy" ? buyRoom(v.good, v.stock, v.target) : sellRoom(v.good, v.stock, v.target, v.purse, qty);
+  private room(v: MarketView, side: Side, qty: number, playerId: string): [number, number] | null {
+    if (side === "buy") return buyRoom(v.item, v.stock);
+    const cls = this.d.classOf?.(playerId) ?? null;
+    return sellRoom(v.item, v.stock, v.purse, qty, cls !== null && CLASS_CATEGORY[cls] === v.category);
   }
 
   private account(merchant: string) {
     return `${merchant}.${this.d.contractId}`;
   }
 
-  private view(merchant: string): MarketView {
-    const v = this.d.market.byAccount(this.account(merchant));
-    if (!v) throw new HttpError(503, "market_unavailable", "The market is closed right now.");
+  private view(merchant: string, item: string): MarketView {
+    const v = this.d.market.byItem(item);
+    if (!v || v.merchant !== this.account(merchant)) throw new HttpError(503, "market_unavailable", "The market is closed right now.");
     return v;
+  }
+
+  private lastItem(sessionId: string): string | undefined {
+    const r = this.d.db.prepare("SELECT good FROM deal WHERE session_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1").get(sessionId) as
+      | { good: string }
+      | undefined;
+    return r && itemById(r.good) ? r.good : undefined;
+  }
+
+  private async rarestHeld(playerId: string, category: string): Promise<string> {
+    const b = await this.d.players.balances(playerId);
+    const held = ITEMS.filter((i) => i.category === category && (b[i.id] ?? 0) > 0).sort((a, z) => z.base - a.base)[0];
+    return (held ?? ITEMS.find((i) => i.category === category)!).id;
   }
 
   private nextDay(v: MarketView): number {
@@ -273,8 +303,7 @@ export class HaggleEngine {
     const r = this.d.db
       .prepare("SELECT * FROM deal WHERE session_id = ? AND status = 'quoted' AND expires_at > ? ORDER BY created_at DESC, rowid DESC LIMIT 1")
       .get(sessionId, this.now()) as DealRow | undefined;
-    if (!r) return undefined;
-    return { side: r.side, good: r.good, qty: r.qty, unitPrice: r.unit_price, total: r.unit_price * r.qty, dealId: r.id, expiresAt: r.expires_at };
+    return r ? counterOf(r) : undefined;
   }
 
   private history(sessionId: string) {
@@ -295,6 +324,11 @@ export class HaggleEngine {
   private setStatus(id: string, status: string) {
     this.d.db.prepare("UPDATE deal SET status = ? WHERE id = ?").run(status, id);
   }
+}
+
+function counterOf(r: { side: Side; good: string; qty: number; unit_price: number; id: string; expires_at: number }): Counter {
+  const name = itemById(r.good)?.name ?? r.good;
+  return { side: r.side, item: r.good, itemName: name, qty: r.qty, unitPrice: r.unit_price, total: r.unit_price * r.qty, dealId: r.id, expiresAt: r.expires_at };
 }
 
 function clamp(x: number, [lo, hi]: [number, number]) {

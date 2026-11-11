@@ -20,7 +20,10 @@
 | deal (SQLite) | Quote and its settle outcome + tx hash | Backend | Until 2026-12-31 |
 | patience (SQLite) | Patience per player/merchant/day | Backend | 2 game days |
 | pending_gather (SQLite) | Gathers waiting for the next batch | Backend | Deleted when minted |
-| price_point (SQLite) | Ask/bid/stock per merchant per minute for charts | Backend | Until 2026-12-31 |
+| price_point (SQLite) | v1 only: ask/bid/stock per merchant per minute (kept, no longer written) | Backend | Until 2026-12-31 |
+| item_price (SQLite, v2) | Ask/bid/stock per item per minute for charts | Backend | Until 2026-12-31 |
+| gather_session (SQLite, v2) | One gather minigame: hidden roll, start time, result item (also the catch log for best catch) | Backend | Until 2026-12-31 |
+| player_class (SQLite, v2) | Cached class + last switch time for the 5 min cooldown (truth: contract `classes`) | Backend | Until 2026-12-31 |
 | llm_cache (SQLite) | Prompt hash -> LLM JSON reply (replay mode) | Backend | Until 2026-12-31 |
 
 ## Schema
@@ -41,6 +44,10 @@ SQLite (tables `STRICT`, timestamps INTEGER unix ms):
 - `deal(id TEXT PRIMARY KEY, session_id TEXT NOT NULL REFERENCES haggle_session(id), merchant TEXT NOT NULL, player_id TEXT NOT NULL, good TEXT NOT NULL, side TEXT NOT NULL, qty INTEGER NOT NULL, unit_price INTEGER NOT NULL, nonce INTEGER NOT NULL UNIQUE, expires_at INTEGER NOT NULL, status TEXT NOT NULL CHECK(status IN ('quoted','settling','settled','requoted','failed','expired')), tx_hash TEXT, error TEXT, created_at INTEGER NOT NULL)`
 - `patience(player_id TEXT NOT NULL, merchant TEXT NOT NULL, day INTEGER NOT NULL, points INTEGER NOT NULL DEFAULT 3, PRIMARY KEY(player_id, merchant, day))`
 - `pending_gather(id INTEGER PRIMARY KEY, player_id TEXT NOT NULL, good TEXT NOT NULL, qty INTEGER NOT NULL, created_at INTEGER NOT NULL, batch_tx TEXT)`
+- v2: `pending_gather.good` holds an item id (`wood_oak`); v1 rows (`wood`) are parked with `batch_tx = 'invalid'`.
+- `item_price(item TEXT, ts INTEGER, ask, bid, stock, purse INTEGER, PRIMARY KEY(item, ts))`
+- `gather_session(id TEXT PRIMARY KEY, player_id TEXT, node TEXT, roll_bp INTEGER, started_at INTEGER ms, closed_at INTEGER, item TEXT, qty INTEGER)`, index `(player_id, started_at)`
+- `player_class(player_id TEXT PRIMARY KEY, class TEXT, changed_at INTEGER ms)`
 - `price_point(merchant TEXT NOT NULL, ts INTEGER NOT NULL, ask INTEGER NOT NULL, bid INTEGER NOT NULL, stock INTEGER NOT NULL, purse INTEGER NOT NULL, PRIMARY KEY(merchant, ts))`
 - `llm_cache(prompt_hash TEXT PRIMARY KEY, model TEXT NOT NULL, reply_json TEXT NOT NULL, created_at INTEGER NOT NULL)`
 
