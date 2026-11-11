@@ -27,6 +27,7 @@ local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
 local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
 local CollectionService = game:GetService("CollectionService")
 require(script.Parent.fx.TreeFx).start()
+require(script.Parent.fx.RockFx).start()
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaggleTownUI"

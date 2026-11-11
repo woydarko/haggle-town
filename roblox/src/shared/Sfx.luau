@@ -10,6 +10,10 @@ local Sfx = {
 		timber = "rbxassetid://9120957463", -- Wood Roof Crash 1
 		leaves = "rbxassetid://9114518245", -- Foliage Movement 3
 		respawn = "rbxassetid://132948338000932", -- bubble pop sound effect
+		pick = "rbxassetid://9118608146", -- Rock Hits Rock On Rock Various Versions 8
+		crack = "rbxassetid://9120826936", -- Wood Cracks Multiple Variations 4 (works as a stone crack)
+		rockBreak = "rbxassetid://9118770617", -- Sand Silt 2 (falling clumps)
+		sparkle = "rbxassetid://90618709727045", -- RevealSmall
 	} :: { [string]: string },
 }
 
