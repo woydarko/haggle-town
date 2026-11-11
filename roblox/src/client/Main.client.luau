@@ -25,6 +25,10 @@ local ChooseClass = remotes:WaitForChild("ChooseClass") :: RemoteFunction
 local GetStats = remotes:WaitForChild("GetStats") :: RemoteFunction
 local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
 local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
+local CastAt = remotes:WaitForChild("CastAt") :: RemoteFunction
+local Anims = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Anims"))
+local Regions = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Regions"))
+local FishFx = require(script.Parent.fx.FishFx)
 local CollectionService = game:GetService("CollectionService")
 require(script.Parent.fx.TreeFx).start()
 require(script.Parent.fx.RockFx).start()
@@ -112,6 +116,15 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 -- The server only fires this after it opened a session, so one minigame runs at a time.
+local function reportCatch(r: any)
+	if r and r.catch then
+		local c = r.catch
+		hud.toast(`Caught {c.name} ({c.tier})` .. (if c.qty > 1 then ` x{c.qty}` else "") .. "!")
+	elseif r and r.message then
+		hud.toast(r.message)
+	end
+end
+
 -- The server names the node it claimed for us; its model (streamed in, we are next to it) anchors in-world UI and fx.
 local function nodeModel(id: any): Model?
 	for _, tag in { "GatherTree", "GatherRock", "GatherWater" } do
@@ -131,11 +144,76 @@ PlayMinigame.OnClientEvent:Connect(function(node, params, nodeId)
 			GatherFx:FireServer(kind)
 		end,
 	})
-	local r = GatherFinish:InvokeServer(quality)
-	if r and r.catch then
-		local c = r.catch
-		hud.toast(`Caught {c.name} ({c.tier})` .. (if c.qty > 1 then ` x{c.qty}` else "") .. "!")
-	elseif r and r.message then
-		hud.toast(r.message)
-	end
+	reportCatch(GatherFinish:InvokeServer(quality))
 end)
+
+-- Fishing: click with the Rod -> charge the cast -> the bobber flies where the camera looks; only a landing in
+-- the lake or the sea asks the server (CastAt), which re-checks it and opens the session.
+local fishing = false
+local function fish()
+	local char = Players.LocalPlayer.Character
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if fishing or not (char and hum) or gui:FindFirstChild("Minigame") then
+		return
+	end
+	fishing = true
+	local cast: FishFx.Cast? = nil
+	local ok, err = pcall(function()
+		local power = Run.play(gui, "cast", { zoneScale = 1, fishSpeed = 1, minMs = 0 }, { strip = true })
+		if not power then
+			return
+		end
+		Anims.play(hum, "Cast")
+		task.wait(0.25)
+		local c = FishFx.cast(char, power, workspace.CurrentCamera.CFrame.LookVector)
+		cast = c
+		if not Regions.fishNodeAt(c.landing.X, c.landing.Z) then
+			hud.toast("Cast into the water")
+			task.wait(0.8)
+			return
+		end
+		local r = CastAt:InvokeServer(c.landing)
+		if not (r and r.params) then
+			hud.toast(r and r.message or "Cast into the water")
+			return
+		end
+		local quality = Run.play(gui, r.node, r.params, { bobber = c, cast = power })
+		local res = GatherFinish:InvokeServer(quality)
+		reportCatch(res)
+		if res and res.catch then
+			Anims.play(hum, "CatchLift")
+			FishFx.catch(c, Theme.tiers[res.catch.tier], res.catch.tier ~= "common")
+			task.wait(0.8)
+		end
+	end)
+	if cast then
+		cast.clear()
+	end
+	if not ok then
+		warn("fishing error", err)
+	end
+	fishing = false
+end
+
+local hookedRods: { [Instance]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+local function hookRod(t: Instance)
+	if t:IsA("Tool") and t.Name == "Rod" and not hookedRods[t] then
+		hookedRods[t] = true
+		t.Activated:Connect(function()
+			task.spawn(fish)
+		end)
+	end
+end
+local function watchBackpack()
+	local bp = Players.LocalPlayer:WaitForChild("Backpack")
+	for _, t in bp:GetChildren() do
+		hookRod(t)
+	end
+	bp.ChildAdded:Connect(hookRod)
+end
+Players.LocalPlayer.CharacterAdded:Connect(function()
+	task.spawn(watchBackpack)
+end)
+if Players.LocalPlayer.Character then
+	task.spawn(watchBackpack)
+end

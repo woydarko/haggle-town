@@ -58,6 +58,22 @@ function Regions.fishNodeAt(x: number, z: number): string?
 	return nil
 end
 
+-- Server check of a bobber landing point cast from (fx, fz): the backend node, or nil + "bad" (not a number),
+-- "far" (beyond maxDist) or "land" (not fishable water).
+function Regions.castNode(fx: number, fz: number, tx: number, tz: number, maxDist: number): (string?, string?)
+	local d = math.sqrt((tx - fx) ^ 2 + (tz - fz) ^ 2)
+	if d ~= d or math.abs(tx) == math.huge or math.abs(tz) == math.huge then
+		return nil, "bad"
+	elseif d > maxDist then
+		return nil, "far"
+	end
+	local node = Regions.fishNodeAt(tx, tz)
+	if not node then
+		return nil, "land"
+	end
+	return node, nil
+end
+
 function Regions.regionAt(x: number, z: number): string
 	if dist(x, z, Regions.CENTER) > Regions.RING_IN + 30 then
 		return "peaks"

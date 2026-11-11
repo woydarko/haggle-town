@@ -43,4 +43,18 @@ for s = -700, 700, 50 do
 	local r = math.sqrt((p.x - c.x) ^ 2 + (p.z - c.z) ^ 2)
 	check(not Regions.isWater(p.x, p.z) or r < Regions.RING_IN, `sea inside the ring at s={s}`)
 end
+-- castNode: the server's check of a bobber landing point (fishable water, within reach of the player).
+local pier = { x = L.x, z = L.z - L.r - 20 } -- standing on the lake shore
+local n, why = Regions.castNode(pier.x, pier.z, L.x, L.z - L.r + 15, 45)
+check(n == "fish" and why == nil, "cast onto the lake -> fish")
+local shoreSea = Regions.along(Regions.SEA_D - 20)
+local nearSea = Regions.along(Regions.SEA_D + 15)
+n = Regions.castNode(shoreSea.x, shoreSea.z, nearSea.x, nearSea.z, 45)
+check(n == "fish_deep", "cast onto the sea -> fish_deep")
+n, why = Regions.castNode(pier.x, pier.z, pier.x + 10, pier.z, 45)
+check(n == nil and why == "land", "cast onto the shore -> land")
+n, why = Regions.castNode(pier.x, pier.z, L.x, L.z, 45)
+check(n == nil and why == "far", "cast to the lake centre from the shore is too far")
+n, why = Regions.castNode(pier.x, pier.z, 0 / 0, 5, 45)
+check(n == nil and why == "bad", "NaN landing point is rejected")
 print("Regions.spec passed")

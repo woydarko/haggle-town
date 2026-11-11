@@ -12,6 +12,7 @@ local Nodes = require(script.Parent.Nodes)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Validate = require(Shared:WaitForChild("Validate"))
 local Tools = require(Shared:WaitForChild("Tools"))
+local Regions = require(Shared:WaitForChild("Regions"))
 
 -- Nobody spawns before the big map exists (they would fall through); clients show a loading screen meanwhile.
 Players.CharacterAutoLoads = false
@@ -44,6 +45,7 @@ local function re(name: string): RemoteEvent
 	return r
 end
 local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinish")
+local CastAt = rf("CastAt")
 local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
 local StateChanged, OpenHaggle, Toast, PlayMinigame = re("StateChanged"), re("OpenHaggle"), re("Toast"), re("PlayMinigame")
 local OpenClassCard = re("OpenClassCard")
@@ -52,7 +54,11 @@ remotes.Parent = ReplicatedStorage
 
 local issued: { [Player]: { [string]: boolean } } = {}
 -- One minigame per player; the session id never leaves the server. `at` lets a stuck session expire with the backend's 60 s TTL.
-local gathering: { [Player]: { id: string?, part: BasePart, at: number, n: Nodes.Node } } = {}
+-- pos/reach: where the gathering happens and how far the player may stand (12 at a tree/rock, 45 to a bobber).
+-- n: the claimed tree/rock (nil when fishing: open water has no node to claim).
+type Slot = { id: string?, pos: Vector3, reach: number, at: number, n: Nodes.Node? }
+local gathering: { [Player]: Slot } = {}
+local CAST_REACH = 45
 local SESSION_TTL = 60
 local lastState: any = nil
 local statsCache: { [Player]: { at: number, value: any } } = {}
@@ -65,6 +71,12 @@ end
 local function distance(p: Player, target: BasePart): number?
 	local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	return hrp and (hrp.Position - target.Position).Magnitude or nil
+end
+
+-- Is the player still within reach of their gathering spot?
+local function inReach(p: Player, s: Slot, slack: number): boolean
+	local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	return hrp ~= nil and (hrp.Position - s.pos).Magnitude <= s.reach + slack
 end
 
 -- Merchant lines are shaped by what the player typed, so they go through Roblox text filtering.
@@ -80,7 +92,9 @@ local function letGo(p: Player)
 	local s = gathering[p]
 	if s then
 		gathering[p] = nil
-		Nodes.release(s.n, p)
+		if s.n then
+			Nodes.release(s.n, p)
+		end
 	end
 end
 
@@ -101,9 +115,14 @@ local function onToolUse(p: Player, toolName: string)
 	if not (info and hrp) then
 		return
 	end
+	if toolName == "Rod" then
+		return -- fishing starts from the client's cast (CastAt below), where the bobber lands
+	end
 	local open = gathering[p]
 	if open and os.clock() - open.at < SESSION_TTL then
-		Nodes.hit(open.n) -- swings during the minigame keep the claim alive
+		if open.n then
+			Nodes.hit(open.n) -- swings during the minigame keep the claim alive
+		end
 		return
 	end
 	letGo(p) -- a stuck old session
@@ -117,7 +136,7 @@ local function onToolUse(p: Player, toolName: string)
 		hint(p, if why == "taken" then info.taken else info.gone)
 		return
 	end
-	local slot = { id = nil :: string?, part = n.hit, at = os.clock(), n = n }
+	local slot: Slot = { id = nil, pos = n.hit.Position, reach = 12, at = os.clock(), n = n }
 	gathering[p] = slot -- reserved before the yielding HTTP call so a double swing cannot start two
 	local ok, r = Backend.post("/rbx/gather/start", { userId = uid(p), node = n.node })
 	if gathering[p] ~= slot then
@@ -230,8 +249,7 @@ task.spawn(function()
 	while true do
 		task.wait(1)
 		for p, slot in gathering do
-			local d = distance(p, slot.part)
-			if os.clock() - slot.at > SESSION_TTL or not (d and d < 16) then
+			if os.clock() - slot.at > SESSION_TTL or not inReach(p, slot, 4) then
 				letGo(p)
 			end
 		end
@@ -247,10 +265,43 @@ GatherFx.OnServerEvent:Connect(function(p: Player, kind: any)
 		return
 	end
 	lastFx[p] = os.clock()
-	Nodes.hit(s.n)
-	s.n.model:SetAttribute("HitKind", kind)
-	s.n.model:SetAttribute("Hit", ((s.n.model:GetAttribute("Hit") :: number?) or 0) + 1)
+	local n = s.n
+	if n then
+		Nodes.hit(n)
+		n.model:SetAttribute("HitKind", kind)
+		n.model:SetAttribute("Hit", ((n.model:GetAttribute("Hit") :: number?) or 0) + 1)
+	end
 end)
+
+-- Fishing: the client casts the bobber and sends where it landed; the server re-checks that it is fishable water
+-- within reach (Regions.castNode), picks lake (fish) or sea (fish_deep), and opens the backend session.
+CastAt.OnServerInvoke = function(p: Player, point: any)
+	local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if typeof(point) ~= "Vector3" or not hrp then
+		return { message = "Cast into the water" }
+	end
+	local open = gathering[p]
+	if open and os.clock() - open.at < SESSION_TTL then
+		return { message = "Finish what you are doing first" }
+	end
+	letGo(p)
+	local node, why = Regions.castNode(hrp.Position.X, hrp.Position.Z, point.X, point.Z, CAST_REACH)
+	if not (node and Validate.node(node)) then
+		return { message = if why == "far" then "Too far - cast closer" else "Cast into the water" }
+	end
+	local slot: Slot = { id = nil, pos = Vector3.new(point.X, hrp.Position.Y, point.Z), reach = CAST_REACH, at = os.clock() }
+	gathering[p] = slot
+	local ok, r = Backend.post("/rbx/gather/start", { userId = uid(p), node = node })
+	if gathering[p] ~= slot then
+		return { message = "It got away..." }
+	end
+	if not ok then
+		gathering[p] = nil
+		return { message = "Market offline - your goods are safe" }
+	end
+	slot.id = r.sessionId
+	return { node = node, params = r.params }
+end
 
 -- quality nil = the player failed the minigame: close locally, nothing is caught (the backend session just expires).
 GatherFinish.OnServerInvoke = function(p: Player, quality: any)
@@ -259,8 +310,13 @@ GatherFinish.OnServerInvoke = function(p: Player, quality: any)
 		return { error = "no_session" }
 	end
 	gathering[p] = nil -- the node stays claimed until the backend answers, so nobody grabs a tree about to fall
-	if quality == nil or not Validate.quality(quality) or not Validate.near(distance(p, s.part)) then
-		Nodes.release(s.n, p)
+	local function release()
+		if s.n then
+			Nodes.release(s.n, p)
+		end
+	end
+	if quality == nil or not Validate.quality(quality) or not inReach(p, s, 0) then
+		release()
 		return if quality == nil
 			then { message = "It got away..." }
 			elseif not Validate.quality(quality) then { error = "invalid" }
@@ -268,12 +324,10 @@ GatherFinish.OnServerInvoke = function(p: Player, quality: any)
 	end
 	local ok, r = Backend.post("/rbx/gather/finish", { userId = uid(p), sessionId = s.id, quality = quality })
 	if not ok then
-		Nodes.release(s.n, p)
+		release()
 		return { message = if r.error == "too_fast" or r.error == "session_closed" then "It slipped away - try again." else "Market offline - your goods are safe" }
 	end
-	if s.n.tag == "GatherWater" then
-		Nodes.release(s.n, p)
-	else
+	if s.n then
 		local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		Nodes.fell(s.n, hrp and hrp.Position) -- the tree falls away from the player / the rock breaks
 	end

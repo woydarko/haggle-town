@@ -18,12 +18,16 @@ export type Ctx = {
 	fail: (text: string) -> nil, -- show why, pause, return nil (nothing caught)
 	target: Model?, -- the tree / rock / spot being gathered (for in-world UI and fx)
 	fx: (kind: string) -> (), -- tell the server a swing result so everyone sees chips and hears it
+	inWorld: boolean, -- the slim strip is up, the action happens in the world
+	cast: number?, -- fishing: power of the cast already thrown
+	bobber: any, -- fishing: FishFx.Cast of the bobber in the water
 }
-export type Opts = { target: Model?, fx: (kind: string) -> () }
+export type Opts = { target: Model?, fx: ((kind: string) -> ())?, strip: boolean?, cast: number?, bobber: any }
 
 local mine = require(script.Parent.Mining).play
 local GAMES: { [string]: (Ctx, Params) -> number? } = {
 	fish = require(script.Parent.Fishing).play,
+	cast = require(script.Parent.Fishing).cast, -- fishing step 1 on its own: returns cast power
 	fish_deep = require(script.Parent.Fishing).play,
 	wood = require(script.Parent.Chopping).play,
 	wood_old = require(script.Parent.Chopping).play,
@@ -38,7 +42,7 @@ function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): nu
 	local started = os.clock()
 	-- Chop and mine play on the tree / rock itself (BillboardGuis), which a ScreenGui panel would cover:
 	-- then the panel is only a slim hint strip above the hotbar.
-	local inWorld = opts ~= nil and opts.target ~= nil and GAMES[node] ~= GAMES.fish
+	local inWorld = opts ~= nil and (opts.strip == true or opts.bobber ~= nil or (opts.target ~= nil and GAMES[node] ~= GAMES.fish))
 	local panel = Ui.new("Frame", {
 		Parent = gui,
 		Name = "Minigame",
@@ -64,7 +68,10 @@ function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): nu
 		node = node,
 		panel = panel,
 		target = opts and opts.target,
-		fx = if opts then opts.fx else function(_kind: string) end,
+		fx = (opts and opts.fx) or function(_kind: string) end,
+		inWorld = inWorld,
+		cast = opts and opts.cast,
+		bobber = opts and opts.bobber,
 		held = function()
 			return held
 		end,

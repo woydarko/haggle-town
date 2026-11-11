@@ -14,6 +14,9 @@ local Sfx = {
 		crack = "rbxassetid://9120826936", -- Wood Cracks Multiple Variations 4 (works as a stone crack)
 		rockBreak = "rbxassetid://9118770617", -- Sand Silt 2 (falling clumps)
 		sparkle = "rbxassetid://90618709727045", -- RevealSmall
+		splash = "rbxassetid://9117942768", -- Puddle Impact Small Footsteps 1 (bobber lands, bite plink)
+		bigSplash = "rbxassetid://9117942473", -- Puddle Impact Big Puddle Splash 20 (catch)
+		reel = "rbxassetid://79404754846319", -- Fishing Rod Reel
 	} :: { [string]: string },
 }
 
