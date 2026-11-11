@@ -13,6 +13,9 @@
         "HaggleClient": { "$path": "src/client" }
       }
     },
+    "Workspace": {
+      "$properties": { "StreamingEnabled": true }
+    },
     "ServerStorage": {
       "Assets": { "$path": "assets" }
     },

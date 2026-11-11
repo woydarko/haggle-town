@@ -217,14 +217,16 @@ local function woodNode(pos: Vector3): Part
 	return stump
 end
 
-local function fishNode(pos: Vector3): Part
-	-- Pier from the shore out over the water; the fishing spot is at its end.
-	for i = 0, 7 do
-		part({ Name = "PierPlank", Size = Vector3.new(6, 0.4, 1.8), Position = Vector3.new(pos.X, 0.8, 50 + i * 2), Color = WOOD_LIGHT, Material = Enum.Material.WoodPlanks })
-	end
-	for _, x in { -2.7, 2.7 } do
-		for _, z in { 52, 58, 64 } do
-			part({ Name = "PierPost", Size = Vector3.new(0.6, 4, 0.6), Position = Vector3.new(pos.X + x, -1, z), Color = WOOD_DARK, Material = Enum.Material.Wood })
+local function fishNode(pos: Vector3, shore: Vector3): Part
+	-- Pier from the shore spot out over the water; the fishing spot is at its end.
+	local a, b = shore + Vector3.new(0, 0.4, 0), Vector3.new(pos.X, pos.Y + 1.2, pos.Z)
+	local len = (b - a).Magnitude
+	local deck = CFrame.lookAt((a + b) / 2, b)
+	part({ Name = "Pier", Size = Vector3.new(6, 0.4, len), CFrame = deck, Color = WOOD_LIGHT, Material = Enum.Material.WoodPlanks })
+	for d = 4, len - 2, 8 do
+		for _, x in { -2.7, 2.7 } do
+			local top = (deck * CFrame.new(x, 0, len / 2 - d)).Position
+			part({ Name = "PierPost", Size = Vector3.new(0.6, 8, 0.6), Position = top - Vector3.new(0, 4, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
 		end
 	end
 	local spot = part({ Name = "Fish", Size = Vector3.new(6, 0.4, 4), Position = pos + Vector3.new(0, 0.8, 0), Color = WOOD_LIGHT, Material = Enum.Material.WoodPlanks })
@@ -249,9 +251,14 @@ local function oreNode(pos: Vector3, glow: Color3, title: string): Part
 	return core
 end
 
+-- Spot snapped to the built terrain (voxel caverns can sit a few studs off the pure plan).
 local function spot(name: string): Vector3
 	local p = Terrain.SPOTS[name]
-	return Vector3.new(p.x, p.y, p.z)
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { workspace.Terrain }
+	local hit = workspace:Raycast(Vector3.new(p.x, p.y + 6, p.z), Vector3.new(0, -14, 0), params)
+	return if hit then hit.Position else Vector3.new(p.x, p.y, p.z)
 end
 
 -- kind: 0 pine, 1 oak, 2 maple, 3 ancient redwood
@@ -298,13 +305,13 @@ export type Built = {
 	leaderBoard: Part,
 }
 
-function World.build(): Built
+function World.build(onProgress: ((number) -> ())?): Built
 	root = Instance.new("Folder")
 	root.Name = "HaggleTown"
 	root.Parent = workspace
 	ambience()
 
-	Terrain.build() -- valley, lake, mountain ring, cave hill
+	Terrain.build(onProgress) -- big map: village, lake, woods, mine mountain + caverns, coast, mountain ring
 	part({ Name = "Square", Size = Vector3.new(60, 0.2, 50), Position = Vector3.new(0, 0.1, 5), Color = Color3.fromHex("CDBB9A"), Material = Enum.Material.Cobblestone })
 	part({ Name = "Fountain", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 8, 8), CFrame = CFrame.new(0, 0.6, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Cobblestone })
 	part({ Name = "FountainWater", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 7, 7), CFrame = CFrame.new(0, 1.15, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHex("5FA8C9"), Material = Enum.Material.Glass, Transparency = 0.3 })
@@ -327,14 +334,13 @@ function World.build(): Built
 		lamp(p)
 	end
 	path(Vector3.new(-30, 0, -10), Vector3.new(-45, 0, -28))
-	path(Vector3.new(30, 0, -10), Vector3.new(66, 0, -30)) -- to the cave mouth
 	path(Vector3.new(9, 0, 24), Vector3.new(2, 0, 50))
 
 	return {
 		nodes = {
 			-- keys are backend gather nodes; positions come from Terrain.SPOTS (checked by Terrain.spec)
 			wood = woodNode(spot("wood")),
-			fish = fishNode(spot("fish")),
+			fish = fishNode(spot("fish"), spot("lake_pier")),
 			ore_mouth = oreNode(spot("ore_mouth"), Color3.fromHex("E07A3F"), "Ore"),
 			ore_deep = oreNode(spot("ore_deep"), Color3.fromHex("B07CFF"), "Deep ore"),
 		},

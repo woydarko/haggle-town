@@ -6,6 +6,7 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+require(script.Parent.ui.Loading).show() -- before waiting on Remotes: the server builds the map first
 local Hud = require(script.Parent.ui.Hud)
 local HagglePanel = require(script.Parent.ui.HagglePanel)
 local ClassCard = require(script.Parent.ui.ClassCard)

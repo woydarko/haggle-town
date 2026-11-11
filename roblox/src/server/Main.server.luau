@@ -11,7 +11,14 @@ local Lobby = require(script.Parent.Lobby)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Validate = require(Shared:WaitForChild("Validate"))
 
-local world = World.build()
+-- Nobody spawns before the big map exists (they would fall through); clients show a loading screen meanwhile.
+Players.CharacterAutoLoads = false
+workspace:SetAttribute("WorldProgress", 0)
+local buildStart = os.clock()
+local world = World.build(function(f)
+	workspace:SetAttribute("WorldProgress", f)
+end)
+print(string.format("[HaggleTown] map built in %.1f s", os.clock() - buildStart))
 Boards.renderPrices(world.priceBoard, nil)
 Boards.renderLeaders(world.leaderBoard, nil)
 local lobby = Lobby.build()
@@ -62,14 +69,33 @@ local function filter(text: string, p: Player): string
 	return if ok then out else "..."
 end
 
-Players.PlayerAdded:Connect(function(p)
+-- CharacterAutoLoads is off, so the server spawns and respawns everyone itself.
+local function spawnLoop(p: Player)
+	p.CharacterAdded:Connect(function(char)
+		local hum = char:WaitForChild("Humanoid") :: Humanoid
+		hum.Died:Connect(function()
+			task.wait(Players.RespawnTime)
+			if p.Parent then
+				p:LoadCharacter()
+			end
+		end)
+	end)
+	p:LoadCharacter()
+end
+
+local function onJoin(p: Player)
 	issued[p] = {}
+	task.spawn(spawnLoop, p)
 	local ok, r = Backend.post("/rbx/join", { userId = uid(p), name = p.DisplayName })
 	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board } else { offline = true })
 	if ok and r.class == nil then
 		Toast:FireClient(p, "Talk to a mentor in the lobby to pick a class")
 	end
-end)
+end
+Players.PlayerAdded:Connect(onJoin)
+for _, p in Players:GetPlayers() do -- joined while the map was building
+	task.spawn(onJoin, p)
+end
 
 Players.PlayerRemoving:Connect(function(p)
 	issued[p] = nil
