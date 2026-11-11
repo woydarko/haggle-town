@@ -9,15 +9,21 @@ local Ui = require(script.Parent.Parent.ui.Ui)
 
 export type Params = { zoneScale: number, fishSpeed: number, minMs: number }
 export type Ctx = {
+	node: string,
 	panel: Frame,
 	held: () -> boolean, -- button is down now
 	consume: () -> boolean, -- button went down since the last call
 	step: () -> number, -- wait one frame, returns dt
 	hint: (text: string) -> (),
+	fail: (text: string) -> nil, -- show why, pause, return nil (nothing caught)
 }
 
+local mine = require(script.Parent.Mining).play
 local GAMES: { [string]: (Ctx, Params) -> number? } = {
 	fish = require(script.Parent.Fishing).play,
+	wood = require(script.Parent.Chopping).play,
+	ore_mouth = mine,
+	ore_deep = mine,
 }
 
 local Run = {}
@@ -45,7 +51,9 @@ function Run.play(gui: ScreenGui, node: string, params: Params): number?
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Space, Enum.UserInputType.MouseButton1, Enum.UserInputType.Touch)
 
-	local ctx: Ctx = {
+	local ctx: Ctx
+	ctx = {
+		node = node,
 		panel = panel,
 		held = function()
 			return held
@@ -61,21 +69,19 @@ function Run.play(gui: ScreenGui, node: string, params: Params): number?
 		hint = function(text)
 			hintLabel.Text = text
 		end,
+		fail = function(text)
+			ctx.hint(text)
+			task.wait(1)
+			return nil
+		end,
 	}
 
 	local ok, q = pcall(function(): number?
 		local play = GAMES[node]
-		local score: number?
-		if play then
-			score = play(ctx, params)
-		else
-			-- shortcut: wood/ore have no minigame until Task 7; waits the minimum and scores mid luck.
-			ctx.hint("Working...")
-			score = 0.5
-		end
+		local score = if play then play(ctx, params) else nil
 		local left = params.minMs / 1000 - (os.clock() - started) + 0.2
 		if score and left > 0 then
-			ctx.hint("Landing it...")
+			ctx.hint("Almost done...")
 			task.wait(left)
 		end
 		return score

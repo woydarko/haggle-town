@@ -13,9 +13,7 @@ local REEL_LIMIT = 40 -- seconds; the server session lives 60 s
 local Fishing = {}
 
 local function escaped(ctx: any): nil
-	ctx.hint("It got away...")
-	task.wait(1)
-	return nil
+	return ctx.fail("It got away...")
 end
 
 function Fishing.play(ctx: any, params: any): number?
