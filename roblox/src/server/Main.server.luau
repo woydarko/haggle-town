@@ -28,11 +28,14 @@ local function re(name: string): RemoteEvent
 	r.Parent = remotes
 	return r
 end
-local Haggle, Accept = rf("Haggle"), rf("Accept")
-local StateChanged, OpenHaggle, Toast = re("StateChanged"), re("OpenHaggle"), re("Toast")
+local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinish")
+local StateChanged, OpenHaggle, Toast, PlayMinigame = re("StateChanged"), re("OpenHaggle"), re("Toast"), re("PlayMinigame")
 remotes.Parent = ReplicatedStorage
 
 local issued: { [Player]: { [string]: boolean } } = {}
+-- One minigame per player; the session id never leaves the server. `at` lets a stuck session expire with the backend's 60 s TTL.
+local gathering: { [Player]: { id: string?, part: BasePart, at: number } } = {}
+local SESSION_TTL = 60
 local lastState: any = nil
 
 local function uid(p: Player): string
@@ -60,24 +63,57 @@ end)
 
 Players.PlayerRemoving:Connect(function(p)
 	issued[p] = nil
+	gathering[p] = nil
 end)
 
-for good, nodePart in world.nodes do
+for node, nodePart in world.nodes do
 	local pp = nodePart:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
 	pp.Triggered:Connect(function(p)
-		if not (Validate.good(good) and Validate.near(distance(p, nodePart))) then
+		if not (Validate.node(node) and Validate.near(distance(p, nodePart))) then
 			return
 		end
-		local ok, r = Backend.post("/rbx/gather", { userId = uid(p), good = good })
-		if ok then
-			StateChanged:FireClient(p, { balances = r.balances })
-			Toast:FireClient(p, "+1 " .. good)
-		elseif r.error == "cooldown" then
-			Toast:FireClient(p, "Resting... " .. math.ceil((r.cooldownMs or 0) / 1000) .. "s")
-		else
-			Toast:FireClient(p, "Market offline - your goods are safe")
+		local open = gathering[p]
+		if open and os.clock() - open.at < SESSION_TTL then
+			return
 		end
+		local slot = { id = nil :: string?, part = nodePart, at = os.clock() }
+		gathering[p] = slot -- reserved before the yielding HTTP call so a double trigger cannot start two
+		local ok, r = Backend.post("/rbx/gather/start", { userId = uid(p), node = node })
+		if gathering[p] ~= slot then
+			return -- player left meanwhile
+		end
+		if not ok then
+			gathering[p] = nil
+			Toast:FireClient(p, "Market offline - your goods are safe")
+			return
+		end
+		slot.id = r.sessionId
+		PlayMinigame:FireClient(p, node, r.params)
 	end)
+end
+
+-- quality nil = the player failed the minigame: close locally, nothing is caught (the backend session just expires).
+GatherFinish.OnServerInvoke = function(p: Player, quality: any)
+	local s = gathering[p]
+	if not (s and s.id) then
+		return { error = "no_session" }
+	end
+	gathering[p] = nil
+	if quality == nil then
+		return { message = "It got away..." }
+	end
+	if not Validate.quality(quality) then
+		return { error = "invalid" }
+	end
+	if not Validate.near(distance(p, s.part)) then
+		return { message = "You walked away from the spot." }
+	end
+	local ok, r = Backend.post("/rbx/gather/finish", { userId = uid(p), sessionId = s.id, quality = quality })
+	if not ok then
+		return { message = if r.error == "too_fast" or r.error == "session_closed" then "It slipped away - try again." else "Market offline - your goods are safe" }
+	end
+	StateChanged:FireClient(p, { balances = r.balances })
+	return { catch = r.catch }
 end
 
 for name, body in world.merchants do

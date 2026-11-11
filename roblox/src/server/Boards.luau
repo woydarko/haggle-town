@@ -54,12 +54,13 @@ function Boards.renderPrices(board: BasePart, market: { any }?)
 		row(f, "Opening soon", "", Theme.muted)
 		return
 	end
+	-- shortcut: name from the item id ("fish_golden_koi" -> "golden koi"); Task 8 redesigns this board per category.
 	for _, m in market do
-		local prev = lastAsk[m.good]
+		local prev = lastAsk[m.item]
 		local arrow = if prev == nil or prev == m.ask then "=" elseif m.ask > prev then "up" else "down"
-		lastAsk[m.good] = m.ask
-		local name = (m.good :: string):sub(1, 1):upper() .. (m.good :: string):sub(2)
-		row(f, name, `buy {m.ask} C  sell {m.bid} C  {arrow}`, (Theme :: any)[m.good] or Theme.text)
+		lastAsk[m.item] = m.ask
+		local name = string.gsub((string.gsub(m.item :: string, "^%a+_", "")), "_", " ")
+		row(f, name, `buy {m.ask} C  sell {m.bid} C  {arrow}`, (Theme :: any)[m.category] or Theme.text)
 	end
 end
 

@@ -239,8 +239,8 @@ local function ironNode(pos: Vector3): Part
 	for i = 1, 5 do
 		part({ Name = "Ore", Size = Vector3.new(0.5, 0.5, 0.5), Position = pos + Vector3.new(-1.5 + i * 0.6, 1 + (i % 3) * 0.6, 2.55), Color = Color3.fromHex("E07A3F"), Material = Enum.Material.Neon })
 	end
-	prompt(core, "Dig", "Iron")
-	label(core, "Iron", Theme.iron)
+	prompt(core, "Mine", "Ore")
+	label(core, "Ore", Theme.iron)
 	return core
 end
 
@@ -317,7 +317,7 @@ function World.build(): Built
 		nodes = {
 			wood = woodNode(Vector3.new(-45, 0, -30)),
 			fish = fishNode(Vector3.new(0, 0, 66)),
-			iron = ironNode(Vector3.new(48, 0, -30)),
+			ore_mouth = ironNode(Vector3.new(48, 0, -30)), -- keys are backend gather nodes; ore_deep comes with the cave (Task 9)
 		},
 		merchants = {
 			woodcutter = stall("woodcutter", "wood", Vector3.new(-22, 0, 8), Theme.wood),

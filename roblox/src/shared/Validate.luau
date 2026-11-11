@@ -2,15 +2,20 @@
 -- Pure checks the Roblox server runs on every RemoteEvent before calling the backend.
 -- No Roblox globals here so roblox/tests/Validate.spec.luau can run outside Studio.
 
-local GOODS = { wood = true, fish = true, iron = true }
+local NODES = { wood = true, fish = true, ore_mouth = true, ore_deep = true }
 local MERCHANTS = { woodcutter = true, fishmonger = true, smith = true }
 local MAX_DISTANCE = 12
 local MAX_TEXT = 200
 
 local Validate = {}
 
-function Validate.good(good: any): boolean
-	return type(good) == "string" and GOODS[good] == true
+function Validate.node(node: any): boolean
+	return type(node) == "string" and NODES[node] == true
+end
+
+-- Minigame score from the client; NaN fails both comparisons.
+function Validate.quality(q: any): boolean
+	return type(q) == "number" and q >= 0 and q <= 1
 end
 
 function Validate.merchant(name: any): boolean

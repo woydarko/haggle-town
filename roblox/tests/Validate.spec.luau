@@ -8,8 +8,10 @@ local function check(cond, name)
 	print("ok", name)
 end
 
-check(Validate.good("wood") and Validate.good("fish") and Validate.good("iron"), "known goods")
-check(not Validate.good("gold") and not Validate.good(nil) and not Validate.good(5), "unknown good rejected")
+check(Validate.node("wood") and Validate.node("fish") and Validate.node("ore_mouth") and Validate.node("ore_deep"), "known gather nodes")
+check(not Validate.node("iron") and not Validate.node(nil) and not Validate.node(5), "unknown node rejected")
+check(Validate.quality(0) and Validate.quality(1) and Validate.quality(0.42), "quality 0..1")
+check(not Validate.quality(1.1) and not Validate.quality(-0.1) and not Validate.quality(0 / 0) and not Validate.quality("1"), "bad quality rejected")
 check(Validate.merchant("smith") and not Validate.merchant("king"), "merchant names")
 check(Validate.near(11.9) and not Validate.near(12.1) and not Validate.near(nil), "distance limit 12 studs")
 check(Validate.text("hi") and not Validate.text("") and not Validate.text("   "), "empty text rejected")

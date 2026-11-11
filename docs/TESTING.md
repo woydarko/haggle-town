@@ -50,7 +50,7 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 - Reset/isolation: sandbox is fresh per test file; SQLite uses `:memory:` in tests; testnet contract can be redeployed to a fresh sub-account.
 
 ## Verified commands
-- Luau: `lute run roblox/tests/Hmac.spec.luau` and `lute run roblox/tests/Validate.spec.luau` (Lute via `winget install Luau.Lute`)
+- Luau: `lute run roblox/tests/Hmac.spec.luau`, `lute run roblox/tests/Validate.spec.luau`, `lute run roblox/tests/Minigame.spec.luau`; parse all: `LUTE=lute bash roblox/tests/check-syntax.sh` (Lute via `winget install Luau.Lute`)
 - Unit/integration: `cd server && NODE_ENV=test npm test` (Node 24 test runner, native TS); `cargo test -p economy`; `cargo test -p haggle-contract --lib` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
 - End-to-end: Not configured
 - Build/type check: `cd server && npm run typecheck`
@@ -83,5 +83,6 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-11 `cd server && NODE_ENV=test npm test` -> 92 passed (adds /api/players list, /api/players/:id balances+deals+gathers, bad id 400, unknown 404). Production players view shows user Darko (roblox:3011283432): balances 548 C / wood 5 / fish 3, 2 settled deals with tx, 4 gathers with batch tx. Passed.
 - 2026-11-11 v2: `cargo test -p economy --lib` 17 passed; `cargo test -p haggle-contract --lib` 28 passed (items, class fee, specialist ceiling, per-item tick); deployed haggletown-v2.testnet, get_market 12 rows with expected asks. Passed.
 - 2026-11-11 v2 backend: `cd server && NODE_ENV=test npm test` -> 114 passed (gather sessions: too fast 422, foreign 404, double/expired 409, quality NaN/-1/5 clamped, cave mouth never crystal, specialist zone 1.3 + 15% double drop; class first free / 5 min cooldown / InsufficientFunds 409; /rbx/stats shape; join re-registers on a new contract; haggle items, wrong_merchant 400, specialist sell room); `npm run typecheck` clean. Testnet smoke `node --env-file=../.env scripts/smoke.ts` on haggletown-v2.testnet x2: class logger, wood session caught Oak (rare, once qty 2), gather_batch tx H858NaHamv6u5DHBgTVd1hPyELw2Y9xQFf9z1RXnvHsU, sold via signed deal tx 351eZ3kg4JUeyTNs6nZ4QuHKqnQVtfvkPNwBbCPXrhei. Passed. LLM eval not re-run yet.
+- 2026-11-11 v2 Task 6 (fishing minigame): `lute run roblox/tests/Minigame.spec.luau` passed (full zone + long cast -> 1, never in zone -> 0, top band = perfect cast, NaN/out-of-range clamped, drain grows with fish speed, cast bar ping-pong); `Validate.spec` passed (gather nodes wood/fish/ore_mouth/ore_deep, quality 0..1, NaN rejected); `check-syntax.sh` all parse; `rojo build` ok. Not run: Studio playtest of the minigame (user).
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.

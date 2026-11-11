@@ -18,7 +18,7 @@ All game code lives here and is synced into Roblox Studio with [Rojo](https://ro
    - `BackendUrl` = the backend URL
    - `HmacSecret` = the same value as `RBX_HMAC_SECRET` in the backend `.env`
    Do not put these in ReplicatedStorage or commit them.
-5. Press Play. You get 1000 C, walk to Wood / Fish / Iron to gather, then to a merchant and press **Haggle**.
+5. Press Play. You get 1000 C, walk to Wood / Fish / Ore and play the gather minigame, then to a merchant and press **Haggle**.
 
 Why a StringValue and not Roblox Secrets: Secrets are opaque values that can only be placed into HTTP headers, so the server cannot compute the HMAC over the request body with them.
 
@@ -39,6 +39,7 @@ Why a StringValue and not Roblox Secrets: Secrets are opaque values that can onl
 ```bash
 lute run roblox/tests/Hmac.spec.luau
 lute run roblox/tests/Validate.spec.luau
+lute run roblox/tests/Minigame.spec.luau
 ```
 
 `Hmac.spec` uses the same fixed vector as `server/test/hmac.test.ts`, so both sides sign identically.
