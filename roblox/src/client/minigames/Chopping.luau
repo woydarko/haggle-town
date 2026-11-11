@@ -23,7 +23,7 @@ function Chopping.play(ctx: any, params: any): number?
 		b.Adornee = trunk
 		b.AlwaysOnTop = true
 		b.Size = UDim2.fromOffset(280, 40)
-		b.StudsOffsetWorldSpace = Vector3.new(0, trunk.Size.Y / 2 + 2, 0)
+		b.StudsOffsetWorldSpace = Vector3.new(0, -trunk.Size.Y / 2 + 5.5, 0) -- chest height on the trunk; above the canopy it hides behind the HUD
 		b.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 		game:GetService("Debris"):AddItem(b, 90) -- failsafe if the minigame errors
 		bb = b
@@ -40,7 +40,8 @@ function Chopping.play(ctx: any, params: any): number?
 	local spot = Ui.new("Frame", { Parent = bar, AnchorPoint = Vector2.new(0.5, 0), Size = UDim2.fromScale(width, 1), BackgroundColor3 = Theme.success })
 	Ui.new("Frame", { Parent = spot, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0.3, 1), BackgroundColor3 = Theme.warning })
 	local needle = Ui.new("Frame", { Parent = bar, Position = UDim2.new(0, -3, 0, -6), Size = UDim2.new(0, 6, 1, 12), BackgroundColor3 = Theme.text })
-	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 210), Size = UDim2.new(1, 0, 0, 60), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = 30, Text = "" })
+	-- Status sits under the hint in the slim strip (in-world bar) or lower in the full panel.
+	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, if bb then 40 else 210), Size = UDim2.new(1, 0, 0, if bb then 28 else 60), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = if bb then 22 else 30, Text = "" })
 
 	local function newSpot(): number
 		local c = width / 2 + math.random() * (1 - width)

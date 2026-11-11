@@ -36,12 +36,15 @@ local Run = {}
 -- Returns quality 0..1, or nil when the player failed (nothing is caught).
 function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): number?
 	local started = os.clock()
+	-- Chop and mine play on the tree / rock itself (BillboardGuis), which a ScreenGui panel would cover:
+	-- then the panel is only a slim hint strip above the hotbar.
+	local inWorld = opts ~= nil and opts.target ~= nil and GAMES[node] ~= GAMES.fish
 	local panel = Ui.new("Frame", {
 		Parent = gui,
 		Name = "Minigame",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -40),
-		Size = UDim2.fromOffset(340, 400),
+		Position = if inWorld then UDim2.new(0.5, 0, 1, -96) else UDim2.new(0.5, 0, 1, -40),
+		Size = if inWorld then UDim2.fromOffset(360, 92) else UDim2.fromOffset(340, 400),
 		BackgroundColor3 = Theme.surface,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(12) })
 	local hintLabel = Ui.text({ Parent = panel, Size = UDim2.new(1, 0, 0, 44), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = 20, Text = "" })
