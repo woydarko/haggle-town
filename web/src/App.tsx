@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { api, MERCHANT_NAME, merchantKey, type Config, type Feed, type History, type Leader, type Market } from "./api.ts";
-import { PriceChart } from "./PriceChart.tsx";
+import { api, MERCHANT_NAME, type Config, type Feed, type History, type Leader, type Market } from "./api.ts";
+import { CategoryChips, PriceChart, categorySeries } from "./PriceChart.tsx";
+import { CATEGORIES, CATEGORY_MERCHANT, CATEGORY_NAME, itemName, tierColor, type Category } from "./items.ts";
 import { FastForward } from "./FastForward.tsx";
 import { Players } from "./Players.tsx";
 
@@ -21,6 +22,7 @@ export function App() {
   const [range, setRange] = useState(60);
   const [metric, setMetric] = useState<"ask" | "stock">("ask");
   const [hist, setHist] = useState<History>([]);
+  const [chartCat, setChartCat] = useState<Category>("fish");
 
   useEffect(() => {
     const on = () => setTab(tabFromHash());
@@ -69,7 +71,7 @@ export function App() {
         <div>
           <h1>Haggle Town market</h1>
           <p className="muted">
-            Three AI merchants run their own NEAR {config?.network ?? "testnet"} purses. Prices follow supply and demand; every deal below is
+            Three AI merchants run their own NEAR {config?.network ?? "testnet"} purses and trade 12 items from common to legendary. Each price follows that item's supply and demand; every deal below is
             signed by the merchant and settled on chain{config ? <> by <code>{config.contractId}</code></> : null}.
           </p>
         </div>
@@ -92,33 +94,43 @@ export function App() {
       ) : (
         <>
           <section className="merchants" aria-label="Merchants">
-            {data.market.map((m) => {
-              const key = merchantKey(m.account_id);
-              const pct = Math.min(100, Math.round((m.stock / (m.target * 2)) * 100));
+            {CATEGORIES.map((cat) => {
+              const rows = data.market.filter((m) => m.category === cat);
+              if (!rows.length) return null;
+              const purse = rows[0].purse; // one purse per merchant, shared by its four items
               return (
-                <article key={m.account_id} className="card merchant">
-                  <div className="name" style={{ color: `var(--${m.good})` }}>
-                    {MERCHANT_NAME[key] ?? key}
+                <article key={cat} className="card merchant">
+                  <div className="name" style={{ color: `var(--${cat})` }}>
+                    {CATEGORY_MERCHANT[cat]}
                   </div>
-                  <div className="muted">sells and buys {m.good}</div>
-                  <dl>
-                    <dt>Ask</dt>
-                    <dd className="num">{m.ask} C</dd>
-                    <dt>Bid</dt>
-                    <dd className="num">{m.bid} C</dd>
-                    <dt>Haggle floor</dt>
-                    <dd className="num">{m.floor} C</dd>
-                    <dt>Purse</dt>
-                    <dd className="num">{m.purse.toLocaleString()} C</dd>
-                    <dt>Stock</dt>
-                    <dd className="num">
-                      {m.stock} / {m.target}
-                    </dd>
-                  </dl>
-                  <div className="bar" aria-hidden>
-                    <span style={{ width: `${pct}%`, background: `var(--${m.good})` }} />
+                  <div className="muted">
+                    buys and sells {CATEGORY_NAME[cat].toLowerCase()} - purse <span className="num">{purse.toLocaleString()} C</span>
                   </div>
-                  {m.ceiling_one === null && <p style={{ color: "var(--error)" }}>Closed for buying - empty purse</p>}
+                  <table className="items">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th className="num">Ask</th>
+                        <th className="num">Bid</th>
+                        <th className="num">Stock</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((m) => (
+                        <tr key={m.item}>
+                          <td className="name" style={{ color: tierColor(m.tier) }}>
+                            {itemName(m.item)}
+                          </td>
+                          <td className="num">{m.ask}</td>
+                          <td className="num">{m.bid}</td>
+                          <td className="num">
+                            {m.stock}/{m.target}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {rows.every((m) => m.ceiling_one === null) && <p style={{ color: "var(--error)" }}>Closed for buying - empty purse</p>}
                 </article>
               );
             })}
@@ -144,11 +156,13 @@ export function App() {
                 <span className="muted"> | </span>
                 <button className="chip" aria-pressed={metric === "ask"} onClick={() => setMetric("ask")}>ask price</button>
                 <button className="chip" aria-pressed={metric === "stock"} onClick={() => setMetric("stock")}>stock</button>
+                <span className="muted"> | </span>
+                <CategoryChips value={chartCat} onChange={setChartCat} />
               </div>
               {hist.length ? (
                 <PriceChart
                   yLabel={metric === "ask" ? "ask (C)" : "stock"}
-                  series={hist.map((h) => ({ good: h.good, points: h.points.map((p) => ({ ts: p.ts / 1000, ask: p[metric] })) }))}
+                  series={categorySeries(chartCat, (item) => (hist.find((h) => h.item === item)?.points ?? []).map((p) => ({ ts: p.ts / 1000, ask: p[metric] })))}
                 />
               ) : (
                 <p className="muted">Collecting prices... the first points appear within a minute.</p>
@@ -180,7 +194,7 @@ export function App() {
                 <ul className="feed">
                   {data.feed.deals.map((d) => (
                     <li key={d.txHash}>
-                      <strong>{d.player}</strong> {d.side === "buy" ? "bought" : "sold"} {d.qty} {d.good} @ <span className="num">{d.unitPrice} C</span>{" "}
+                      <strong>{d.player}</strong> {d.side === "buy" ? "bought" : "sold"} {d.qty} {itemName(d.good)} @ <span className="num">{d.unitPrice} C</span>{" "}
                       {d.side === "buy" ? "from" : "to"} {MERCHANT_NAME[d.merchant] ?? d.merchant}{" "}
                       <span className="muted">{ago(d.at)}</span>{" "}
                       <a href={tx(d.txHash)} target="_blank" rel="noreferrer">

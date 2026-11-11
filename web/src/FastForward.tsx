@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { PriceChart, type Series } from "./PriceChart.tsx";
+import { CategoryChips, PriceChart, categorySeries } from "./PriceChart.tsx";
+import type { Category } from "./items.ts";
 
-type Week = { days: number; ticksPerDay: number; series: { tick: number; day: number; good: string; ask: number }[] };
+type Week = { days: number; ticksPerDay: number; series: { tick: number; day: number; item: string; ask: number }[] };
 
 const DURATION_MS = 60_000;
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -12,6 +13,7 @@ export function FastForward() {
   const [error, setError] = useState(false);
   const [shown, setShown] = useState(0); // ticks revealed
   const [playing, setPlaying] = useState(false);
+  const [category, setCategory] = useState<Category>("fish");
   const raf = useRef(0);
 
   useEffect(() => {
@@ -46,10 +48,9 @@ export function FastForward() {
   if (error) return <p style={{ color: "var(--error)" }}>Simulation file missing. Run the simulator, then reload.</p>;
   if (!week) return <p className="muted">Loading the simulation...</p>;
 
-  const series: Series[] = ["wood", "fish", "iron"].map((good) => ({
-    good,
-    points: week.series.filter((p) => p.good === good && p.tick < shown).map((p) => ({ ts: p.tick / week.ticksPerDay + 1, ask: p.ask })),
-  }));
+  const series = categorySeries(category, (item) =>
+    week.series.filter((p) => p.item === item && p.tick < shown).map((p) => ({ ts: p.tick / week.ticksPerDay + 1, ask: p.ask })),
+  );
   const day = shown ? Math.min(week.days, Math.floor((shown - 1) / week.ticksPerDay) + 1) : 0;
 
   return (
@@ -67,6 +68,7 @@ export function FastForward() {
         <span className="num" aria-live="polite">
           {shown ? `Day ${day} of ${week.days}` : `${week.days} days, 10 bot traders, no patches`}
         </span>
+        <CategoryChips value={category} onChange={setCategory} />
       </div>
       {shown > 0 && <PriceChart series={series} xLabel="day" />}
     </div>

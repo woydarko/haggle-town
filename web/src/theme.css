@@ -10,6 +10,11 @@
   --wood: #a8661c;
   --fish: #1e7a78;
   --iron: #4f5d6b;
+  --ore: var(--iron);
+  --tier-common: #5b626c;
+  --tier-rare: #2a5fb4;
+  --tier-epic: #8a3fc2;
+  --tier-legendary: #8a5e00;
   --success: #2f7a3b;
   --warning: #b07a12;
   --error: #a12c2c;
@@ -76,3 +81,8 @@ button.primary:disabled { opacity: 0.4; cursor: default; }
 .chip[aria-pressed="true"] { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
 .feed a[aria-current="true"] { color: var(--text); text-decoration: underline; }
 h3 { font-size: 18px; line-height: 24px; }
+.items { margin-top: var(--s3); }
+.items td, .items th { padding: var(--s1) 0 var(--s1) var(--s3); white-space: nowrap; }
+.items td:first-child, .items th:first-child { padding-left: 0; white-space: normal; }
+.items .name { font-weight: 600; }
+.badge { display: inline-block; font-size: 14px; padding: 0 var(--s2); border-radius: 999px; border: 2px solid currentColor; }

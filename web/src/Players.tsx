@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import { api, MERCHANT_NAME, type Config, type PlayerDetail, type PlayerRow } from "./api.ts";
+import { CATEGORIES, CATEGORY_NAME, CLASS_NAME, ITEMS, itemName, tierColor } from "./items.ts";
+
+const CLASS_CATEGORY: Record<string, string> = { fisher: "fish", logger: "wood", miner: "ore" };
 
 const time = (t: number) => new Date(t).toLocaleString();
 const selectedFromHash = () => decodeURIComponent(location.hash.replace(/^#\/players\/?/, "")) || null;
@@ -73,21 +76,33 @@ export function Players({ config }: { config: Config | null }) {
               ) : null}
               . First seen {time(detail.firstSeen)}.
             </p>
-            <table aria-label="Balances">
-              <tbody>
-                <tr>
-                  {(["coin", "wood", "fish", "iron"] as const).map((k) => (
-                    <td key={k}>
-                      <div className="muted">{k}</div>
-                      <div className="num" style={{ textAlign: "left", fontSize: 22, color: k === "coin" ? "var(--primary)" : `var(--${k})` }}>
-                        {detail.balances[k]}
-                        {k === "coin" ? " C" : ""}
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+            <p>
+              <span className="num" style={{ fontSize: 22, color: "var(--primary)" }}>{detail.balances.coin ?? 0} C</span>{" "}
+              {detail.class ? (
+                <span className="badge" style={{ color: `var(--${CLASS_CATEGORY[detail.class]})` }}>
+                  {CLASS_NAME[detail.class] ?? detail.class}
+                </span>
+              ) : (
+                <span className="muted">no class yet</span>
+              )}
+            </p>
+            <div className="merchants" aria-label="Items held on chain">
+              {CATEGORIES.map((cat) => (
+                <table key={cat} className="items">
+                  <caption style={{ textAlign: "left", color: `var(--${cat})`, fontWeight: 600 }}>{CATEGORY_NAME[cat]}</caption>
+                  <tbody>
+                    {ITEMS.filter((i) => i.category === cat).map((i) => (
+                      <tr key={i.id}>
+                        <td className="name" style={{ color: tierColor(i.tier) }}>
+                          {i.name}
+                        </td>
+                        <td className="num">{detail.balances[i.id] ?? 0}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ))}
+            </div>
 
             <h3 style={{ marginTop: "var(--s4)" }}>Deals</h3>
             {detail.deals.length ? (
@@ -106,7 +121,7 @@ export function Players({ config }: { config: Config | null }) {
                     <tr key={i}>
                       <td className="muted">{time(d.at)}</td>
                       <td>
-                        {d.side === "buy" ? "bought" : "sold"} {d.qty} {d.good} {d.side === "buy" ? "from" : "to"} {MERCHANT_NAME[d.merchant] ?? d.merchant}
+                        {d.side === "buy" ? "bought" : "sold"} {d.qty} {itemName(d.good)} {d.side === "buy" ? "from" : "to"} {MERCHANT_NAME[d.merchant] ?? d.merchant}
                       </td>
                       <td className="num">{d.unitPrice} C</td>
                       <td>
@@ -127,7 +142,7 @@ export function Players({ config }: { config: Config | null }) {
                 <thead>
                   <tr>
                     <th>When</th>
-                    <th>Good</th>
+                    <th>Item</th>
                     <th>Minted in batch</th>
                   </tr>
                 </thead>
@@ -136,7 +151,7 @@ export function Players({ config }: { config: Config | null }) {
                     <tr key={i}>
                       <td className="muted">{time(g.at)}</td>
                       <td>
-                        +{g.qty} {g.good}
+                        +{g.qty} {itemName(g.good)}
                       </td>
                       <td>{tx(g.batchTx)}</td>
                     </tr>

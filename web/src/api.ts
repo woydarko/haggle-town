@@ -1,6 +1,9 @@
+/** One row per item (12): its merchant (account id), category and tier, live price and stock. */
 export type Market = {
-  account_id: string;
-  good: "wood" | "fish" | "iron";
+  merchant: string;
+  category: "fish" | "wood" | "ore";
+  item: string;
+  tier: string;
   stock: number;
   purse: number;
   target: number;
@@ -14,7 +17,7 @@ export type Deal = { at: number; player: string; merchant: string; good: string;
 export type Chat = { at: number; merchant: string; line: string; mood: string; source: string; reasoning: string | null };
 export type Feed = { deals: Deal[]; chat: Chat[] };
 export type Leader = { name: string; netWorth: number };
-export type History = { merchant: string; good: string; points: { ts: number; ask: number; bid: number; stock: number; purse: number }[] }[];
+export type History = { item: string; points: { ts: number; ask: number; bid: number; stock: number; purse: number }[] }[];
 export type Config = { contractId: string; network: string; explorerBase: string };
 export type PlayerRow = { id: string; name: string; lastSeen: number; deals: number };
 export type PlayerDeal = { at: number; merchant: string; good: string; qty: number; unitPrice: number; side: string; status: string; txHash: string | null };
@@ -23,7 +26,8 @@ export type PlayerDetail = {
   name: string;
   firstSeen: number;
   lastSeen: number;
-  balances: { coin: number; wood: number; fish: number; iron: number };
+  class: string | null;
+  balances: Record<string, number>; // coin + the 12 item ids
   deals: PlayerDeal[];
   gathers: { at: number; good: string; qty: number; batchTx: string | null }[];
 };
