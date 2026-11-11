@@ -83,8 +83,8 @@ test("exploration nodes: wood_old and fish_deep get the deep +20 quality bonus",
   assert.equal(at("wood"), "wood_pine");
   assert.equal(at("wood_old"), at("wood", 0.2));
   assert.equal(at("fish_deep"), at("fish", 0.2));
-  assert.equal(at("wood_old"), "wood_maple", "roll 6900 q0 -> rare");
-  assert.equal(at("fish_deep"), "fish_salmon", "roll 6900 q0 -> rare");
+  assert.equal(at("wood_old"), "wood_oak", "roll 6900 q0 -> rare");
+  assert.equal(at("fish_deep"), "fish_trout", "roll 6900 q0 -> rare");
   const s = setup({ rand: seq(0.99) }).g.start("roblox:1", "fish_deep");
   assert.equal(s.params.minMs, 6_000);
   assert.equal(s.params.fishSpeed, 1.99, "deep fish dart like lake fish");
