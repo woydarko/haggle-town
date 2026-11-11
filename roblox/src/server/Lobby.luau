@@ -59,7 +59,7 @@ function Lobby.build(): Built
 	local how = k.board("HowToPlay", facingCenter(Vector3.new(-24, 8.4, -6)))
 	Boards.renderText(how, "How to play", {
 		{ "1. Talk to a mentor and pick a class." },
-		{ "2. Fish at the pier, chop trees, mine ore." },
+		{ "2. Pick a tool (1-3), click a tree, rock or fishing spot." },
 		{ "3. Play well in the minigame for better luck." },
 		{ "4. Haggle with the merchants for coin." },
 		{ "Press Tab for your stats and bag.", Theme.muted },

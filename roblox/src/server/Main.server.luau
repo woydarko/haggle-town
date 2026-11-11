@@ -8,8 +8,10 @@ local Backend = require(script.Parent.Backend)
 local World = require(script.Parent.World)
 local Boards = require(script.Parent.Boards)
 local Lobby = require(script.Parent.Lobby)
+local Nodes = require(script.Parent.Nodes)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Validate = require(Shared:WaitForChild("Validate"))
+local Tools = require(Shared:WaitForChild("Tools"))
 
 -- Nobody spawns before the big map exists (they would fall through); clients show a loading screen meanwhile.
 Players.CharacterAutoLoads = false
@@ -18,7 +20,10 @@ local buildStart = os.clock()
 local world = World.build(function(f)
 	workspace:SetAttribute("WorldProgress", f)
 end)
-print(string.format("[HaggleTown] map built in %.1f s", os.clock() - buildStart))
+Nodes.tools()
+local counts = Nodes.build()
+Nodes.start()
+print(string.format("[HaggleTown] map built in %.1f s (%d trees, %d rocks, %d fishing spots)", os.clock() - buildStart, counts.trees, counts.rocks, counts.spots))
 Boards.renderPrices(world.priceBoard, nil)
 Boards.renderLeaders(world.leaderBoard, nil)
 local lobby = Lobby.build()
@@ -46,7 +51,7 @@ remotes.Parent = ReplicatedStorage
 
 local issued: { [Player]: { [string]: boolean } } = {}
 -- One minigame per player; the session id never leaves the server. `at` lets a stuck session expire with the backend's 60 s TTL.
-local gathering: { [Player]: { id: string?, part: BasePart, at: number } } = {}
+local gathering: { [Player]: { id: string?, part: BasePart, at: number, n: Nodes.Node } } = {}
 local SESSION_TTL = 60
 local lastState: any = nil
 local statsCache: { [Player]: { at: number, value: any } } = {}
@@ -69,11 +74,86 @@ local function filter(text: string, p: Player): string
 	return if ok then out else "..."
 end
 
+-- Frees the node a player holds (minigame failed, walked away, died, left).
+local function letGo(p: Player)
+	local s = gathering[p]
+	if s then
+		gathering[p] = nil
+		Nodes.release(s.n, p)
+	end
+end
+
+local hinted: { [Player]: number } = {}
+local function hint(p: Player, text: string) -- at most one hint every 3 s, swings repeat fast
+	if os.clock() - (hinted[p] or 0) > 3 then
+		hinted[p] = os.clock()
+		Toast:FireClient(p, text)
+	end
+end
+
+-- Tool swing (server-side Tool.Activated, so the client never names a node): the nearest node of the
+-- tool's kind within reach is claimed for this player and its minigame starts.
+local function onToolUse(p: Player, toolName: string)
+	local info = Tools[toolName]
+	local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not (info and hrp) then
+		return
+	end
+	local open = gathering[p]
+	if open and os.clock() - open.at < SESSION_TTL then
+		Nodes.hit(open.n) -- swings during the minigame keep the claim alive
+		return
+	end
+	letGo(p) -- a stuck old session
+	local n, d = Nodes.nearest(hrp.Position, info.tag)
+	if not (n and Validate.near(d) and Validate.node(n.node)) then
+		hint(p, info.noTarget)
+		return
+	end
+	local claimed, why = Nodes.claim(n, p)
+	if not claimed then
+		hint(p, if why == "taken" then info.taken else info.gone)
+		return
+	end
+	local slot = { id = nil :: string?, part = n.hit, at = os.clock(), n = n }
+	gathering[p] = slot -- reserved before the yielding HTTP call so a double swing cannot start two
+	local ok, r = Backend.post("/rbx/gather/start", { userId = uid(p), node = n.node })
+	if gathering[p] ~= slot then
+		Nodes.release(n, p) -- player left or walked off meanwhile
+		return
+	end
+	if not ok then
+		letGo(p)
+		Toast:FireClient(p, "Market offline - your goods are safe")
+		return
+	end
+	slot.id = r.sessionId
+	PlayMinigame:FireClient(p, n.node, r.params)
+end
+
+local function hookTools(p: Player)
+	local function hook(t: Instance)
+		if t:IsA("Tool") and Tools[t.Name] and not t:GetAttribute("Hooked") then
+			t:SetAttribute("Hooked", true)
+			t.Activated:Connect(function()
+				onToolUse(p, t.Name)
+			end)
+		end
+	end
+	local bp = p:WaitForChild("Backpack")
+	for _, t in bp:GetChildren() do
+		hook(t)
+	end
+	bp.ChildAdded:Connect(hook)
+end
+
 -- CharacterAutoLoads is off, so the server spawns and respawns everyone itself.
 local function spawnLoop(p: Player)
 	p.CharacterAdded:Connect(function(char)
+		task.spawn(hookTools, p)
 		local hum = char:WaitForChild("Humanoid") :: Humanoid
 		hum.Died:Connect(function()
+			letGo(p)
 			task.wait(Players.RespawnTime)
 			if p.Parent then
 				p:LoadCharacter()
@@ -99,7 +179,8 @@ end
 
 Players.PlayerRemoving:Connect(function(p)
 	issued[p] = nil
-	gathering[p] = nil
+	letGo(p)
+	hinted[p] = nil
 	statsCache[p] = nil
 end)
 
@@ -141,31 +222,18 @@ GetStats.OnServerInvoke = function(p: Player)
 	return r
 end
 
-for node, nodePart in world.nodes do
-	local pp = nodePart:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
-	pp.Triggered:Connect(function(p)
-		if not (Validate.node(node) and Validate.near(distance(p, nodePart))) then
-			return
+-- Claims follow the player: walking away or a stuck session frees the node within about a second.
+task.spawn(function()
+	while true do
+		task.wait(1)
+		for p, slot in gathering do
+			local d = distance(p, slot.part)
+			if os.clock() - slot.at > SESSION_TTL or not (d and d < 16) then
+				letGo(p)
+			end
 		end
-		local open = gathering[p]
-		if open and os.clock() - open.at < SESSION_TTL then
-			return
-		end
-		local slot = { id = nil :: string?, part = nodePart, at = os.clock() }
-		gathering[p] = slot -- reserved before the yielding HTTP call so a double trigger cannot start two
-		local ok, r = Backend.post("/rbx/gather/start", { userId = uid(p), node = node })
-		if gathering[p] ~= slot then
-			return -- player left meanwhile
-		end
-		if not ok then
-			gathering[p] = nil
-			Toast:FireClient(p, "Market offline - your goods are safe")
-			return
-		end
-		slot.id = r.sessionId
-		PlayMinigame:FireClient(p, node, r.params)
-	end)
-end
+	end
+end)
 
 -- quality nil = the player failed the minigame: close locally, nothing is caught (the backend session just expires).
 GatherFinish.OnServerInvoke = function(p: Player, quality: any)
@@ -173,19 +241,23 @@ GatherFinish.OnServerInvoke = function(p: Player, quality: any)
 	if not (s and s.id) then
 		return { error = "no_session" }
 	end
-	gathering[p] = nil
-	if quality == nil then
-		return { message = "It got away..." }
-	end
-	if not Validate.quality(quality) then
-		return { error = "invalid" }
-	end
-	if not Validate.near(distance(p, s.part)) then
-		return { message = "You walked away from the spot." }
+	gathering[p] = nil -- the node stays claimed until the backend answers, so nobody grabs a tree about to fall
+	if quality == nil or not Validate.quality(quality) or not Validate.near(distance(p, s.part)) then
+		Nodes.release(s.n, p)
+		return if quality == nil
+			then { message = "It got away..." }
+			elseif not Validate.quality(quality) then { error = "invalid" }
+			else { message = "You walked away from the spot." }
 	end
 	local ok, r = Backend.post("/rbx/gather/finish", { userId = uid(p), sessionId = s.id, quality = quality })
 	if not ok then
+		Nodes.release(s.n, p)
 		return { message = if r.error == "too_fast" or r.error == "session_closed" then "It slipped away - try again." else "Market offline - your goods are safe" }
+	end
+	if s.n.tag == "GatherWater" then
+		Nodes.release(s.n, p)
+	else
+		Nodes.fell(s.n) -- the tree falls / the rock breaks
 	end
 	StateChanged:FireClient(p, { balances = r.balances })
 	return { catch = r.catch }

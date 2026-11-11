@@ -208,17 +208,8 @@ local function board(name: string, cframe: CFrame): Part
 	return b
 end
 
-local function woodNode(pos: Vector3): Part
-	local stump = part({ Name = "Wood", Shape = Enum.PartType.Cylinder, Size = Vector3.new(2, 3, 3), CFrame = CFrame.new(pos + Vector3.new(0, 1, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = WOOD_LIGHT, Material = Enum.Material.Wood })
-	part({ Name = "AxeHandle", Size = Vector3.new(0.3, 2.6, 0.3), CFrame = CFrame.new(pos + Vector3.new(0.4, 2.8, 0)) * CFrame.Angles(0, 0, math.rad(-20)), Color = WOOD_DARK, Material = Enum.Material.Wood })
-	part({ Name = "AxeHead", Size = Vector3.new(1, 0.7, 0.15), CFrame = CFrame.new(pos + Vector3.new(0.05, 2.1, 0)) * CFrame.Angles(0, 0, math.rad(-20)), Color = Color3.fromHex("8A9199"), Material = Enum.Material.Metal })
-	prompt(stump, "Chop", "Wood")
-	label(stump, "Wood", Theme.wood)
-	return stump
-end
-
-local function fishNode(pos: Vector3, shore: Vector3): Part
-	-- Pier from the shore spot out over the water; the fishing spot is at its end.
+local function pier(pos: Vector3, shore: Vector3)
+	-- Pier from the shore spot out over the water; a fishing spot (Nodes.luau) floats at its end.
 	local a, b = shore + Vector3.new(0, 0.4, 0), Vector3.new(pos.X, pos.Y + 1.2, pos.Z)
 	local len = (b - a).Magnitude
 	local deck = CFrame.lookAt((a + b) / 2, b)
@@ -229,26 +220,7 @@ local function fishNode(pos: Vector3, shore: Vector3): Part
 			part({ Name = "PierPost", Size = Vector3.new(0.6, 8, 0.6), Position = top - Vector3.new(0, 4, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
 		end
 	end
-	local spot = part({ Name = "Fish", Size = Vector3.new(6, 0.4, 4), Position = pos + Vector3.new(0, 0.8, 0), Color = WOOD_LIGHT, Material = Enum.Material.WoodPlanks })
-	part({ Name = "Bucket", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 1.2, 1.2), CFrame = CFrame.new(pos + Vector3.new(2, 1.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Theme.fish, Material = Enum.Material.Metal })
-	prompt(spot, "Fish", "Fish")
-	label(spot, "Fish", Theme.fish)
-	return spot
-end
-
--- Ore rock in a cave chamber; glow tints the ore specks (deep cave = crystal purple). A lantern lights the chamber.
-local function oreNode(pos: Vector3, glow: Color3, title: string): Part
-	for i, off in { Vector3.new(-3, 0, -2), Vector3.new(3, 0, -1), Vector3.new(0, 0, -4), Vector3.new(-2, 0, 2.5) } do
-		part({ Name = "Rock", Size = Vector3.new(5, 4 + i, 4), CFrame = CFrame.new(pos + off + Vector3.new(0, (4 + i) / 2, 0)) * CFrame.Angles(0, math.rad(i * 37), math.rad(i * 7)), Color = STONE, Material = Enum.Material.Slate })
-	end
-	local core = part({ Name = "Iron", Size = Vector3.new(4, 3, 3), Position = pos + Vector3.new(0, 1.5, 1), Color = Theme.iron, Material = Enum.Material.Slate })
-	for i = 1, 5 do
-		part({ Name = "Ore", Size = Vector3.new(0.5, 0.5, 0.5), Position = pos + Vector3.new(-1.5 + i * 0.6, 1 + (i % 3) * 0.6, 2.55), Color = glow, Material = Enum.Material.Neon })
-	end
-	lamp(pos + Vector3.new(7, 0, 7))
-	prompt(core, "Mine", title)
-	label(core, title, Theme.iron)
-	return core
+	part({ Name = "Bucket", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 1.2, 1.2), CFrame = CFrame.new(b + Vector3.new(2, 0.6, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Theme.fish, Material = Enum.Material.Metal })
 end
 
 -- Spot snapped to the built terrain (voxel caverns can sit a few studs off the pure plan).
@@ -261,19 +233,21 @@ local function spot(name: string): Vector3
 	return if hit then hit.Position else Vector3.new(p.x, p.y, p.z)
 end
 
--- kind: 0 pine, 1 oak, 2 maple, 3 ancient redwood
-local function tree(pos: Vector3, kind: number)
+-- Greybox tree (Creator Store models replace it in Task 8). kind: 0 pine, 1 oak, 2 maple, 3 ancient redwood.
+-- Returns the trunk (the part players hit); leaves never collide so nobody gets stuck in a canopy.
+local function tree(pos: Vector3, kind: number, parent: Instance?): Part
 	local tall = if kind == 3 then 18 else 9
-	part({ Name = "Trunk", Size = Vector3.new(if kind == 3 then 2.8 else 1.6, tall, if kind == 3 then 2.8 else 1.6), Position = pos + Vector3.new(0, tall / 2, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
+	local trunk = part({ Name = "Trunk", Size = Vector3.new(if kind == 3 then 2.8 else 1.6, tall, if kind == 3 then 2.8 else 1.6), Position = pos + Vector3.new(0, tall / 2, 0), Color = WOOD_DARK, Material = Enum.Material.Wood, Parent = parent })
 	if kind == 0 then
 		for i, w in { 7, 5, 3 } do
-			part({ Name = "Needles", Shape = Enum.PartType.Ball, Size = Vector3.new(w, 4, w), Position = pos + Vector3.new(0, 6 + i * 2.5, 0), Color = Color3.fromHex("2F5E35"), Material = Enum.Material.Grass })
+			part({ Name = "Needles", Shape = Enum.PartType.Ball, Size = Vector3.new(w, 4, w), Position = pos + Vector3.new(0, 6 + i * 2.5, 0), Color = Color3.fromHex("2F5E35"), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
 		end
 	else
 		local color = ({ "4F8F45", "C8642A", "35603A" })[kind]
 		local size = if kind == 3 then Vector3.new(11, 8, 11) else Vector3.new(8, 7, 8)
-		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = size, Position = pos + Vector3.new(0, tall + 1.5, 0), Color = Color3.fromHex(color), Material = Enum.Material.Grass })
+		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = size, Position = pos + Vector3.new(0, tall + 1.5, 0), Color = Color3.fromHex(color), Material = Enum.Material.Grass, CanCollide = false, Parent = parent })
 	end
+	return trunk
 end
 
 local function ambience()
@@ -299,7 +273,6 @@ local function ambience()
 end
 
 export type Built = {
-	nodes: { [string]: BasePart },
 	merchants: { [string]: BasePart },
 	priceBoard: Part,
 	leaderBoard: Part,
@@ -318,13 +291,6 @@ function World.build(onProgress: ((number) -> ())?): Built
 
 	-- The spawn lives in the lobby (Lobby.luau).
 
-	-- Forest west of town, one of each wood type in turn (pine, oak, maple, ancient redwood).
-	for c = 0, 3 do
-		for r = 0, 3 do
-			tree(Vector3.new(-78 + c * 8, 0, -50 + r * 9), (c + r) % 4)
-		end
-	end
-
 	house(Vector3.new(-40, 0, -8), 90, Color3.fromHex("EADBC3"))
 	house(Vector3.new(-40, 0, 16), 90, Color3.fromHex("E2CDA8"))
 	house(Vector3.new(40, 0, 16), -90, Color3.fromHex("EADBC3"))
@@ -335,15 +301,14 @@ function World.build(onProgress: ((number) -> ())?): Built
 	end
 	path(Vector3.new(-30, 0, -10), Vector3.new(-45, 0, -28))
 	path(Vector3.new(9, 0, 24), Vector3.new(2, 0, 50))
+	-- Piers; trees, rocks and fishing spots are gather nodes (Nodes.luau). Lanterns light the caverns.
+	pier(spot("fish"), spot("lake_pier"))
+	pier(spot("fish_deep"), spot("sea_pier"))
+	for _, name in { "ore_mouth", "ore_deep", "ore_crystal" } do
+		lamp(spot(name) + Vector3.new(5, 0, 4))
+	end
 
 	return {
-		nodes = {
-			-- keys are backend gather nodes; positions come from Terrain.SPOTS (checked by Terrain.spec)
-			wood = woodNode(spot("wood")),
-			fish = fishNode(spot("fish"), spot("lake_pier")),
-			ore_mouth = oreNode(spot("ore_mouth"), Color3.fromHex("E07A3F"), "Ore"),
-			ore_deep = oreNode(spot("ore_deep"), Color3.fromHex("B07CFF"), "Deep ore"),
-		},
 		merchants = {
 			woodcutter = stall("woodcutter", "wood", Vector3.new(-22, 0, 8), Theme.wood),
 			fishmonger = stall("fishmonger", "fish", Vector3.new(0, 0, 30), Theme.fish),
@@ -355,6 +320,6 @@ function World.build(onProgress: ((number) -> ())?): Built
 end
 
 -- Builders shared with Lobby.luau (call after World.build so parts land in the town folder).
-World.kit = { part = part, wedge = wedge, prompt = prompt, label = label, npc = npc, board = board, path = path, lamp = lamp }
+World.kit = { tree = tree, spot = spot, part = part, wedge = wedge, prompt = prompt, label = label, npc = npc, board = board, path = path, lamp = lamp }
 
 return World
