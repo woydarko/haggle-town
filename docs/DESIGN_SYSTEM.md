@@ -21,6 +21,7 @@ Two surfaces share one look: the **Roblox game UI** (ScreenGui, Luau) and the **
 | color.accent.iron | #4F5D6B | Iron series, icons |
 | color.success | #2F7A3B | Deal done, price down for buyer |
 | color.warning | #B07A12 | Pending deal, low patience |
+| color.tier.common / rare / epic / legendary | #5B626C / #2A5FB4 / #8A3FC2 / #8A5E00 | Item rarity text (boards, bag, chips); each >= 4.86:1 on background and surface |
 | color.error | #A12C2C | Failed deal, refused (always with text label) |
 | color.focus | #1F5FBF | Focus ring (web) |
 | font.display | Fraunces 600 (web); Enum.Font.FredokaOne (Roblox) | Titles, merchant names |

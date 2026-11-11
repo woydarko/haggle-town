@@ -7,12 +7,15 @@ local TextService = game:GetService("TextService")
 local Backend = require(script.Parent.Backend)
 local World = require(script.Parent.World)
 local Boards = require(script.Parent.Boards)
+local Lobby = require(script.Parent.Lobby)
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Validate = require(Shared:WaitForChild("Validate"))
 
 local world = World.build()
 Boards.renderPrices(world.priceBoard, nil)
 Boards.renderLeaders(world.leaderBoard, nil)
+local lobby = Lobby.build()
+Boards.renderLeaders(lobby.leaderBoard, nil)
 
 local remotes = Instance.new("Folder")
 remotes.Name = "Remotes"
@@ -29,7 +32,9 @@ local function re(name: string): RemoteEvent
 	return r
 end
 local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinish")
+local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
 local StateChanged, OpenHaggle, Toast, PlayMinigame = re("StateChanged"), re("OpenHaggle"), re("Toast"), re("PlayMinigame")
+local OpenClassCard = re("OpenClassCard")
 remotes.Parent = ReplicatedStorage
 
 local issued: { [Player]: { [string]: boolean } } = {}
@@ -37,6 +42,8 @@ local issued: { [Player]: { [string]: boolean } } = {}
 local gathering: { [Player]: { id: string?, part: BasePart, at: number } } = {}
 local SESSION_TTL = 60
 local lastState: any = nil
+local statsCache: { [Player]: { at: number, value: any } } = {}
+local STATS_EVERY = 2 -- seconds; Tab spam must not burn the 500 req/min HTTP budget
 
 local function uid(p: Player): string
 	return tostring(p.UserId)
@@ -58,13 +65,55 @@ end
 Players.PlayerAdded:Connect(function(p)
 	issued[p] = {}
 	local ok, r = Backend.post("/rbx/join", { userId = uid(p), name = p.DisplayName })
-	StateChanged:FireClient(p, if ok then { balances = r.balances, board = lastState and lastState.board } else { offline = true })
+	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board } else { offline = true })
+	if ok and r.class == nil then
+		Toast:FireClient(p, "Talk to a mentor in the lobby to pick a class")
+	end
 end)
 
 Players.PlayerRemoving:Connect(function(p)
 	issued[p] = nil
 	gathering[p] = nil
+	statsCache[p] = nil
 end)
+
+for cls, mentor in lobby.mentors do
+	local pp = mentor:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
+	pp.Triggered:Connect(function(p)
+		if Validate.near(distance(p, mentor)) then
+			OpenClassCard:FireClient(p, cls)
+		end
+	end)
+end
+
+ChooseClass.OnServerInvoke = function(p: Player, cls: any)
+	if not Validate.class(cls) then
+		return { error = "invalid" }
+	end
+	if not Validate.near(distance(p, lobby.mentors[cls])) then
+		return { error = "too_far", message = "Walk closer to the mentor." }
+	end
+	local ok, r = Backend.post("/rbx/class", { userId = uid(p), class = cls })
+	if not ok then
+		return { error = r.error or "offline", message = r.message or "Market offline - try again soon." }
+	end
+	statsCache[p] = nil
+	StateChanged:FireClient(p, { balances = r.balances, class = r.class })
+	return { class = r.class, fee = r.fee }
+end
+
+GetStats.OnServerInvoke = function(p: Player)
+	local c = statsCache[p]
+	if c and os.clock() - c.at < STATS_EVERY then
+		return c.value
+	end
+	local ok, r = Backend.get("/rbx/stats?userId=" .. uid(p))
+	if not ok then
+		return { error = "offline" }
+	end
+	statsCache[p] = { at = os.clock(), value = r }
+	return r
+end
 
 for node, nodePart in world.nodes do
 	local pp = nodePart:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
@@ -181,6 +230,7 @@ task.spawn(function()
 		if lastState then
 			Boards.renderPrices(world.priceBoard, lastState.board)
 			Boards.renderLeaders(world.leaderBoard, lastState.leaderboard)
+			Boards.renderLeaders(lobby.leaderBoard, lastState.leaderboard)
 		end
 	end
 end)

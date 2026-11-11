@@ -22,6 +22,15 @@ local Theme = {
 }
 
 Theme.merchantNames = { woodcutter = "Woodcutter", fishmonger = "Fishmonger", smith = "Smith" }
-Theme.goodOf = { woodcutter = "wood", fishmonger = "fish", smith = "iron" }
+Theme.ore = Theme.iron -- item category name
+-- Rarity colors (spec: common grey, rare blue, epic purple, legendary gold), >= 4.5:1 on background and surface.
+Theme.tiers = {
+	common = Color3.fromHex("5B626C"),
+	rare = Color3.fromHex("2A5FB4"),
+	epic = Color3.fromHex("8A3FC2"),
+	legendary = Color3.fromHex("8A5E00"),
+}
+Theme.classNames = { fisher = "Fisher", logger = "Logger", miner = "Miner" }
+Theme.categoryNames = { fish = "Fish", wood = "Wood", ore = "Ore" }
 
 return Theme

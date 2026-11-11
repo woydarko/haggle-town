@@ -1,34 +1,29 @@
 --!strict
--- Top-left balances + toast line + offline banner (DESIGN_SYSTEM W2).
+-- Top bar: coin, class badge, bag count, Stats button; toast line + offline banner (DESIGN_SYSTEM W2).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
 local Ui = require(script.Parent.Ui)
+local Items = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Items"))
 
 local Hud = {}
 
-function Hud.mount(gui: ScreenGui)
+function Hud.mount(gui: ScreenGui, onStats: () -> ())
 	local bar = Ui.new("Frame", {
 		Name = "Hud",
 		Parent = gui,
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 8),
-		Size = UDim2.fromOffset(440, 44),
+		Size = UDim2.fromOffset(480, 44), -- 130+90+80+100 + 3x16 gaps + padding
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center }) })
 
-	local labels: { [string]: TextLabel } = {}
-	for _, item in { { "coin", "Coin", Theme.primary }, { "wood", "Wood", Theme.wood }, { "fish", "Fish", Theme.fish }, { "iron", "Iron", Theme.iron } } do
-		local key, name, color = item[1], item[2], item[3]
-		labels[key] = Ui.text({
-			Parent = bar,
-			Size = UDim2.fromOffset(if key == "coin" then 130 else 80, 32),
-			Font = Theme.numeric,
-			TextSize = 20,
-			TextColor3 = color,
-			Text = name .. " ...",
-		})
-	end
+	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), Font = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "Coin ..." })
+	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), Font = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
+	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), Font = Theme.numeric, TextSize = 20, Text = "Bag 0" })
+	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
+	stats.Activated:Connect(onStats)
+	local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
 
 	local toast = Ui.text({ Parent = gui, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 58), Size = UDim2.fromOffset(440, 28), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Theme.muted, Text = "", TextStrokeTransparency = 0.8 })
 	local offline = Ui.text({
@@ -46,10 +41,13 @@ function Hud.mount(gui: ScreenGui)
 	local api = {}
 
 	function api.balances(b: { [string]: number })
-		for key, label in labels do
-			local name = if key == "coin" then "Coin" else key:sub(1, 1):upper() .. key:sub(2)
-			label.Text = if key == "coin" then `{name} {b[key] or 0} C` else `{name} {b[key] or 0}`
-		end
+		coin.Text = `Coin {b.coin or 0} C`
+		bag.Text = `Bag {Items.bagCount(b)}`
+	end
+
+	function api.class(cls: string?)
+		badge.Text = if cls then Theme.classNames[cls] else "No class"
+		badge.TextColor3 = if cls then CLASS_COLOR[cls] else Theme.muted
 	end
 
 	function api.offline(on: boolean)

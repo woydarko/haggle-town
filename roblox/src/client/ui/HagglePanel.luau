@@ -1,23 +1,28 @@
 --!strict
--- Bottom-center haggle panel (DESIGN_SYSTEM W3): merchant bubble, counter, reasoning, patience, input, Accept/Leave.
+-- Bottom-center haggle panel (DESIGN_SYSTEM W3): merchant bubble, counter, reasoning, patience,
+-- quick-sell chips for bag items this merchant buys, input, Accept/Leave.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
 local Ui = require(script.Parent.Ui)
+local Items = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Items"))
 
 local HagglePanel = {}
 
 local EXAMPLES = {
-	woodcutter = "e.g. sell 3 wood for 120, or 2 wood at 40",
-	fishmonger = "e.g. 2 fish for 150, or sell 3 fish for 200",
-	smith = "e.g. 1 iron at 140, or sell 2 iron for 260",
+	woodcutter = "e.g. sell 2 oak for 90, or 3 pine at 15",
+	fishmonger = "e.g. sell 1 trout for 60, or 2 sardine for 40",
+	smith = "e.g. sell 3 copper for 90, or 1 iron at 100",
 }
 
 export type Handlers = {
 	send: (merchant: string, text: string) -> any,
 	accept: (dealId: string) -> any,
 	onBalances: (b: any) -> (),
+	bag: () -> { [string]: number },
 }
+
+local HEIGHT = 336
 
 function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local panel = Ui.new("Frame", {
@@ -26,7 +31,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		Visible = false,
 		AnchorPoint = Vector2.new(0.5, 1),
 		Position = UDim2.new(0.5, 0, 1, -24),
-		Size = UDim2.fromOffset(560, 300),
+		Size = UDim2.fromOffset(560, HEIGHT),
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16), Ui.new("UIScale", { Name = "Scale" }) })
 
@@ -36,9 +41,12 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local line = Ui.text({ Parent = bubble, Size = UDim2.new(1, 0, 0, 48), TextSize = 20 })
 	local counter = Ui.text({ Parent = bubble, Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.5, 0, 0, 26), Font = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary })
 	local reasoning = Ui.text({ Parent = bubble, Position = UDim2.new(0.5, 0, 0, 50), Size = UDim2.new(0.5, 0, 0, 26), TextSize = 16, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right })
+	local chips = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 146), Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1 }, {
+		Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
+	})
 	local input = Ui.new("TextBox", {
 		Parent = panel,
-		Position = UDim2.fromOffset(0, 148),
+		Position = UDim2.fromOffset(0, 188),
 		Size = UDim2.new(1, -110, 0, 44),
 		BackgroundColor3 = Theme.surface,
 		Font = Theme.body,
@@ -50,10 +58,10 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8) })
-	local send = Ui.button("Send", false, { Parent = panel, Position = UDim2.new(1, -100, 0, 148), Size = UDim2.fromOffset(100, 44) })
-	local accept = Ui.button("Accept", true, { Parent = panel, Position = UDim2.fromOffset(0, 208), Size = UDim2.fromOffset(240, 48) })
-	local leave = Ui.button("Leave", false, { Parent = panel, Position = UDim2.new(1, -140, 0, 208), Size = UDim2.fromOffset(140, 48) })
-	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 262), Size = UDim2.new(1, 0, 0, 22), TextSize = 16, TextColor3 = Theme.muted })
+	local send = Ui.button("Send", false, { Parent = panel, Position = UDim2.new(1, -100, 0, 188), Size = UDim2.fromOffset(100, 44) })
+	local accept = Ui.button("Accept", true, { Parent = panel, Position = UDim2.fromOffset(0, 244), Size = UDim2.fromOffset(240, 48) })
+	local leave = Ui.button("Leave", false, { Parent = panel, Position = UDim2.new(1, -140, 0, 244), Size = UDim2.fromOffset(140, 48) })
+	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 298), Size = UDim2.new(1, 0, 0, 22), TextSize = 16, TextColor3 = Theme.muted })
 
 	local merchant: string? = nil
 	local deal: any = nil
@@ -87,6 +95,32 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		input.TextEditable = not on
 		status.TextColor3 = Theme.muted
 		status.Text = text or ""
+	end
+
+	-- One chip per item of this merchant's category in the bag; click fills "sell 1 <item> for ".
+	local function renderChips()
+		for _, c in chips:GetChildren() do
+			if c:IsA("GuiObject") then
+				c:Destroy()
+			end
+		end
+		local b = h.bag()
+		local count = 0
+		for i, item in Items.ofCategory(Items.MERCHANT_CATEGORY[merchant :: string] or "") do
+			local qty = b[item.id] or 0
+			if qty > 0 then
+				count += 1
+				local chip = Ui.button(`{item.name} x{qty}`, false, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(128, 32), TextSize = 16, TextColor3 = Theme.tiers[item.tier] })
+				chip.Activated:Connect(function()
+					input.Text = `sell 1 {string.lower(item.name)} for `
+					input:CaptureFocus()
+					input.CursorPosition = #input.Text + 1
+				end)
+			end
+		end
+		if count == 0 then
+			Ui.text({ Parent = chips, Size = UDim2.new(1, 0, 1, 0), TextSize = 16, TextColor3 = Theme.muted, Text = "Nothing to sell here yet. You can still buy." })
+		end
 	end
 
 	local function showError(text: string)
@@ -156,6 +190,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 			if r.balances then
 				h.onBalances(r.balances)
 			end
+			renderChips()
 		elseif r.status == "requoted" then
 			line.Text = `"{r.line}"`
 			setCounter(r.counter)
@@ -184,9 +219,10 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		setCounter(nil)
 		setPatience(3)
 		setBusy(false)
+		renderChips()
 		panel.Visible = true
 		panel.Size = UDim2.fromOffset(560, 0)
-		TweenService:Create(panel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.fromOffset(560, 300) }):Play()
+		TweenService:Create(panel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.fromOffset(560, HEIGHT) }):Play()
 		input:CaptureFocus()
 	end
 

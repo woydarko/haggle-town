@@ -22,6 +22,12 @@ function Validate.merchant(name: any): boolean
 	return type(name) == "string" and MERCHANTS[name] == true
 end
 
+local CLASSES = { fisher = true, logger = true, miner = true }
+
+function Validate.class(name: any): boolean
+	return type(name) == "string" and CLASSES[name] == true
+end
+
 function Validate.near(distance: any): boolean
 	return type(distance) == "number" and distance <= MAX_DISTANCE
 end

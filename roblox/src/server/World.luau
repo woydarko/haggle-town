@@ -115,7 +115,9 @@ local function path(from: Vector3, to: Vector3)
 	part({ Name = "Path", Size = Vector3.new(5, 0.25, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.12, 0), to + Vector3.new(0, 0.12, 0)), Color = Color3.fromHex("B8A88A"), Material = Enum.Material.Cobblestone })
 end
 
-local function npc(name: string, pos: Vector3, shirt: Color3): BasePart
+-- title/action default to the merchant's name and "Haggle"; facing defaults to +Z.
+local function npc(name: string, pos: Vector3, shirt: Color3, title: string?, action: string?, facing: Vector3?): BasePart
+	local tag, verb, dir = title or Theme.merchantNames[name], action or "Haggle", facing or Vector3.new(0, 0, 1)
 	local ok, model = pcall(function()
 		local d = Instance.new("HumanoidDescription")
 		local skin = Color3.fromHex("E8C39E")
@@ -130,22 +132,22 @@ local function npc(name: string, pos: Vector3, shirt: Color3): BasePart
 		local hum = m:FindFirstChildOfClass("Humanoid") :: Humanoid
 		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		local hrp = m:WaitForChild("HumanoidRootPart") :: BasePart
-		m:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 3, 0), pos + Vector3.new(0, 3, 1)))
+		m:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 3, 0), pos + Vector3.new(0, 3, 0) + dir))
 		for _, d in m:GetDescendants() do
 			if d:IsA("BasePart") then
 				d.Anchored = true
 			end
 		end
 		m.Parent = root
-		label(hrp, Theme.merchantNames[name], shirt, 4.5)
-		prompt(hrp, "Haggle", Theme.merchantNames[name])
+		label(hrp, tag, shirt, 4.5)
+		prompt(hrp, verb, tag)
 		return hrp
 	end
 	-- Fallback if the rig cannot be created (e.g. offline Studio): the original simple figure.
 	local body = part({ Name = name, Shape = Enum.PartType.Cylinder, Size = Vector3.new(4, 2.2, 2.2), CFrame = CFrame.new(pos + Vector3.new(0, 2, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = shirt })
 	part({ Name = name .. "Head", Shape = Enum.PartType.Ball, Size = Vector3.new(1.8, 1.8, 1.8), Position = pos + Vector3.new(0, 4.9, 0), Color = Color3.fromHex("E8C39E") })
-	label(body, Theme.merchantNames[name], shirt)
-	prompt(body, "Haggle", Theme.merchantNames[name])
+	label(body, tag, shirt)
+	prompt(body, verb, tag)
 	return body
 end
 
@@ -286,14 +288,7 @@ function World.build(): Built
 	part({ Name = "Fountain", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 8, 8), CFrame = CFrame.new(0, 0.6, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Cobblestone })
 	part({ Name = "FountainWater", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 7, 7), CFrame = CFrame.new(0, 1.15, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHex("5FA8C9"), Material = Enum.Material.Glass, Transparency = 0.3 })
 
-	local spawn = Instance.new("SpawnLocation")
-	spawn.Anchored = true
-	spawn.Size = Vector3.new(6, 0.4, 6)
-	spawn.Position = Vector3.new(0, 0.3, 0)
-	spawn.Neutral = true
-	spawn.Color = Theme.border
-	spawn.Material = Enum.Material.Cobblestone
-	spawn.Parent = root
+	-- The spawn lives in the lobby (Lobby.luau).
 
 	for i = 1, 9 do
 		local x, z = -70 + (i % 3) * 8, -48 + math.floor(i / 3) * 9
@@ -328,5 +323,8 @@ function World.build(): Built
 		leaderBoard = board("LeaderBoard", CFrame.new(9, 8, -14)),
 	}
 end
+
+-- Builders shared with Lobby.luau (call after World.build so parts land in the town folder).
+World.kit = { part = part, wedge = wedge, prompt = prompt, label = label, npc = npc, board = board, path = path, lamp = lamp }
 
 return World
