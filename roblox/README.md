@@ -29,10 +29,12 @@ Why a StringValue and not Roblox Secrets: Secrets are opaque values that can onl
 | `src/server/Main.server.luau` | server | builds town, validates every RemoteEvent, calls backend, filters merchant lines, polls state |
 | `src/server/Backend.luau` | server | HMAC-signed HTTP to the backend |
 | `src/server/Hmac.luau` | server | pure-Luau SHA-256 / HMAC |
-| `src/server/World.luau` | server | greybox town |
+| `src/server/World.luau` | server | town, merchants, gather nodes (positions from Terrain.SPOTS) |
+| `src/server/Terrain.luau` | server | valley, lake, mountain ring, cave (pure plan, spec-checked) |
+| `src/server/Lobby.luau` | server | spawn, class mentors, info boards, gate |
 | `src/shared/Validate.luau` | both | pure input checks |
 | `src/shared/Theme.luau` | both | design tokens |
-| `src/client/*` | client | HUD and haggle panel |
+| `src/client/*` | client | HUD, haggle panel, class card, stats panel, gather minigames |
 
 ## Tests
 
@@ -41,6 +43,7 @@ lute run roblox/tests/Hmac.spec.luau
 lute run roblox/tests/Validate.spec.luau
 lute run roblox/tests/Minigame.spec.luau
 lute run roblox/tests/Items.spec.luau
+lute run roblox/tests/Terrain.spec.luau
 ```
 
 `Hmac.spec` uses the same fixed vector as `server/test/hmac.test.ts`, so both sides sign identically.

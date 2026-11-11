@@ -7,10 +7,12 @@ local Theme = require(Shared:WaitForChild("Theme"))
 local Items = require(Shared:WaitForChild("Items"))
 local World = require(script.Parent.World)
 local Boards = require(script.Parent.Boards)
+local Terrain = require(script.Parent.Terrain)
 
 local Lobby = {}
 
-local C = Vector3.new(0, 0, -80) -- lobby center; the town square is north (+Z)
+local SPOT = Terrain.SPOTS.lobby
+local C = Vector3.new(SPOT.x, SPOT.y, SPOT.z) -- lobby center; the town square is north (+Z)
 local MENTORS = { { "fisher", -14, Theme.fish }, { "logger", 0, Theme.wood }, { "miner", 14, Theme.iron } }
 
 export type Built = { mentors: { [string]: BasePart }, leaderBoard: Part }

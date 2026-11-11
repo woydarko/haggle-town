@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+local Terrain = require(script.Parent.Terrain)
 
 local World = {}
 
@@ -233,17 +234,39 @@ local function fishNode(pos: Vector3): Part
 	return spot
 end
 
-local function ironNode(pos: Vector3): Part
+-- Ore rock in a cave chamber; glow tints the ore specks (deep cave = crystal purple). A lantern lights the chamber.
+local function oreNode(pos: Vector3, glow: Color3, title: string): Part
 	for i, off in { Vector3.new(-3, 0, -2), Vector3.new(3, 0, -1), Vector3.new(0, 0, -4), Vector3.new(-2, 0, 2.5) } do
 		part({ Name = "Rock", Size = Vector3.new(5, 4 + i, 4), CFrame = CFrame.new(pos + off + Vector3.new(0, (4 + i) / 2, 0)) * CFrame.Angles(0, math.rad(i * 37), math.rad(i * 7)), Color = STONE, Material = Enum.Material.Slate })
 	end
 	local core = part({ Name = "Iron", Size = Vector3.new(4, 3, 3), Position = pos + Vector3.new(0, 1.5, 1), Color = Theme.iron, Material = Enum.Material.Slate })
 	for i = 1, 5 do
-		part({ Name = "Ore", Size = Vector3.new(0.5, 0.5, 0.5), Position = pos + Vector3.new(-1.5 + i * 0.6, 1 + (i % 3) * 0.6, 2.55), Color = Color3.fromHex("E07A3F"), Material = Enum.Material.Neon })
+		part({ Name = "Ore", Size = Vector3.new(0.5, 0.5, 0.5), Position = pos + Vector3.new(-1.5 + i * 0.6, 1 + (i % 3) * 0.6, 2.55), Color = glow, Material = Enum.Material.Neon })
 	end
-	prompt(core, "Mine", "Ore")
-	label(core, "Ore", Theme.iron)
+	lamp(pos + Vector3.new(7, 0, 7))
+	prompt(core, "Mine", title)
+	label(core, title, Theme.iron)
 	return core
+end
+
+local function spot(name: string): Vector3
+	local p = Terrain.SPOTS[name]
+	return Vector3.new(p.x, p.y, p.z)
+end
+
+-- kind: 0 pine, 1 oak, 2 maple, 3 ancient redwood
+local function tree(pos: Vector3, kind: number)
+	local tall = if kind == 3 then 18 else 9
+	part({ Name = "Trunk", Size = Vector3.new(if kind == 3 then 2.8 else 1.6, tall, if kind == 3 then 2.8 else 1.6), Position = pos + Vector3.new(0, tall / 2, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
+	if kind == 0 then
+		for i, w in { 7, 5, 3 } do
+			part({ Name = "Needles", Shape = Enum.PartType.Ball, Size = Vector3.new(w, 4, w), Position = pos + Vector3.new(0, 6 + i * 2.5, 0), Color = Color3.fromHex("2F5E35"), Material = Enum.Material.Grass })
+		end
+	else
+		local color = ({ "4F8F45", "C8642A", "35603A" })[kind]
+		local size = if kind == 3 then Vector3.new(11, 8, 11) else Vector3.new(8, 7, 8)
+		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = size, Position = pos + Vector3.new(0, tall + 1.5, 0), Color = Color3.fromHex(color), Material = Enum.Material.Grass })
+	end
 end
 
 local function ambience()
@@ -281,19 +304,18 @@ function World.build(): Built
 	root.Parent = workspace
 	ambience()
 
-	-- Ground stops at the shore; real terrain water fills the bay behind the fish pier.
-	part({ Name = "Ground", Size = Vector3.new(220, 2, 165), Position = Vector3.new(0, -1, -27.5), Color = Color3.fromHex("7FA35B"), Material = Enum.Material.Grass })
-	workspace.Terrain:FillBlock(CFrame.new(0, -3.5, 82), Vector3.new(220, 7, 54), Enum.Material.Water)
+	Terrain.build() -- valley, lake, mountain ring, cave hill
 	part({ Name = "Square", Size = Vector3.new(60, 0.2, 50), Position = Vector3.new(0, 0.1, 5), Color = Color3.fromHex("CDBB9A"), Material = Enum.Material.Cobblestone })
 	part({ Name = "Fountain", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 8, 8), CFrame = CFrame.new(0, 0.6, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Cobblestone })
 	part({ Name = "FountainWater", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 7, 7), CFrame = CFrame.new(0, 1.15, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHex("5FA8C9"), Material = Enum.Material.Glass, Transparency = 0.3 })
 
 	-- The spawn lives in the lobby (Lobby.luau).
 
-	for i = 1, 9 do
-		local x, z = -70 + (i % 3) * 8, -48 + math.floor(i / 3) * 9
-		part({ Name = "Trunk", Size = Vector3.new(1.6, 9, 1.6), Position = Vector3.new(x, 4.5, z), Color = WOOD_DARK, Material = Enum.Material.Wood })
-		part({ Name = "Leaves", Shape = Enum.PartType.Ball, Size = Vector3.new(8, 7, 8), Position = Vector3.new(x, 10.5, z), Color = Color3.fromHex(if i % 2 == 0 then "3E7D3A" else "4F8F45"), Material = Enum.Material.Grass })
+	-- Forest west of town, one of each wood type in turn (pine, oak, maple, ancient redwood).
+	for c = 0, 3 do
+		for r = 0, 3 do
+			tree(Vector3.new(-78 + c * 8, 0, -50 + r * 9), (c + r) % 4)
+		end
 	end
 
 	house(Vector3.new(-40, 0, -8), 90, Color3.fromHex("EADBC3"))
@@ -305,14 +327,16 @@ function World.build(): Built
 		lamp(p)
 	end
 	path(Vector3.new(-30, 0, -10), Vector3.new(-45, 0, -28))
-	path(Vector3.new(30, 0, -10), Vector3.new(46, 0, -26))
+	path(Vector3.new(30, 0, -10), Vector3.new(66, 0, -30)) -- to the cave mouth
 	path(Vector3.new(9, 0, 24), Vector3.new(2, 0, 50))
 
 	return {
 		nodes = {
-			wood = woodNode(Vector3.new(-45, 0, -30)),
-			fish = fishNode(Vector3.new(0, 0, 66)),
-			ore_mouth = ironNode(Vector3.new(48, 0, -30)), -- keys are backend gather nodes; ore_deep comes with the cave (Task 9)
+			-- keys are backend gather nodes; positions come from Terrain.SPOTS (checked by Terrain.spec)
+			wood = woodNode(spot("wood")),
+			fish = fishNode(spot("fish")),
+			ore_mouth = oreNode(spot("ore_mouth"), Color3.fromHex("E07A3F"), "Ore"),
+			ore_deep = oreNode(spot("ore_deep"), Color3.fromHex("B07CFF"), "Deep ore"),
 		},
 		merchants = {
 			woodcutter = stall("woodcutter", "wood", Vector3.new(-22, 0, 8), Theme.wood),
