@@ -43,11 +43,11 @@ function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): nu
 		Parent = gui,
 		Name = "Minigame",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = if inWorld then UDim2.new(0.5, 0, 1, -96) else UDim2.new(0.5, 0, 1, -40),
-		Size = if inWorld then UDim2.fromOffset(360, 92) else UDim2.fromOffset(340, 400),
+		Position = if inWorld then UDim2.new(0.5, 0, 1, -70) else UDim2.new(0.5, 0, 1, -40), -- just above the hotbar
+		Size = if inWorld then UDim2.fromOffset(360, 72) else UDim2.fromOffset(340, 400),
 		BackgroundColor3 = Theme.surface,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(12) })
-	local hintLabel = Ui.text({ Parent = panel, Size = UDim2.new(1, 0, 0, 44), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = 20, Text = "" })
+	local hintLabel = Ui.text({ Parent = panel, Size = UDim2.new(1, 0, 0, if inWorld then 26 else 44), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = if inWorld then 18 else 20, Text = "" })
 
 	local held, pressed = false, false
 	ContextActionService:BindActionAtPriority("HaggleMinigame", function(_, state: Enum.UserInputState)

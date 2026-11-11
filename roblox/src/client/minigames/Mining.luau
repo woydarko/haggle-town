@@ -34,8 +34,8 @@ function Mining.play(ctx: any, params: any): number?
 		local front = if toward.Magnitude > 0.1 then toward.Unit else Vector3.new(0, 0, 1)
 		local right = Vector3.yAxis:Cross(front)
 		local a = Instance.new("Attachment")
+		a.Parent = c -- parent first: WorldPosition on an unparented attachment becomes a local offset
 		a.WorldPosition = c.Position + front * (c.Size.X / 2) + right * ((math.random() - 0.5) * c.Size.X * 0.8) + Vector3.new(0, (math.random() - 0.4) * c.Size.Y * 0.7, 0)
-		a.Parent = c
 		return a
 	end
 
