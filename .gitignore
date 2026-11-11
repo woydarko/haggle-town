@@ -15,3 +15,4 @@ web/dist/
 roblox/local.project.json
 roblox/build-local.rbxl
 *.rbxl.lock
+roblox/assets/_Staging/

@@ -23,12 +23,10 @@ project = json.load(open("roblox/default.project.json", encoding="utf-8"))
 tree = project["tree"]
 # Paths are relative to the generated file's folder (roblox/), same as default.project.json.
 tree["HttpService"] = {"$properties": {"HttpEnabled": True}}
-tree["ServerStorage"] = {
-    "Config": {
-        "$className": "Folder",
-        "BackendUrl": {"$className": "StringValue", "$properties": {"Value": url}},
-        "HmacSecret": {"$className": "StringValue", "$properties": {"Value": secret}},
-    }
+tree.setdefault("ServerStorage", {})["Config"] = {
+    "$className": "Folder",
+    "BackendUrl": {"$className": "StringValue", "$properties": {"Value": url}},
+    "HmacSecret": {"$className": "StringValue", "$properties": {"Value": secret}},
 }
 json.dump(project, open("roblox/local.project.json", "w", encoding="utf-8"), indent=2)
 print("wrote roblox/local.project.json (BackendUrl =", url + ")")

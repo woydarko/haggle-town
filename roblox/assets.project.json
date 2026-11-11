@@ -1,0 +1,24 @@
+{
+  "name": "HaggleTownAssets",
+  "tree": {
+    "$className": "DataModel",
+    "ServerStorage": {
+      "Assets": {
+        "$properties": {
+          "ExplorerIconContent": {
+            "Content": "None"
+          },
+          "SerializedOverrides": {
+            "BinaryString": ""
+          }
+        },
+        "$path": "assets"
+      },
+      "$properties": {
+        "SerializedOverrides": {
+          "BinaryString": ""
+        }
+      }
+    }
+  }
+}

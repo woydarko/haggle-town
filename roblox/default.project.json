@@ -13,6 +13,9 @@
         "HaggleClient": { "$path": "src/client" }
       }
     },
+    "ServerStorage": {
+      "Assets": { "$path": "assets" }
+    },
     "Lighting": {
       "$properties": { "ClockTime": 15.5, "Brightness": 2 }
     }

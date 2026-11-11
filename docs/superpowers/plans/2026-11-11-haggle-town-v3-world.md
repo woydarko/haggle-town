@@ -87,9 +87,15 @@
 - Studio must be open with `roblox/build-local.rbxl`. If Studio shows a setting to enable Studio as an MCP server (Assistant menu), turn it on.
 - Rojo live sync must be connected: `rojo serve roblox/local.project.json`, then Plugins > Rojo > Connect.
 
-**First call in the new session**
-- List the tools the server exposes and write their exact names into this section.
-- Expected from the official server: one tool to run Luau in Studio, one to search and insert Creator Store models, plus console output, play/stop, a play-mode script runner, and Studio mode. Do not assume names; read them.
+**Tools (read 2026-11-11, 38 tools, prefix `mcp__Roblox_Studio__`)**
+- Every call needs `studio_id` from `list_roblox_studios` (build-local.rbxl).
+- Core: `execute_luau` (`datamodel_type` Edit/Server/Client), `get_studio_state`, `start_stop_play`, `get_console_output`, `save_place` (local file, never publishes).
+- Tree: `inspect_instance`, `search_game_tree`, `script_read`, `script_grep`, `script_search`, `multi_edit` (do not use on Rojo-owned scripts).
+- Assets: `search_asset` (scope `creator_store`, `priceFilter: free`), `insert_asset` (`parentPath`), `upload_image`, `store_image`.
+- Generation: `generate_animation`, `generate_mesh`, `generate_material`, `generate_texture`, `generate_procedural_model`, `generate_scene`, `generate_avatar`, `auto_setup_avatar`, `segment_mesh`.
+- Playtest input: `character_navigation`, `user_keyboard_input`, `user_mouse_input`, `screen_capture`, `wait_job_finished`.
+- Other: `http_get`, `open_cloud_invoke`, `skill`, `list_skills`, `create_skill`, `edit_skill`, `subagent`, `submit_feedback`.
+- Rojo note: `roblox/assets/init.meta.json` sets `ignoreUnknownInstances` so Rojo live sync does not delete models inserted in Studio before syncback. Syncback uses `roblox/assets.project.json` (only `ServerStorage.Assets`), so it never rewrites `src/` or touches the secret-bearing `local.project.json`. Verified 2026-11-11: insert -> save -> syncback wrote `roblox/assets/_Staging/PineTest.rbxm`.
 
 **What it is for**
 1. **Inspect.** Read the live DataModel: count parts, list Workspace and ServerStorage children, read attributes and node states, time `Terrain.build()`, read the console after Play.
@@ -116,13 +122,10 @@
 
 ### ForgeGUI
 
-**Status:** not connected in the 2026-11-11 session (not listed in `session_connectors_status`). The user says it is in the connectors.
+**Status (2026-11-11 23:xx):** connected as claude.ai connector `ForgeGUI` (41 tools, prefix `mcp__7a5992a0-5265-4cdd-aafd-cac735b0cc73__`). Paid credits: on `insufficient_credits` stop and point the user to https://forgegui.com/plans; never regenerate an `outcome_unknown` job.
 
-**In the new session**
-1. Run `session_connectors_status`, or ToolSearch for "forge".
-2. If it is there, list its tools and write their names here.
-3. If it needs auth, tell the user to sign in via `/mcp`.
-4. If it is absent, ask the user for the name or URL once, then continue with the hand-built UI.
+**Tools:** `generation_gui`, `generation_image`, `generation_model_3d`, `generation_animate_3d`, `generation_rig_3d`, `generation_remesh_3d`, `generation_sound_effect`, `generation_music`, `generation_status`, `generation_list`, `generation_retry`, `generations_by_style`, `enhance_prompt`, `remove_background`, `auto_separate`, `drawing_reference`, `style_create|get|list|revise`, `project_create|list`, `run_create|append|complete|get|list`, `library_search`, `library_details`, `toolbox_search`, `personal_assets_search`, `personal_asset_details`, `asset_prepare`, `asset_capabilities`, `animation_actions`, `image_upload_authorize`, `image_upload_register`, `publication_connections_list`, `publication_status`, `publication_retry`, `artifact_publish`.
+- Uploads/publications to Roblox through ForgeGUI count as asset uploads: user OK first.
 
 **What it is for:** draft, never final.
 - Generate the layouts for the HUD bar, catch-reveal card, haggle panel, stats/bag panel, class card, minigame frames, loading screen and the custom ProximityPrompt.
@@ -153,10 +156,10 @@
 - Modify: `roblox/default.project.json`, `roblox/local.project.json` (mount `ServerStorage.Assets` from `roblox/assets`).
 - Create: `roblox/ASSETS.md` (credits table: name, Creator Store id, creator, license, where it is used).
 
-- [ ] **Studio MCP.** In the new session, confirm the `Roblox_Studio` tools load. Expected tools, roughly: run code, insert model, console output, play/stop. Record the exact tool names in this plan.
-- [ ] **ForgeGUI.** Check the connectors for it and record the result here.
-- [ ] **Syncback.** Insert one test model, save the place, run `rojo syncback`, and confirm a file appears under `roblox/assets/`. If syncback is not available in Rojo 7.7.1, fallback: the user exports with "Save to File" as `roblox/assets/<Name>.rbxm`.
-- [ ] Commit.
+- [x] **Studio MCP.** In the new session, confirm the `Roblox_Studio` tools load. Expected tools, roughly: run code, insert model, console output, play/stop. Record the exact tool names in this plan.
+- [x] **ForgeGUI.** Check the connectors for it and record the result here.
+- [x] **Syncback.** Insert one test model, save the place, run `rojo syncback`, and confirm a file appears under `roblox/assets/`. If syncback is not available in Rojo 7.7.1, fallback: the user exports with "Save to File" as `roblox/assets/<Name>.rbxm`.
+- [x] Commit.
 
 ### Task 2: backend nodes for exploration (core, ~1 h)
 
