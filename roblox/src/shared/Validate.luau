@@ -2,7 +2,7 @@
 -- Pure checks the Roblox server runs on every RemoteEvent before calling the backend.
 -- No Roblox globals here so roblox/tests/Validate.spec.luau can run outside Studio.
 
-local NODES = { wood = true, fish = true, ore_mouth = true, ore_deep = true }
+local NODES = { wood = true, fish = true, ore_mouth = true, ore_deep = true, wood_old = true, fish_deep = true }
 local MERCHANTS = { woodcutter = true, fishmonger = true, smith = true }
 local MAX_DISTANCE = 12
 local MAX_TEXT = 200

@@ -77,6 +77,20 @@ test("cave mouth never yields crystal; deep cave can", () => {
   assert.equal(setup({ rand: seq(0.9999) }).play("ore_deep", 0).item, "ore_crystal");
 });
 
+test("exploration nodes: wood_old and fish_deep get the deep +20 quality bonus", () => {
+  // roll 6900: q0 -> common; +20 bonus -> rare; same rule as ore_deep
+  const at = (node: string, q = 0) => setup({ rand: seq(0.69) }).play(node, q).item;
+  assert.equal(at("wood"), "wood_pine");
+  assert.equal(at("wood_old"), at("wood", 0.2));
+  assert.equal(at("fish_deep"), at("fish", 0.2));
+  assert.equal(at("wood_old"), "wood_maple", "roll 6900 q0 -> rare");
+  assert.equal(at("fish_deep"), "fish_salmon", "roll 6900 q0 -> rare");
+  const s = setup({ rand: seq(0.99) }).g.start("roblox:1", "fish_deep");
+  assert.equal(s.params.minMs, 6_000);
+  assert.equal(s.params.fishSpeed, 1.99, "deep fish dart like lake fish");
+  assert.equal(setup().g.start("roblox:1", "wood_old").params.minMs, 3_000);
+});
+
 test("specialist: bigger zone and 15% double drop; others never double", () => {
   const spec = setup({ cls: "logger", rand: seq(0.5, 0.1) });
   assert.equal(spec.g.start("roblox:9", "fish").params.zoneScale, 1, "logger is not a fish specialist");

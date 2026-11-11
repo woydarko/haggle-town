@@ -9,6 +9,7 @@ local function check(cond, name)
 end
 
 check(Validate.node("wood") and Validate.node("fish") and Validate.node("ore_mouth") and Validate.node("ore_deep"), "known gather nodes")
+check(Validate.node("wood_old") and Validate.node("fish_deep"), "exploration nodes wood_old, fish_deep")
 check(not Validate.node("iron") and not Validate.node(nil) and not Validate.node(5), "unknown node rejected")
 check(Validate.quality(0) and Validate.quality(1) and Validate.quality(0.42), "quality 0..1")
 check(not Validate.quality(1.1) and not Validate.quality(-0.1) and not Validate.quality(0 / 0) and not Validate.quality("1"), "bad quality rejected")

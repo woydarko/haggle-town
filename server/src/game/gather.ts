@@ -12,7 +12,11 @@ export const NODES: Record<string, { category: Category; minMs: number }> = {
   wood: { category: "wood", minMs: 3_000 },
   ore_mouth: { category: "ore", minMs: 3_500 },
   ore_deep: { category: "ore", minMs: 3_500 },
+  wood_old: { category: "wood", minMs: 3_000 },
+  fish_deep: { category: "fish", minMs: 6_000 },
 };
+/** Remote spots (deep cave, ancient grove, sea): same odds tables, +DEEP_QUALITY_BONUS quality. */
+const DEEP_NODES = new Set(["ore_deep", "wood_old", "fish_deep"]);
 const SESSION_TTL_MS = 60_000;
 const SPECIALIST_ZONE = 1.3;
 const DOUBLE_DROP = 0.15;
@@ -62,7 +66,7 @@ export class Gather {
       node,
       params: {
         zoneScale: specialist ? SPECIALIST_ZONE : 1,
-        fishSpeed: node === "fish" ? Math.round((1 + roll / 10_000) * 100) / 100 : 1, // rarer rolls dart faster
+        fishSpeed: n.category === "fish" ? Math.round((1 + roll / 10_000) * 100) / 100 : 1, // rarer rolls dart faster
         minMs: n.minMs,
       },
     };
@@ -83,7 +87,7 @@ export class Gather {
     if (elapsed < n.minMs) throw new HttpError(422, "too_fast", "Too fast.");
 
     const q01 = Number.isFinite(quality) ? Math.min(Math.max(quality, 0), 1) : 0;
-    const q = Math.min(Math.round(q01 * 100) + (s.node === "ore_deep" ? DEEP_QUALITY_BONUS : 0), 100);
+    const q = Math.min(Math.round(q01 * 100) + (DEEP_NODES.has(s.node) ? DEEP_QUALITY_BONUS : 0), 100);
     const specialist = this.specialist(playerId, n.category);
     let tier = rollTier(s.roll_bp, specialist, q);
     if (s.node === "ore_mouth" && tier === "legendary") tier = "epic"; // crystal only grows deep in the cave

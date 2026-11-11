@@ -21,7 +21,9 @@ export type Ctx = {
 local mine = require(script.Parent.Mining).play
 local GAMES: { [string]: (Ctx, Params) -> number? } = {
 	fish = require(script.Parent.Fishing).play,
+	fish_deep = require(script.Parent.Fishing).play,
 	wood = require(script.Parent.Chopping).play,
+	wood_old = require(script.Parent.Chopping).play,
 	ore_mouth = mine,
 	ore_deep = mine,
 }
