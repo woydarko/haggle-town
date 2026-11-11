@@ -13,7 +13,7 @@ local ClassCard = require(script.Parent.ui.ClassCard)
 local StatsPanel = require(script.Parent.ui.StatsPanel)
 local Run = require(script.Parent.minigames.Run)
 
-local remotes = ReplicatedStorage:WaitForChild("Remotes")
+local remotes = ReplicatedStorage:WaitForChild("Remotes", math.huge) -- created after the map build (a few seconds)
 local Haggle = remotes:WaitForChild("Haggle") :: RemoteFunction
 local Accept = remotes:WaitForChild("Accept") :: RemoteFunction
 local StateChanged = remotes:WaitForChild("StateChanged") :: RemoteEvent
