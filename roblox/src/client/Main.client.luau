@@ -24,6 +24,9 @@ local GatherFinish = remotes:WaitForChild("GatherFinish") :: RemoteFunction
 local ChooseClass = remotes:WaitForChild("ChooseClass") :: RemoteFunction
 local GetStats = remotes:WaitForChild("GetStats") :: RemoteFunction
 local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
+local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
+local CollectionService = game:GetService("CollectionService")
+require(script.Parent.fx.TreeFx).start()
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "HaggleTownUI"
@@ -108,8 +111,25 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 -- The server only fires this after it opened a session, so one minigame runs at a time.
-PlayMinigame.OnClientEvent:Connect(function(node, params)
-	local quality = Run.play(gui, node, params)
+-- The server names the node it claimed for us; its model (streamed in, we are next to it) anchors in-world UI and fx.
+local function nodeModel(id: any): Model?
+	for _, tag in { "GatherTree", "GatherRock", "GatherWater" } do
+		for _, m in CollectionService:GetTagged(tag) do
+			if m:GetAttribute("NodeId") == id then
+				return m :: Model
+			end
+		end
+	end
+	return nil
+end
+
+PlayMinigame.OnClientEvent:Connect(function(node, params, nodeId)
+	local quality = Run.play(gui, node, params, {
+		target = nodeModel(nodeId),
+		fx = function(kind: string)
+			GatherFx:FireServer(kind)
+		end,
+	})
 	local r = GatherFinish:InvokeServer(quality)
 	if r and r.catch then
 		local c = r.catch

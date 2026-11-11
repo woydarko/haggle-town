@@ -47,6 +47,7 @@ local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinis
 local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
 local StateChanged, OpenHaggle, Toast, PlayMinigame = re("StateChanged"), re("OpenHaggle"), re("Toast"), re("PlayMinigame")
 local OpenClassCard = re("OpenClassCard")
+local GatherFx = re("GatherFx")
 remotes.Parent = ReplicatedStorage
 
 local issued: { [Player]: { [string]: boolean } } = {}
@@ -84,6 +85,7 @@ local function letGo(p: Player)
 end
 
 local hinted: { [Player]: number } = {}
+local lastFx: { [Player]: number } = {} -- GatherFx rate limit
 local function hint(p: Player, text: string) -- at most one hint every 3 s, swings repeat fast
 	if os.clock() - (hinted[p] or 0) > 3 then
 		hinted[p] = os.clock()
@@ -128,7 +130,7 @@ local function onToolUse(p: Player, toolName: string)
 		return
 	end
 	slot.id = r.sessionId
-	PlayMinigame:FireClient(p, n.node, r.params)
+	PlayMinigame:FireClient(p, n.node, r.params, n.id)
 end
 
 local function hookTools(p: Player)
@@ -181,6 +183,7 @@ Players.PlayerRemoving:Connect(function(p)
 	issued[p] = nil
 	letGo(p)
 	hinted[p] = nil
+	lastFx[p] = nil
 	statsCache[p] = nil
 end)
 
@@ -235,6 +238,20 @@ task.spawn(function()
 	end
 end)
 
+-- Minigame swing results (good / perfect / miss) shown to everyone nearby through node attributes.
+-- Cosmetic only: the catch still comes from the backend; capped at ~6 per second per player.
+local FX_KINDS = { good = true, perfect = true, miss = true }
+GatherFx.OnServerEvent:Connect(function(p: Player, kind: any)
+	local s = gathering[p]
+	if not (s and s.id and FX_KINDS[kind]) or os.clock() - (lastFx[p] or 0) < 0.15 then
+		return
+	end
+	lastFx[p] = os.clock()
+	Nodes.hit(s.n)
+	s.n.model:SetAttribute("HitKind", kind)
+	s.n.model:SetAttribute("Hit", ((s.n.model:GetAttribute("Hit") :: number?) or 0) + 1)
+end)
+
 -- quality nil = the player failed the minigame: close locally, nothing is caught (the backend session just expires).
 GatherFinish.OnServerInvoke = function(p: Player, quality: any)
 	local s = gathering[p]
@@ -257,7 +274,8 @@ GatherFinish.OnServerInvoke = function(p: Player, quality: any)
 	if s.n.tag == "GatherWater" then
 		Nodes.release(s.n, p)
 	else
-		Nodes.fell(s.n) -- the tree falls / the rock breaks
+		local hrp = p.Character and p.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		Nodes.fell(s.n, hrp and hrp.Position) -- the tree falls away from the player / the rock breaks
 	end
 	StateChanged:FireClient(p, { balances = r.balances })
 	return { catch = r.catch }

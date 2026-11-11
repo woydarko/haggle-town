@@ -16,7 +16,10 @@ export type Ctx = {
 	step: () -> number, -- wait one frame, returns dt
 	hint: (text: string) -> (),
 	fail: (text: string) -> nil, -- show why, pause, return nil (nothing caught)
+	target: Model?, -- the tree / rock / spot being gathered (for in-world UI and fx)
+	fx: (kind: string) -> (), -- tell the server a swing result so everyone sees chips and hears it
 }
+export type Opts = { target: Model?, fx: (kind: string) -> () }
 
 local mine = require(script.Parent.Mining).play
 local GAMES: { [string]: (Ctx, Params) -> number? } = {
@@ -31,7 +34,7 @@ local GAMES: { [string]: (Ctx, Params) -> number? } = {
 local Run = {}
 
 -- Returns quality 0..1, or nil when the player failed (nothing is caught).
-function Run.play(gui: ScreenGui, node: string, params: Params): number?
+function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): number?
 	local started = os.clock()
 	local panel = Ui.new("Frame", {
 		Parent = gui,
@@ -57,6 +60,8 @@ function Run.play(gui: ScreenGui, node: string, params: Params): number?
 	ctx = {
 		node = node,
 		panel = panel,
+		target = opts and opts.target,
+		fx = if opts then opts.fx else function(_kind: string) end,
 		held = function()
 			return held
 		end,

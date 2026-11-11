@@ -259,14 +259,23 @@ function Nodes.hit(n: Node)
 	n.st:hit(os.clock())
 end
 
--- Felled tree / broken rock: gone for respawnS. Fishing spots never run out.
-function Nodes.fell(n: Node)
+-- Felled tree / broken rock: gone for respawnS. Fishing spots never run out. `from` (the player's position)
+-- sets FellDir so trees fall away from the chopper; clients animate the fall before the server hides it.
+local FALL_S = 2.5
+function Nodes.fell(n: Node, from: Vector3?)
 	if n.tag == "GatherWater" then
 		return
 	end
+	local flat = if from then (n.hit.Position - from) * V(1, 0, 1) else V(0, 0, 0)
+	n.model:SetAttribute("FellDir", if flat.Magnitude > 0.1 then flat.Unit else V(1, 0, 0))
 	n.st:fell(os.clock())
 	sync(n)
-	show(n, false)
+	local at = n.st.at
+	task.delay(if n.tag == "GatherTree" then FALL_S else 0, function()
+		if n.st.state == "felled" and n.st.at == at then
+			show(n, false)
+		end
+	end)
 end
 
 -- Respawn and claim-timeout loop.
