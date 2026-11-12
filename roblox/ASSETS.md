@@ -17,7 +17,7 @@ Every model in `roblox/assets/` comes from the Roblox Creator Store (free). Scri
 | Village/Well1 | 5103977622 (well) | B_annedB | Free model (Creator Store) | Town square |
 | Mine/Crystal1-2 | 138344717707782 (Low Poly Crystal pack) | Pimasova17 | Free model (Creator Store; 4 scripts + 2 sounds removed) | Deep + crystal caverns |
 
-Pipeline: Studio MCP `insert_asset` into `ServerStorage.Assets._Staging` (gitignored) -> strip scripts, anchor,
+Pipeline: Studio MCP `insert_asset` into `ServerStorage._AssetStaging` (outside the synced Assets folder) -> strip scripts, anchor,
 scale, rename, move to `Assets/<Category>` -> save place -> `rojo syncback roblox/assets.project.json --input
 roblox/build-local.rbxl --non-interactive` -> review `git diff --stat roblox/assets`.
 
