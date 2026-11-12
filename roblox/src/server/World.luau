@@ -125,8 +125,25 @@ local function lamp(pos: Vector3)
 	light.Parent = bulb
 end
 
+-- Places a copy of a curated asset model (pivot at its base) and returns it, or nil when the folder is empty.
+local function place(folder: string, prefix: string, cf: CFrame, index: number?): Model?
+	local list = variants(folder, prefix)
+	if #list == 0 then
+		return nil
+	end
+	local m = list[((index or 1) - 1) % #list + 1]:Clone()
+	m:PivotTo(cf)
+	m.Parent = root
+	return m
+end
+
+local houseCount = 0
 local function house(pos: Vector3, yaw: number, wall: Color3)
 	local cf = CFrame.new(pos) * CFrame.Angles(0, math.rad(yaw), 0)
+	houseCount += 1
+	if place("Village", "House", cf, houseCount) then
+		return
+	end
 	part({ Name = "HouseWall", Size = Vector3.new(12, 8, 10), CFrame = cf * CFrame.new(0, 4, 0), Color = wall, Material = Enum.Material.Plaster })
 	part({ Name = "HouseBeam", Size = Vector3.new(12.4, 0.6, 10.4), CFrame = cf * CFrame.new(0, 8, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
 	wedge({ Name = "Roof", Size = Vector3.new(13, 4, 6), CFrame = cf * CFrame.new(0, 10.3, 2.6), Color = Theme.primary, Material = Enum.Material.Slate })
@@ -312,6 +329,50 @@ local function ambience()
 	end
 end
 
+-- Mine mouth: timber frame with a sign, rails along the tunnel, a cart, lanterns; glowing crystals deep inside.
+local function mineDecor()
+	local mouth = spot("mine_mouth")
+	local y, z = mouth.Y, mouth.Z
+	local x0 = mouth.X + 16 -- where the tunnel enters the hill
+	for _, dz in { -7.5, 7.5 } do
+		part({ Name = "MinePost", Size = Vector3.new(1.4, 13, 1.4), Position = Vector3.new(x0, y + 6.5, z + dz), Color = WOOD_DARK, Material = Enum.Material.Wood })
+	end
+	local beam = part({ Name = "MineBeam", Size = Vector3.new(1.6, 1.6, 17), Position = Vector3.new(x0, y + 13.2, z), Color = WOOD_DARK, Material = Enum.Material.Wood })
+	label(beam, "Mine", Theme.iron, 3)
+	for _, dz in { -9.5, 9.5 } do
+		lamp(Vector3.new(x0 - 2, y, z + dz))
+	end
+	-- Rails: two steel strips on sleepers from the mouth to the first cavern.
+	local x1 = spot("ore_mouth").X - 12
+	local len = x1 - (mouth.X + 4)
+	local mid = (x1 + mouth.X + 4) / 2
+	for _, dz in { -1.4, 1.4 } do
+		part({ Name = "Rail", Size = Vector3.new(len, 0.3, 0.3), Position = Vector3.new(mid, y + 0.45, z + dz), Color = Color3.fromHex("6E6A66"), Material = Enum.Material.Metal })
+	end
+	for x = mouth.X + 5, x1, 4 do
+		part({ Name = "Sleeper", Size = Vector3.new(0.8, 0.3, 4.2), Position = Vector3.new(x, y + 0.15, z), Color = WOOD_DARK, Material = Enum.Material.Wood })
+	end
+	-- Ore cart parked at the mouth.
+	local c = CFrame.new(mouth.X + 8, y + 1.9, z)
+	part({ Name = "CartBody", Size = Vector3.new(4, 2.4, 3.2), CFrame = c, Color = Color3.fromHex("5A4632"), Material = Enum.Material.WoodPlanks })
+	part({ Name = "CartOre", Size = Vector3.new(3.4, 0.8, 2.6), CFrame = c * CFrame.new(0, 1.3, 0), Color = Color3.fromHex("8E8A82"), Material = Enum.Material.Slate })
+	for _, w in { { -1.3, -1.7 }, { 1.3, -1.7 }, { -1.3, 1.7 }, { 1.3, 1.7 } } do
+		part({ Name = "CartWheel", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 1.2, 1.2), CFrame = c * CFrame.new(w[1], -1.2, w[2]) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromHex("3A3F45"), Material = Enum.Material.Metal })
+	end
+	-- Crystals glow along the deep and crystal cavern walls.
+	for i, at in { { "ore_deep", 10, 9 }, { "ore_deep", -10, 8 }, { "ore_crystal", 10, -8 }, { "ore_crystal", -10, 6 }, { "ore_crystal", 3, 11 } } do
+		local p = spot(at[1]) + Vector3.new(at[2], 0, at[3])
+		local m = place("Mine", "Crystal", CFrame.new(p) * CFrame.Angles(0, math.rad(i * 70), math.rad(10)), i)
+		if m then
+			local light = Instance.new("PointLight")
+			light.Color = Color3.fromHex("B07CFF")
+			light.Range = 14
+			light.Brightness = 1.4
+			light.Parent = m:FindFirstChildWhichIsA("BasePart", true)
+		end
+	end
+end
+
 export type Built = {
 	merchants: { [string]: BasePart },
 	priceBoard: Part,
@@ -347,6 +408,8 @@ function World.build(onProgress: ((number) -> ())?): Built
 	for _, name in { "ore_mouth", "ore_deep", "ore_crystal" } do
 		lamp(spot(name) + Vector3.new(5, 0, 4))
 	end
+	place("Village", "Well", CFrame.new(-14, 0, 22))
+	mineDecor()
 
 	return {
 		merchants = {
