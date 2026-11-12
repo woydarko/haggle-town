@@ -53,6 +53,8 @@ local stats = StatsPanel.mount(gui, {
 	end,
 })
 local hud = Hud.mount(gui, stats.toggle)
+local catchCard = require(script.Parent.ui.CatchCard).mount(gui)
+require(script.Parent.ui.Prompt).start()
 
 local function setBalances(b: { [string]: number })
 	balances = b
@@ -118,8 +120,7 @@ end)
 -- The server only fires this after it opened a session, so one minigame runs at a time.
 local function reportCatch(r: any)
 	if r and r.catch then
-		local c = r.catch
-		hud.toast(`Caught {c.name} ({c.tier})` .. (if c.qty > 1 then ` x{c.qty}` else "") .. "!")
+		catchCard.show(r.catch)
 	elseif r and r.message then
 		hud.toast(r.message)
 	end

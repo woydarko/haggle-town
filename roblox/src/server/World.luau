@@ -77,6 +77,7 @@ local function prompt(parent: Instance, action: string, object: string)
 	pp.HoldDuration = 0
 	pp.MaxActivationDistance = 10
 	pp.RequiresLineOfSight = false
+	pp.Style = Enum.ProximityPromptStyle.Custom -- drawn by client/ui/Prompt.luau in the game's style
 	pp.Parent = parent
 end
 

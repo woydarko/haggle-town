@@ -63,4 +63,34 @@ function Ui.button(text: string, primary: boolean, props: { [string]: any }): Te
 	return Ui.new("TextButton", base, { Ui.corner(), Ui.stroke() })
 end
 
+-- Item icon: a tier-coloured rounded tile with the item's initial (fallback until uploaded icon images exist).
+function Ui.icon(name: string, tier: string, px: number, props: { [string]: any }?): Frame
+	local base = { Size = UDim2.fromOffset(px, px), BackgroundColor3 = Theme.tiers[tier] or Theme.muted }
+	for k, v in props or {} do
+		base[k] = v
+	end
+	return Ui.new("Frame", base, {
+		Ui.new("UICorner", { CornerRadius = UDim.new(0.22, 0) }),
+		Ui.text({ Size = UDim2.fromScale(1, 1), Text = string.upper(string.sub(name, 1, 1)), Font = Theme.display, TextScaled = true, TextColor3 = Theme.onPrimary, TextXAlignment = Enum.TextXAlignment.Center }),
+	})
+end
+
+-- Tier label on the tier colour (light text, >= 5.4:1 on every tier colour).
+function Ui.tierBadge(tier: string, props: { [string]: any }?): TextLabel
+	local base = {
+		Size = UDim2.fromOffset(120, 26),
+		BackgroundTransparency = 0,
+		BackgroundColor3 = Theme.tiers[tier] or Theme.muted,
+		Text = string.upper(tier),
+		Font = Theme.display,
+		TextSize = 16,
+		TextColor3 = Theme.onPrimary,
+		TextXAlignment = Enum.TextXAlignment.Center,
+	}
+	for k, v in props or {} do
+		base[k] = v
+	end
+	return Ui.new("TextLabel", base, { Ui.new("UICorner", { CornerRadius = UDim.new(0, 6) }) })
+end
+
 return Ui
