@@ -96,6 +96,7 @@ Over-budget warnings sent: none
 | 2026-11-10 23:45 +0700 | ~91 h | 13 / 13 core done (Railway live, Studio golden path passed, LLM live, restock + personas, town dressed) | stretch T14/T15 optional; next: Phase 5 verify + Roblox publish |
 | 2026-11-11 01:26 +0700 | ~86 h | v2 plan 3 / 12 (economy v2, contract v2, deployed haggletown-v2.testnet) | none; production still v1 until v2 Task 12 |
 | 2026-11-11 15:11 +0700 | ~64 h | v2 plan 5 / 12 (backend v2: items, gather sessions, classes, stats, haggle items; smoke on v2 testnet) | none; Roblox v2 (Tasks 6-9) next; production still v1 |
+| 2026-11-12 (v3) | ~2.5 days | v3 plan 9 / 12 (map, nodes + respawn, real chop/mine/fish with animations, sfx/vfx, Creator Store trees/rocks/houses, catch card, custom prompts); user playtested chop/mine/fish OK | stretch T10/T11 pending user call; T12 perf + full playtest, final review, then v2 Task 12 deploy + publish (user OK) |
 
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
