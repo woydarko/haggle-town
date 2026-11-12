@@ -7,8 +7,35 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
 local Terrain = require(script.Parent.Terrain)
+local ServerStorage = game:GetService("ServerStorage")
 
 local World = {}
+
+-- Creator Store models curated into ServerStorage.Assets (roblox/assets, credits in roblox/ASSETS.md).
+-- Every model has its pivot at the base; builders fall back to greybox parts when a folder is missing.
+local function variants(folder: string, prefix: string): { Model }
+	local f = ServerStorage:FindFirstChild("Assets") and (ServerStorage :: any).Assets:FindFirstChild(folder)
+	local out = {}
+	if f then
+		for _, m in f:GetChildren() do
+			if m:IsA("Model") and string.sub(m.Name, 1, #prefix) == prefix then
+				table.insert(out, m)
+			end
+		end
+		table.sort(out, function(a, b)
+			return a.Name < b.Name
+		end)
+	end
+	return out
+end
+-- Deterministic pick + yaw from the position, so the same tree looks the same every server start.
+local function pick(list: { Model }, pos: Vector3): (Model?, number)
+	if #list == 0 then
+		return nil, 0
+	end
+	local h = math.abs(math.floor(pos.X * 7.13 + pos.Z * 3.71))
+	return list[h % #list + 1], (h % 360)
+end
 
 local root: Folder
 
@@ -235,7 +262,20 @@ end
 
 -- Greybox tree (Creator Store models replace it in Task 8). kind: 0 pine, 1 oak, 2 maple, 3 ancient redwood.
 -- Returns the trunk (the part players hit); leaves never collide so nobody gets stuck in a canopy.
+local TREE_PREFIX = { [0] = "Pine", [1] = "Oak", [2] = "Maple", [3] = "Redwood" }
 local function tree(pos: Vector3, kind: number, parent: Instance?): Part
+	local asset, yaw = pick(variants("Trees", TREE_PREFIX[kind] or "Oak"), pos)
+	if asset then
+		-- Model visuals never collide; an invisible trunk is the collider and the part players hit.
+		local m = asset:Clone()
+		m:PivotTo(CFrame.new(pos) * CFrame.Angles(0, math.rad(yaw), 0))
+		local _, size = m:GetBoundingBox()
+		for _, d in m:GetChildren() do
+			d.Parent = parent or root
+		end
+		local w = if kind == 3 then 3.2 else 1.8
+		return part({ Name = "Trunk", Size = Vector3.new(w, size.Y * 0.55, w), Position = pos + Vector3.new(0, size.Y * 0.275, 0), Color = WOOD_DARK, Material = Enum.Material.Wood, Transparency = 1, Parent = parent })
+	end
 	local tall = if kind == 3 then 18 else 9
 	local trunk = part({ Name = "Trunk", Size = Vector3.new(if kind == 3 then 2.8 else 1.6, tall, if kind == 3 then 2.8 else 1.6), Position = pos + Vector3.new(0, tall / 2, 0), Color = WOOD_DARK, Material = Enum.Material.Wood, Parent = parent })
 	if kind == 0 then
@@ -320,6 +360,6 @@ function World.build(onProgress: ((number) -> ())?): Built
 end
 
 -- Builders shared with Lobby.luau (call after World.build so parts land in the town folder).
-World.kit = { tree = tree, spot = spot, part = part, wedge = wedge, prompt = prompt, label = label, npc = npc, board = board, path = path, lamp = lamp }
+World.kit = { tree = tree, spot = spot, variants = variants, pick = pick, part = part, wedge = wedge, prompt = prompt, label = label, npc = npc, board = board, path = path, lamp = lamp }
 
 return World

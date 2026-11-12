@@ -91,9 +91,22 @@ local function rockNode(pos: Vector3, glow: Color3, node: string)
 	m.Name = "Rock"
 	local spin = CFrame.Angles(0, rng:NextNumber() * 2 * math.pi, 0)
 	local base = CFrame.new(pos + V(0, 1.6, 0)) * spin
-	local core = kit.part({ Name = "Boulder", Size = V(5, 4, 5), CFrame = base * CFrame.Angles(math.rad(8), 0, math.rad(6)), Color = STONE, Material = Enum.Material.Slate, Parent = m })
+	local asset = kit.pick(kit.variants("Rocks", "Rock"), pos)
+	local core: BasePart
+	if asset then
+		local rock = asset:Clone()
+		rock:PivotTo(CFrame.new(pos - V(0, 0.4, 0)) * spin) -- sink a little so it sits in the ground
+		core = rock:FindFirstChildWhichIsA("BasePart", true) :: BasePart
+		core.Name = "Boulder"
+		core.CanCollide, core.CanQuery = true, true
+		core.Parent = m
+		rock:Destroy()
+	else
+		core = kit.part({ Name = "Boulder", Size = V(5, 4, 5), CFrame = base * CFrame.Angles(math.rad(8), 0, math.rad(6)), Color = STONE, Material = Enum.Material.Slate, Parent = m })
+	end
+	local depth = math.min(core.Size.X, core.Size.Z) / 2 * 0.85
 	for i = 1, 4 do
-		kit.part({ Name = "Ore", Size = V(0.6, 0.6, 0.6), CFrame = base * CFrame.new(-1.6 + i * 0.7, -0.2 + (i % 2) * 0.8, 2.45), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = m })
+		kit.part({ Name = "Ore", Size = V(0.6, 0.6, 0.6), CFrame = base * CFrame.new(-1.2 + i * 0.6, -0.4 + (i % 2) * 0.7, depth), Color = glow, Material = Enum.Material.Neon, CanCollide = false, Parent = m })
 	end
 	add("GatherRock", node, m, core)
 end
