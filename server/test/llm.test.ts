@@ -92,6 +92,29 @@ test("client sends model, low temperature, token cap, json mode and bearer", asy
   assert.match(system, /untrusted/);
 });
 
+test("LLM_THINKING=off asks the model to skip reasoning; default sends no thinking field", async () => {
+  const bodies: any[] = [];
+  const fetchImpl = async (_url: any, init: any) => {
+    bodies.push(JSON.parse(init.body));
+    return completion('{"line":"Hi","mood":"neutral","unit_price":30,"accept":false}');
+  };
+  await createLlm(cfg({ LLM_THINKING: "off" }), openDb(":memory:"), { fetchImpl }).reply(CTX);
+  await createLlm(cfg(), openDb(":memory:"), { fetchImpl }).reply(CTX);
+  assert.deepEqual(bodies[0].thinking, { type: "disabled" });
+  assert.equal(bodies[1].thinking, undefined);
+});
+
+test("LLM_TIMEOUT_MS sets the request timeout (default 4000)", () => {
+  assert.equal(cfg().LLM_TIMEOUT_MS, 4000);
+  assert.equal(cfg({ LLM_TIMEOUT_MS: "12000" }).LLM_TIMEOUT_MS, 12000);
+  assert.throws(() => cfg({ LLM_TIMEOUT_MS: "soon" }), /LLM_TIMEOUT_MS/);
+});
+
+test("parseReply: em and en dashes in the line become commas (players never see a dash pause)", () => {
+  const r = parseReply('{"line":"Steep for pine, friend—I\'ll give you 22 – final.","mood":"neutral","unit_price":22,"accept":false}');
+  assert.equal(r.line, "Steep for pine, friend, I'll give you 22, final.");
+});
+
 test("prompt gives the merchant a voice and the stock situation", async () => {
   let system = "";
   const llm = createLlm(cfg(), openDb(":memory:"), {

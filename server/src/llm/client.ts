@@ -7,6 +7,9 @@ import { buildMessages } from "./prompt.ts";
 const BANNED = /\b(crypto|blockchain|nft|token|wallet|near|gas|transaction)s?\b/i;
 const MOODS = new Set(["pleased", "neutral", "annoyed", "amused"]);
 
+// Em and en dash (built from char codes so the source stays free of the characters it removes).
+const DASHES = new RegExp("\\s*[" + String.fromCharCode(0x2014, 0x2013) + "]\\s*", "g");
+
 /** Parses the model's JSON reply; throws on anything the engine should not trust (engine then falls back). */
 export function parseReply(content: string): LlmReply {
   const m = content.match(/\{[\s\S]*\}/);
@@ -16,7 +19,7 @@ export function parseReply(content: string): LlmReply {
   if (!Number.isInteger(j.unit_price)) throw new Error("bad unit_price");
   if (BANNED.test(j.line)) throw new Error("banned word in line");
   return {
-    line: j.line.trim().slice(0, 160),
+    line: j.line.replace(DASHES, ", ").trim().slice(0, 160), // no dash pauses in player-facing text
     mood: MOODS.has(j.mood) ? j.mood : "neutral",
     unitPrice: j.unit_price,
     accept: j.accept === true,
@@ -31,7 +34,7 @@ export interface LlmOpts {
 /** NEAR AI Cloud (OpenAI-compatible) merchant brain with record/replay cache for demos. */
 export function createLlm(config: Config, db: Db, opts: LlmOpts = {}): LlmLike {
   const doFetch = opts.fetchImpl ?? fetch;
-  const timeoutMs = opts.timeoutMs ?? 4_000;
+  const timeoutMs = opts.timeoutMs ?? config.LLM_TIMEOUT_MS;
   const getCache = db.prepare("SELECT reply_json FROM llm_cache WHERE prompt_hash = ?");
   const putCache = db.prepare(
     "INSERT INTO llm_cache (prompt_hash, model, reply_json, created_at) VALUES (?, ?, ?, ?) ON CONFLICT DO UPDATE SET reply_json = excluded.reply_json",
@@ -56,6 +59,7 @@ export function createLlm(config: Config, db: Db, opts: LlmOpts = {}): LlmLike {
           temperature: 0.3,
           max_tokens: 400, // some models reason silently first; 150 cut the JSON off
           response_format: { type: "json_object" },
+          ...(config.LLM_THINKING === "off" ? { thinking: { type: "disabled" } } : {}),
         }),
         signal: AbortSignal.timeout(timeoutMs),
       });

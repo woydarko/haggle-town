@@ -24,6 +24,10 @@ export interface Config {
   LLM_BASE_URL: string;
   LLM_MODEL: string;
   LLM_API_KEY: string;
+  /** Request timeout; reasoning models (e.g. GLM) need ~6-10 s. */
+  LLM_TIMEOUT_MS: number;
+  /** "off" sends thinking: {type: "disabled"} (GLM-style) so the model answers without a long hidden reasoning pass. */
+  LLM_THINKING: "on" | "off";
   REPLAY_MODE: ReplayMode;
   DB_PATH: string;
   PORT: number;
@@ -36,6 +40,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
   if (missing.length) throw new Error(`Missing env vars: ${missing.join(", ")}`);
   const replay = env.REPLAY_MODE ?? "off";
   if (!["off", "record", "on"].includes(replay)) throw new Error(`REPLAY_MODE must be off|record|on, got ${replay}`);
+  const llmTimeout = Number(env.LLM_TIMEOUT_MS ?? 4_000);
+  if (!Number.isInteger(llmTimeout) || llmTimeout <= 0) throw new Error(`LLM_TIMEOUT_MS must be a positive integer, got ${env.LLM_TIMEOUT_MS}`);
   return {
     CONTRACT_ID: env.CONTRACT_ID!,
     GAME_ACCOUNT_ID: env.GAME_ACCOUNT_ID!,
@@ -50,6 +56,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     LLM_BASE_URL: env.LLM_BASE_URL ?? "https://cloud-api.near.ai/v1",
     LLM_MODEL: env.LLM_MODEL ?? "",
     LLM_API_KEY: env.LLM_API_KEY ?? "",
+    LLM_TIMEOUT_MS: llmTimeout,
+    LLM_THINKING: env.LLM_THINKING === "off" ? "off" : "on",
     REPLAY_MODE: replay as ReplayMode,
     DB_PATH: env.DB_PATH ?? "./data/haggle.sqlite",
     PORT: Number(env.PORT ?? 8080),
