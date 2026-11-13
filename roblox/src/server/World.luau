@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+local Anims = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Anims"))
 local Village = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Village"))
 local Terrain = require(script.Parent.Terrain)
 local ServerStorage = game:GetService("ServerStorage")
@@ -194,12 +195,20 @@ local function npc(name: string, pos: Vector3, shirt: Color3, title: string?, ac
 		local box, size = m:GetBoundingBox()
 		local lift = m:GetPivot().Position.Y - (box.Position.Y - size.Y / 2)
 		m:PivotTo(CFrame.lookAt(pos + Vector3.new(0, lift, 0), pos + Vector3.new(0, lift, 0) + dir))
+		-- Only the root is anchored: the limbs hang on their joints so the idle animation can move them.
 		for _, d in m:GetDescendants() do
 			if d:IsA("BasePart") then
-				d.Anchored = true
+				d.Anchored = d == hrp
 			end
 		end
 		m.Parent = root
+		if not hum:FindFirstChildOfClass("Animator") then
+			Instance.new("Animator").Parent = hum
+		end
+		local idle = Anims.play(hum, "Idle")
+		if idle then
+			idle.Priority = Enum.AnimationPriority.Idle
+		end
 		label(hrp, tag, shirt, 4.5)
 		prompt(hrp, verb, tag)
 		return hrp

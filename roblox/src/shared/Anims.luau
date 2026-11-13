@@ -9,6 +9,9 @@ local Anims = {
 	ReelLoop = { id = "rbxassetid://81642690828090", speed = 1, looped = true },
 	CatchLift = { id = "rbxassetid://123334761634672", speed = 3, looped = false },
 	HoldTool = { id = "rbxassetid://83778935987434", speed = 1, looped = true },
+	-- NPC stance: Roblox's standard R15 idle (the default Animate script's idle clip), so mentors and merchants
+	-- breathe instead of standing in a T-pose.
+	Idle = { id = "rbxassetid://507766388", speed = 1, looped = true },
 }
 
 local cache: { [Humanoid]: { [string]: AnimationTrack } } = {}
