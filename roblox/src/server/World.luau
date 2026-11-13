@@ -240,10 +240,11 @@ local function stall(name: string, kind: string, pos: Vector3, color: Color3): B
 	return npc(name, pos, color)
 end
 
-local function board(name: string, cframe: CFrame): Part
-	local b = part({ Name = name, Size = Vector3.new(14, 8, 0.6), CFrame = cframe, Color = WOOD_DARK, Material = Enum.Material.Wood })
-	for _, x in { -6.5, 6.5 } do
-		part({ Name = "BoardLeg", Size = Vector3.new(0.6, 5, 0.6), CFrame = cframe * CFrame.new(x, -5.5, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
+local function board(name: string, cframe: CFrame, w: number?, h: number?): Part
+	local bw, bh = w or 14, h or 8
+	local b = part({ Name = name, Size = Vector3.new(bw, bh, 0.6), CFrame = cframe, Color = WOOD_DARK, Material = Enum.Material.Wood })
+	for _, x in { -(bw / 2 - 0.5), bw / 2 - 0.5 } do
+		part({ Name = "BoardLeg", Size = Vector3.new(0.6, 5, 0.6), CFrame = cframe * CFrame.new(x, -(bh / 2 + 1.5), 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
 	end
 	local sg = Instance.new("SurfaceGui")
 	sg.Name = "Gui"
@@ -377,8 +378,7 @@ end
 
 export type Built = {
 	merchants: { [string]: BasePart },
-	priceBoard: Part,
-	leaderBoard: Part,
+	ledger: Part,
 }
 
 function World.build(onProgress: ((number) -> ())?): Built
@@ -425,8 +425,8 @@ function World.build(onProgress: ((number) -> ())?): Built
 			fishmonger = stall("fishmonger", "fish", Vector3.new(Village.STALLS.fishmonger.x, 0, Village.STALLS.fishmonger.z), Theme.fish),
 			smith = stall("smith", "iron", Vector3.new(Village.STALLS.smith.x, 0, Village.STALLS.smith.z), Theme.iron),
 		},
-		priceBoard = board("PriceBoard", CFrame.new(-9, 8, -14)),
-		leaderBoard = board("LeaderBoard", CFrame.new(9, 8, -14)),
+		-- Market Ledger on the square's south edge, front facing the spawn road (server/Ledger.luau draws it).
+		ledger = board("MarketLedger", CFrame.new(Village.LEDGER.x, 10.5, Village.LEDGER.z), 30, 14),
 	}
 end
 

@@ -50,6 +50,7 @@ export function apiRoutes(d: ApiDeps) {
       contractId: d.config.CONTRACT_ID,
       network: d.config.NEAR_NETWORK,
       explorerBase: d.config.NEAR_NETWORK === "mainnet" ? "https://nearblocks.io" : "https://testnet.nearblocks.io",
+      dayLengthMs: d.config.DAY_LENGTH_MS,
     }));
     app.get("/api/market", async () => d.market.get());
     app.get("/api/leaderboard", async () => d.leaderboard());

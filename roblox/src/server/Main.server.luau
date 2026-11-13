@@ -25,8 +25,7 @@ Nodes.tools()
 local counts = Nodes.build()
 Nodes.start()
 print(string.format("[HaggleTown] map built in %.1f s (%d trees, %d rocks, %d fishing spots)", os.clock() - buildStart, counts.trees, counts.rocks, counts.spots))
-Boards.renderPrices(world.priceBoard, nil)
-Boards.renderLeaders(world.leaderBoard, nil)
+require(script.Parent.Ledger).start(world.ledger)
 local lobby = Lobby.build()
 Boards.renderLeaders(lobby.leaderBoard, nil)
 
@@ -398,8 +397,6 @@ task.spawn(function()
 			end)
 		end
 		if lastState then
-			Boards.renderPrices(world.priceBoard, lastState.board)
-			Boards.renderLeaders(world.leaderBoard, lastState.leaderboard)
 			Boards.renderLeaders(lobby.leaderBoard, lastState.leaderboard)
 		end
 	end

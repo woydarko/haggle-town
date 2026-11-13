@@ -69,7 +69,7 @@ test("/api/players/:id rejects bad ids and 404s unknown players", async () => {
 test("/api/config exposes only public values", async () => {
   const { app } = await setup();
   const r = await app.inject({ method: "GET", url: "/api/config" });
-  assert.deepEqual(r.json(), { contractId: "haggle.testnet", network: "testnet", explorerBase: "https://testnet.nearblocks.io" });
+  assert.deepEqual(r.json(), { contractId: "haggle.testnet", network: "testnet", explorerBase: "https://testnet.nearblocks.io", dayLengthMs: 300_000 });
   assert.doesNotMatch(r.body, /PRIVATE|SECRET|ed25519:/i);
 });
 
