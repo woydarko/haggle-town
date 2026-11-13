@@ -145,9 +145,9 @@ local function house(pos: Vector3, yaw: number, wall: Color3, kind: number?)
 	houseCount += 1
 	local m = place("Village", "House", cf, kind or houseCount)
 	if m then
-		-- The three packs use different scales; these bring a storey to ~1.5x an R15 avatar (6.4 studs) and doors
-		-- above head height, measured with an avatar beside each model. Scaled sizes still fit the 26-stud plots.
-		m:ScaleTo(m:GetScale() * (({ House1 = 1.15, House2 = 1.25, House3 = 1.35 }) :: any)[m.Name] or 1)
+		-- The three packs use different scales; these bring a storey to ~2x an R15 avatar (6.4 studs), measured with an
+		-- avatar beside each model (v5: the first pass at ~1.3x still read as a toy house). Scaled sizes fit 34-stud plots.
+		m:ScaleTo(m:GetScale() * (({ House1 = 1.55, House2 = 1.6, House3 = 1.75 }) :: any)[m.Name] or 1)
 		return
 	end
 	part({ Name = "HouseWall", Size = Vector3.new(12, 8, 10), CFrame = cf * CFrame.new(0, 4, 0), Color = wall, Material = Enum.Material.Plaster })
@@ -314,9 +314,9 @@ local function tree(pos: Vector3, kind: number, parent: Instance?): Part
 	return trunk
 end
 
--- Semi-realistic late afternoon: warm low sun with soft shadows, a cool blue-grey haze that swallows the far mountains,
--- light bloom on lamps and water glints, gentle contrast. Lighting.Technology (Future) is not scriptable at runtime;
--- it is set in roblox/default.project.json.
+-- Semi-realistic late afternoon, close to sunset: a low orange sun with long soft shadows, a warm peach haze that
+-- swallows the far mountains, light bloom on lamps and water glints, gentle contrast. Lighting.Technology (Future),
+-- Terrain.Decoration and Terrain.GrassLength are not scriptable at runtime; they are set in roblox/default.project.json.
 local function effect(class: string, props: { [string]: any })
 	local e = Lighting:FindFirstChildOfClass(class) or Instance.new(class)
 	for k, v in props do
@@ -326,23 +326,23 @@ local function effect(class: string, props: { [string]: any })
 end
 
 local function ambience()
-	Lighting.ClockTime = 16.4
+	Lighting.ClockTime = 17.7
 	Lighting.GeographicLatitude = 35
-	Lighting.Brightness = 3
-	Lighting.ExposureCompensation = 0.1
+	Lighting.Brightness = 2.4
+	Lighting.ExposureCompensation = 0.15
 	Lighting.GlobalShadows = true
-	Lighting.ShadowSoftness = 0.2
+	Lighting.ShadowSoftness = 0.25
 	Lighting.EnvironmentDiffuseScale = 1
 	Lighting.EnvironmentSpecularScale = 0.8
-	Lighting.Ambient = Color3.fromHex("2A2622")
-	Lighting.OutdoorAmbient = Color3.fromHex("7A7468")
-	effect("Atmosphere", { Density = 0.34, Offset = 0.2, Color = Color3.fromHex("C9D4DE"), Decay = Color3.fromHex("8E7C68"), Glare = 0.35, Haze = 1.8 })
-	effect("BloomEffect", { Intensity = 0.55, Size = 28, Threshold = 1.5 })
-	effect("SunRaysEffect", { Intensity = 0.05, Spread = 0.75 })
-	effect("ColorCorrectionEffect", { Contrast = 0.08, Saturation = 0.06, Brightness = 0, TintColor = Color3.fromHex("FFF6EA") })
+	Lighting.Ambient = Color3.fromHex("2E2620")
+	Lighting.OutdoorAmbient = Color3.fromHex("8A6F58")
+	effect("Atmosphere", { Density = 0.36, Offset = 0.2, Color = Color3.fromHex("F2C29A"), Decay = Color3.fromHex("A0603E"), Glare = 0.7, Haze = 2 })
+	effect("BloomEffect", { Intensity = 0.35, Size = 24, Threshold = 2 })
+	effect("SunRaysEffect", { Intensity = 0.09, Spread = 0.8 })
+	effect("ColorCorrectionEffect", { Contrast = 0.1, Saturation = 0.12, Brightness = 0, TintColor = Color3.fromHex("FFDDBA") })
 	effect("DepthOfFieldEffect", { FarIntensity = 0.12, FocusDistance = 40, InFocusRadius = 90, NearIntensity = 0 })
 	local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
-	clouds.Cover, clouds.Density, clouds.Color = 0.55, 0.55, Color3.fromHex("FFF8F0")
+	clouds.Cover, clouds.Density, clouds.Color = 0.5, 0.5, Color3.fromHex("FFD9B8")
 	clouds.Parent = workspace.Terrain
 end
 
@@ -412,6 +412,38 @@ local function prop(name: string, at: Vector3, yaw: number, scale: number?): Mod
 	return m
 end
 
+-- Worn ground: terrain grass under the walkpaths (plus a trodden edge), the square and the guild yard becomes
+-- bare earth, so the decoration grass does not grow through the paths. ReplaceMaterial keeps the terrain shape.
+local function wornGround()
+	local t = workspace.Terrain
+	local function bare(min: Vector3, max: Vector3)
+		local r = Region3.new(Vector3.new(min.X, -8, min.Z), Vector3.new(max.X, 6, max.Z)):ExpandToGrid(4)
+		t:ReplaceMaterial(r, 4, Enum.Material.Grass, Enum.Material.Ground)
+		t:ReplaceMaterial(r, 4, Enum.Material.LeafyGrass, Enum.Material.Ground)
+	end
+	for _, rd in Village.ROADS do
+		local a, b = Vector3.new(rd.from.x, 0, rd.from.z), Vector3.new(rd.to.x, 0, rd.to.z)
+		local dir = (b - a).Unit
+		for d = 0, (b - a).Magnitude, 4 do
+			local p = a + dir * d
+			bare(p - Vector3.new(8, 0, 8), p + Vector3.new(8, 0, 8)) -- 16 wide: 4-stud voxels let edge grass lean over a 6-stud path
+		end
+	end
+	-- Trodden patches between the houses so the village floor is not one even lawn (seeded, same every server).
+	local rng = Random.new(1311)
+	for _ = 1, 28 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local d = rng:NextNumber(20, 105)
+		local c = Vector3.new(math.cos(a) * d, 0, -20 + math.sin(a) * d)
+		local r = rng:NextNumber(4, 9)
+		bare(c - Vector3.new(r, 0, r), c + Vector3.new(r, 0, r))
+	end
+	local SQ = Village.SQUARE
+	bare(Vector3.new(SQ.x - SQ.w / 2 - 2, 0, SQ.z - SQ.d / 2 - 2), Vector3.new(SQ.x + SQ.w / 2 + 2, 0, SQ.z + SQ.d / 2 + 2))
+	local L = Terrain.SPOTS.lobby
+	bare(Vector3.new(L.x - 32, 0, L.z - 26), Vector3.new(L.x + 32, 0, L.z + 26))
+end
+
 local function greenery()
 	-- Terrain.Decoration (animated grass blades) is not scriptable at runtime; set in roblox/default.project.json.
 	local rng = Random.new(20261113)
@@ -448,12 +480,12 @@ local function greenery()
 	-- Gardens: fence along each plot's back edge, a bush in each back corner, a flower bed each side of the door.
 	for _, p in Village.PLOTS do
 		local cf = CFrame.new(p.x, 0, p.z) * CFrame.Angles(0, math.rad(p.yaw), 0)
-		for dx = -10.8, 10.8, 5.4 do
+		for dx = -p.w / 2 + 3, p.w / 2 - 3, 5.4 do
 			prop("Fence", (cf * CFrame.new(dx, 0, p.d / 2 - 0.5)).Position, p.yaw)
 		end
-		for _, dx in { -11, 11 } do
+		for _, dx in { -(p.w / 2 - 2), p.w / 2 - 2 } do
 			prop(if dx < 0 then "Bush1" else "Bush2", (cf * CFrame.new(dx, 0, p.d / 2 - 3)).Position, rng:NextInteger(0, 359), 0.8)
-			bed((cf * CFrame.new(dx * 0.75, 0, -p.d / 2 + 1)).Position, 4)
+			bed((cf * CFrame.new(dx * 0.7, 0, -p.d / 2 + 1)).Position, 4)
 		end
 	end
 	-- Village edges and the open map: bushes and flower clusters on grass.
@@ -521,6 +553,7 @@ function World.build(onProgress: ((number) -> ())?): Built
 	end
 	place("Village", "Well", CFrame.new(Village.WELL.x, 0, Village.WELL.z))
 	mineDecor()
+	wornGround()
 	greenery()
 
 	return {

@@ -29,7 +29,7 @@ end
 local ROAD_HALF = 3 -- roads are 6 studs wide
 local S = Village.SQUARE
 
-check(#Village.PLOTS >= 10, "at least 10 house plots")
+check(#Village.PLOTS >= 9, "at least 9 house plots") -- 34-stud plots since v5 (bigger houses)
 for i, p in Village.PLOTS do
 	local r = math.max(p.w, p.d) / 2
 	check(fromCentre(p) + r <= V.r + 2, `plot {i} on flat village ground`)
