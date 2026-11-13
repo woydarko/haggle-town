@@ -14,13 +14,14 @@
       }
     },
     "Workspace": {
-      "$properties": { "StreamingEnabled": true }
+      "$properties": { "StreamingEnabled": true },
+      "Terrain": { "$properties": { "Decoration": true } }
     },
     "ServerStorage": {
       "Assets": { "$path": "assets" }
     },
     "Lighting": {
-      "$properties": { "ClockTime": 15.5, "Brightness": 2 }
+      "$properties": { "Technology": "Future", "GlobalShadows": true, "ClockTime": 16.4, "Brightness": 3 }
     }
   }
 }

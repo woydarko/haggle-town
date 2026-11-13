@@ -143,7 +143,11 @@ local houseCount = 0
 local function house(pos: Vector3, yaw: number, wall: Color3, kind: number?)
 	local cf = CFrame.new(pos) * CFrame.Angles(0, math.rad(yaw), 0)
 	houseCount += 1
-	if place("Village", "House", cf, kind or houseCount) then
+	local m = place("Village", "House", cf, kind or houseCount)
+	if m then
+		-- The three packs use different scales; these bring a storey to ~1.5x an R15 avatar (6.4 studs) and doors
+		-- above head height, measured with an avatar beside each model. Scaled sizes still fit the 26-stud plots.
+		m:ScaleTo(m:GetScale() * (({ House1 = 1.15, House2 = 1.25, House3 = 1.35 }) :: any)[m.Name] or 1)
 		return
 	end
 	part({ Name = "HouseWall", Size = Vector3.new(12, 8, 10), CFrame = cf * CFrame.new(0, 4, 0), Color = wall, Material = Enum.Material.Plaster })
@@ -310,26 +314,36 @@ local function tree(pos: Vector3, kind: number, parent: Instance?): Part
 	return trunk
 end
 
+-- Semi-realistic late afternoon: warm low sun with soft shadows, a cool blue-grey haze that swallows the far mountains,
+-- light bloom on lamps and water glints, gentle contrast. Lighting.Technology (Future) is not scriptable at runtime;
+-- it is set in roblox/default.project.json.
+local function effect(class: string, props: { [string]: any })
+	local e = Lighting:FindFirstChildOfClass(class) or Instance.new(class)
+	for k, v in props do
+		(e :: any)[k] = v
+	end
+	e.Parent = Lighting
+end
+
 local function ambience()
-	Lighting.ClockTime = 16.2
-	Lighting.Brightness = 2.2
-	Lighting.EnvironmentDiffuseScale = 0.6
-	Lighting.EnvironmentSpecularScale = 0.4
-	Lighting.OutdoorAmbient = Color3.fromHex("8C8070")
-	if not Lighting:FindFirstChildOfClass("Atmosphere") then
-		local a = Instance.new("Atmosphere")
-		a.Density = 0.3
-		a.Haze = 1.2
-		a.Color = Color3.fromHex("F2D9B0")
-		a.Decay = Color3.fromHex("C9A37A")
-		a.Parent = Lighting
-	end
-	if not Lighting:FindFirstChildOfClass("ColorCorrectionEffect") then
-		local cc = Instance.new("ColorCorrectionEffect")
-		cc.Saturation = 0.1
-		cc.TintColor = Color3.fromHex("FFF4E4")
-		cc.Parent = Lighting
-	end
+	Lighting.ClockTime = 16.4
+	Lighting.GeographicLatitude = 35
+	Lighting.Brightness = 3
+	Lighting.ExposureCompensation = 0.1
+	Lighting.GlobalShadows = true
+	Lighting.ShadowSoftness = 0.2
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 0.8
+	Lighting.Ambient = Color3.fromHex("2A2622")
+	Lighting.OutdoorAmbient = Color3.fromHex("7A7468")
+	effect("Atmosphere", { Density = 0.34, Offset = 0.2, Color = Color3.fromHex("C9D4DE"), Decay = Color3.fromHex("8E7C68"), Glare = 0.35, Haze = 1.8 })
+	effect("BloomEffect", { Intensity = 0.55, Size = 28, Threshold = 1.5 })
+	effect("SunRaysEffect", { Intensity = 0.05, Spread = 0.75 })
+	effect("ColorCorrectionEffect", { Contrast = 0.08, Saturation = 0.06, Brightness = 0, TintColor = Color3.fromHex("FFF6EA") })
+	effect("DepthOfFieldEffect", { FarIntensity = 0.12, FocusDistance = 40, InFocusRadius = 90, NearIntensity = 0 })
+	local clouds = workspace.Terrain:FindFirstChildOfClass("Clouds") or Instance.new("Clouds")
+	clouds.Cover, clouds.Density, clouds.Color = 0.55, 0.55, Color3.fromHex("FFF8F0")
+	clouds.Parent = workspace.Terrain
 end
 
 -- Mine mouth: timber frame with a sign, rails along the tunnel, a cart, lanterns; glowing crystals deep inside.
@@ -381,6 +395,95 @@ export type Built = {
 	ledger: Part,
 }
 
+-- Grass, bushes, flowers, fences and market clutter (Creator Store props in Assets/Props, credits in roblox/ASSETS.md).
+-- Scatter only lands where a downward ray hits terrain grass first, so roads, the square, houses, water and rock stay
+-- clear. Props never collide except fences. Seeded, so every server looks the same.
+local function prop(name: string, at: Vector3, yaw: number, scale: number?): Model?
+	local src = variants("Props", name)[1]
+	if not src then
+		return nil
+	end
+	local m = src:Clone()
+	if scale then
+		m:ScaleTo(m:GetScale() * scale)
+	end
+	m:PivotTo(CFrame.new(at) * CFrame.Angles(0, math.rad(yaw), 0))
+	m.Parent = root
+	return m
+end
+
+local function greenery()
+	-- Terrain.Decoration (animated grass blades) is not scriptable at runtime; set in roblox/default.project.json.
+	local rng = Random.new(20261113)
+	local flowers = { "Flower1", "Flower2", "Flower3", "Flower4" }
+	local function bed(at: Vector3, n: number)
+		for _ = 1, n do
+			prop(flowers[rng:NextInteger(1, 4)], at + Vector3.new(rng:NextNumber(-2, 2), 0, rng:NextNumber(-2, 2)), rng:NextInteger(0, 359), rng:NextNumber(0.8, 1.2))
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { workspace.Terrain, root }
+	local function grassAt(x: number, z: number): Vector3?
+		local hit = workspace:Raycast(Vector3.new(x, 400, z), Vector3.new(0, -800, 0), params)
+		if hit and hit.Instance == workspace.Terrain and (hit.Material == Enum.Material.Grass or hit.Material == Enum.Material.LeafyGrass) then
+			return hit.Position
+		end
+		return nil
+	end
+	local guild = Vector3.new(Village.GUILD.x, 0, Village.GUILD.z)
+	local function scatter(count: number, half: number, cx: number, cz: number, place: (Vector3) -> ())
+		for _ = 1, count * 3 do -- a third of the samples land on grass in the open map
+			local p = grassAt(cx + rng:NextNumber(-half, half), cz + rng:NextNumber(-half, half))
+			if p and (p - guild).Magnitude > 34 then
+				place(p)
+				count -= 1
+				if count == 0 then
+					return
+				end
+			end
+		end
+	end
+
+	-- Gardens: fence along each plot's back edge, a bush in each back corner, a flower bed each side of the door.
+	for _, p in Village.PLOTS do
+		local cf = CFrame.new(p.x, 0, p.z) * CFrame.Angles(0, math.rad(p.yaw), 0)
+		for dx = -10.8, 10.8, 5.4 do
+			prop("Fence", (cf * CFrame.new(dx, 0, p.d / 2 - 0.5)).Position, p.yaw)
+		end
+		for _, dx in { -11, 11 } do
+			prop(if dx < 0 then "Bush1" else "Bush2", (cf * CFrame.new(dx, 0, p.d / 2 - 3)).Position, rng:NextInteger(0, 359), 0.8)
+			bed((cf * CFrame.new(dx * 0.75, 0, -p.d / 2 + 1)).Position, 4)
+		end
+	end
+	-- Village edges and the open map: bushes and flower clusters on grass.
+	scatter(70, 170, Village.SQUARE.x, -20, function(at)
+		prop(if rng:NextNumber() < 0.5 then "Bush1" else "Bush2", at, rng:NextInteger(0, 359), rng:NextNumber(0.7, 1.2))
+	end)
+	scatter(110, 170, Village.SQUARE.x, -20, function(at)
+		bed(at, rng:NextInteger(3, 6))
+	end)
+	scatter(140, 520, 0, 100, function(at)
+		if rng:NextNumber() < 0.55 then
+			prop(if rng:NextNumber() < 0.5 then "Bush1" else "Bush2", at, rng:NextInteger(0, 359), rng:NextNumber(0.8, 1.4))
+		else
+			bed(at, rng:NextInteger(3, 6))
+		end
+	end)
+	-- Market clutter beside each stall: barrels and crates (parts; the barrel packs found carried scripts).
+	for _, st in Village.STALLS do
+		local at = Vector3.new(st.x, 0, st.z)
+		for i, off in { Vector3.new(-6, 0, 0.5), Vector3.new(-6.2, 0, 3), Vector3.new(6.2, 0, 3.5) } do
+			if i == 2 then
+				part({ Name = "Crate", Size = Vector3.new(2.2, 2.2, 2.2), CFrame = CFrame.new(at + off + Vector3.new(0, 1.1, 0)) * CFrame.Angles(0, math.rad(20), 0), Color = WOOD_LIGHT, Material = Enum.Material.WoodPlanks })
+			else
+				part({ Name = "Barrel", Shape = Enum.PartType.Cylinder, Size = Vector3.new(3, 2.4, 2.4), CFrame = CFrame.new(at + off + Vector3.new(0, 1.5, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = WOOD_DARK, Material = Enum.Material.Wood })
+				part({ Name = "BarrelHoop", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 2.55, 2.55), CFrame = CFrame.new(at + off + Vector3.new(0, 2.3, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHex("3A3F45"), Material = Enum.Material.Metal })
+			end
+		end
+	end
+end
+
 function World.build(onProgress: ((number) -> ())?): Built
 	root = Instance.new("Folder")
 	root.Name = "HaggleTown"
@@ -418,6 +521,7 @@ function World.build(onProgress: ((number) -> ())?): Built
 	end
 	place("Village", "Well", CFrame.new(Village.WELL.x, 0, Village.WELL.z))
 	mineDecor()
+	greenery()
 
 	return {
 		merchants = {

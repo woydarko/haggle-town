@@ -107,7 +107,7 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 		local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
 		heading("Your stats", 26, if s.class then Theme.classNames[s.class] else "No class", if s.class then CLASS_COLOR[s.class] else Theme.muted)
 		if not s.class then
-			line("Visit a mentor to pick a class.", Theme.muted)
+			line("Visit the guild mentor to pick a trade.", Theme.muted)
 		end
 		local tiles = row(2 * 46 + GAP)
 		Ui.new("UIGridLayout", { Parent = tiles, CellSize = UDim2.new(0.5, -GAP // 2, 0, 46), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder })

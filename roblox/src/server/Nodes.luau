@@ -6,6 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local StarterPack = game:GetService("StarterPack")
+local ServerStorage = game:GetService("ServerStorage")
 local Shared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local NodeState = require(Shared:WaitForChild("NodeState"))
 local Tools = require(Shared:WaitForChild("Tools"))
@@ -183,10 +184,50 @@ function Nodes.build(): { trees: number, rocks: number, spots: number }
 	return count
 end
 
--- Greybox tools (Creator Store models replace them in Task 8), given to everyone through StarterPack.
+-- Tools given to everyone through StarterPack. Creator Store models from ServerStorage.Assets.Tools (credits in
+-- roblox/ASSETS.md; curated upright, head up, pivot at the grip) are welded to a small invisible Handle at the grip;
+-- the greybox below stays as the fallback when the folder is missing.
+local function fromAsset(name: string): boolean
+	local folder = ServerStorage:FindFirstChild("Assets") and (ServerStorage :: any).Assets:FindFirstChild("Tools")
+	local src = folder and folder:FindFirstChild(name)
+	if not src then
+		return false
+	end
+	local t = Instance.new("Tool")
+	t.Name = name
+	t.ToolTip = Tools[name].tip
+	t.CanBeDropped = false
+	local h = kit.part({ Name = "Handle", Size = V(0.3, 0.3, 0.3), Transparency = 1, CanCollide = false, Anchored = false, Massless = true, Parent = t })
+	local m = src:Clone()
+	m:PivotTo(h.CFrame)
+	local _, size = m:GetBoundingBox()
+	for _, p in m:GetDescendants() do
+		if p:IsA("BasePart") then
+			p.Anchored, p.CanCollide, p.CanQuery, p.Massless = false, false, false, true
+			local w = Instance.new("WeldConstraint")
+			w.Part0, w.Part1 = h, p
+			w.Parent = p
+		end
+	end
+	m.Parent = t
+	if name == "Rod" then
+		-- FishFx hangs the line from Handle.LineTip; put it at the rod's top end.
+		local a = Instance.new("Attachment")
+		a.Name = "LineTip"
+		a.Position = V(0, size.Y * 0.88, 0)
+		a.Parent = h
+	end
+	t.GripPos = V(0, 0, 0)
+	t.Parent = StarterPack
+	return true
+end
+
 function Nodes.tools()
 	local wood, metal = Color3.fromHex("6B4A2B"), Color3.fromHex("8A9199")
 	local function make(name: string, handleSize: Vector3, bits: { { any } })
+		if fromAsset(name) then
+			return
+		end
 		local t = Instance.new("Tool")
 		t.Name = name
 		t.ToolTip = Tools[name].tip

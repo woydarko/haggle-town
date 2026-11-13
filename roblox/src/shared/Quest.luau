@@ -19,7 +19,7 @@ local MERCHANT = { woodcutter = "Woodcutter", smith = "Smith", fishmonger = "Fis
 function Quest.step(s: State): Step
 	local trade = s.class and BY_CLASS[s.class]
 	if not trade then
-		return { index = 1, title = "Pick a trade", detail = "Talk to a mentor in the guild yard behind you. A trade sets what you gather best.", target = "guild" }
+		return { index = 1, title = "Pick a trade", detail = "Talk to the mentor in the guild yard behind you. A trade sets what you gather best.", target = "guild" }
 	end
 	if s.deals == 0 and s.bagCount == 0 then
 		return { index = 2, title = "Gather something to sell", detail = trade.detail, target = "gather", gate = trade.gate }

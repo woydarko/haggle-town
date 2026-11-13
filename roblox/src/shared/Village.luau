@@ -46,9 +46,10 @@ Village.GATES = {
 	{ name = "Coast", x = 84, z = -60, dest = "sea_pier", label = "Coast and sea pier" },
 }
 
--- House plots (20 x 20 footprint), each facing its own street. kind picks the house model (3 = the large one).
+-- House plots (26 x 26 footprint: the largest scaled house is ~26 x 24), each facing its own street.
+-- kind picks the house model (3 = the large one).
 local function plot(x: number, z: number, yaw: number, roadName: string, kind: number)
-	return { x = x, z = z, yaw = yaw, w = 20, d = 20, road = roadName, kind = kind }
+	return { x = x, z = z, yaw = yaw, w = 26, d = 26, road = roadName, kind = kind }
 end
 Village.PLOTS = {
 	plot(-22, 56, -90, "Lake", 3),

@@ -189,7 +189,7 @@ local function onJoin(p: Player)
 	local ok, r = Backend.post("/rbx/join", { userId = uid(p), name = p.DisplayName })
 	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board } else { offline = true })
 	if ok and r.class == nil then
-		Toast:FireClient(p, "Pick a trade from a mentor in the guild yard")
+		Toast:FireClient(p, "Talk to the mentor in the guild yard to pick a trade")
 	end
 end
 Players.PlayerAdded:Connect(onJoin)
@@ -205,20 +205,19 @@ Players.PlayerRemoving:Connect(function(p)
 	statsCache[p] = nil
 end)
 
-for cls, mentor in lobby.mentors do
-	local pp = mentor:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
-	pp.Triggered:Connect(function(p)
-		if Validate.near(distance(p, mentor)) then
-			OpenClassCard:FireClient(p, cls)
-		end
-	end)
-end
+-- One guild mentor: the prompt opens the class conversation (ClassCard) where the player picks a trade.
+local mentorPrompt = lobby.mentor:FindFirstChildOfClass("ProximityPrompt") :: ProximityPrompt
+mentorPrompt.Triggered:Connect(function(p)
+	if Validate.near(distance(p, lobby.mentor)) then
+		OpenClassCard:FireClient(p)
+	end
+end)
 
 ChooseClass.OnServerInvoke = function(p: Player, cls: any)
 	if not Validate.class(cls) then
 		return { error = "invalid" }
 	end
-	if not Validate.near(distance(p, lobby.mentors[cls])) then
+	if not Validate.near(distance(p, lobby.mentor)) then
 		return { error = "too_far", message = "Walk closer to the mentor." }
 	end
 	local ok, r = Backend.post("/rbx/class", { userId = uid(p), class = cls })
