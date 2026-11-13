@@ -32,8 +32,8 @@ check(Regions.fishNodeAt(S.fish.x, S.fish.z) == "fish", "lake spot -> fish")
 check(Regions.fishNodeAt(S.fish_deep.x, S.fish_deep.z) == "fish_deep", "sea spot -> fish_deep")
 
 -- The village is flat enough to build on (< 6 studs per 20) and the town is not buried.
-for x = -140, 140, 20 do
-	for z = -140, 60, 20 do
+for x = -100, 100, 20 do
+	for z = -120, 60, 20 do
 		check(math.abs(Terrain.height(x + 20, z) - Terrain.height(x, z)) < 6 and math.abs(Terrain.height(x, z + 20) - Terrain.height(x, z)) < 6, `village flat at {x},{z}`)
 	end
 end
@@ -74,14 +74,14 @@ for i = 1, #path - 1 do
 end
 for _, name in { "ore_mouth", "ore_deep", "ore_crystal" } do
 	local p = S[name]
-	check(solid(at(p.x, p.y + 40, p.z)), name .. " is underground") -- caverns are up to 32 tall
+	check(solid(at(p.x, p.y + 30, p.z)), name .. " is underground") -- caverns are up to 26 tall
 end
 
--- Mountain ring closes the map: tall at radius 1100 all the way round.
+-- Mountain ring closes the map: tall at radius 540 all the way round.
 local C = Regions.CENTER
 for deg = 0, 358, 2 do
 	local a = math.rad(deg)
-	check(Terrain.height(C.x + 1100 * math.cos(a), C.z + 1100 * math.sin(a)) > 120, `ring closed at {deg} deg`)
+	check(Terrain.height(C.x + 540 * math.cos(a), C.z + 540 * math.sin(a)) > 100, `ring closed at {deg} deg`)
 end
 
 -- Spawn: the lobby spawn pad sits above the generated ground.

@@ -29,16 +29,17 @@ check(Regions.regionAt(L.x, L.z) == "lake", "lake")
 check(Regions.regionAt(M.x, M.z) == "mine", "mine")
 check(Regions.regionAt(G.x, G.z) == "grove", "grove")
 check(Regions.regionAt(seaPoint.x, seaPoint.z) == "coast", "sea is coast")
-check(Regions.regionAt(-550, 760) == "pine", "north-west pine forest")
-check(Regions.regionAt(-450, 200) == "woods", "west woods")
+check(Regions.regionAt(-275, 380) == "pine", "north-west pine forest")
+check(Regions.regionAt(-225, 100) == "woods", "west woods")
 local c = Regions.CENTER
-check(Regions.regionAt(c.x + 1100, c.z) == "peaks", "ring is peaks")
+check(Regions.regionAt(c.x + 550, c.z) == "peaks", "ring is peaks")
+check(c.z == 150 and Regions.RING_OUT == 560, "quarter-area map: centre 150 north, ring 560")
 
 -- isWater agrees with fishNodeAt
 check(Regions.isWater(L.x, L.z) and Regions.isWater(seaPoint.x, seaPoint.z), "lake and sea are water")
 check(not Regions.isWater(V.x, V.z), "village is dry")
 -- The sea stays inside the mountain ring (the ring closes the map).
-for s = -700, 700, 50 do
+for s = -350, 350, 25 do
 	local p = Regions.along(Regions.SEA_D + 100, s)
 	local r = math.sqrt((p.x - c.x) ^ 2 + (p.z - c.z) ^ 2)
 	check(not Regions.isWater(p.x, p.z) or r < Regions.RING_IN, `sea inside the ring at s={s}`)

@@ -361,7 +361,7 @@ local function mineDecor()
 		part({ Name = "CartWheel", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.4, 1.2, 1.2), CFrame = c * CFrame.new(w[1], -1.2, w[2]) * CFrame.Angles(0, math.rad(90), 0), Color = Color3.fromHex("3A3F45"), Material = Enum.Material.Metal })
 	end
 	-- Crystals glow along the deep and crystal cavern walls.
-	for i, at in { { "ore_deep", 10, 9 }, { "ore_deep", -10, 8 }, { "ore_crystal", 10, -8 }, { "ore_crystal", -10, 6 }, { "ore_crystal", 3, 11 } } do
+	for i, at in { { "ore_deep", 8, 7 }, { "ore_deep", -8, 6 }, { "ore_crystal", 8, -6 }, { "ore_crystal", -8, 5 }, { "ore_crystal", 2, 9 } } do
 		local p = spot(at[1]) + Vector3.new(at[2], 0, at[3])
 		local m = place("Mine", "Crystal", CFrame.new(p) * CFrame.Angles(0, math.rad(i * 70), math.rad(10)), i)
 		if m then

@@ -1,5 +1,5 @@
 --!strict
--- Gather nodes in the world: ~120 trees, 40 rocks, 12 fishing spots, plus the Axe / Pickaxe / Rod tools.
+-- Gather nodes in the world: ~80 trees, 32 rocks, 12 fishing spots, plus the Axe / Pickaxe / Rod tools.
 -- The server owns every node's state (shared/NodeState.luau): one player claims it, a felled tree or broken rock
 -- disappears and grows back after 30 s. Fishing spots never run out. Models carry attributes NodeId, Node
 -- (backend gather node id) and State so clients can animate them later.
@@ -129,28 +129,28 @@ function Nodes.build(): { trees: number, rocks: number, spots: number }
 	for i, p in scatter(-72, -44, 22, 12, 8) do
 		treeNode(p, (i - 1) % 3, "wood")
 	end
-	for _, p in scatter(-550, 760, 240, 46, 12) do
+	for _, p in scatter(-275, 380, 120, 30, 10) do
 		treeNode(p, 0, "wood")
 	end
-	for i, p in scatter(-450, 200, 240, 46, 12) do
+	for i, p in scatter(-225, 100, 120, 30, 10) do
 		treeNode(p, 1 + i % 2, "wood")
 	end
-	for _, p in scatter(Regions.GROVE.x, Regions.GROVE.z, 130, 16, 16) do
+	for _, p in scatter(Regions.GROVE.x, Regions.GROVE.z, 70, 10, 14) do
 		treeNode(p, 3, "wood_old")
 	end
 
 	-- Rocks: boulders round the mine mountain foot (not in front of the tunnel), and in the three caverns.
 	local M = Regions.MINE
-	local foot = scatter(M.x, M.z, 380, 26, 10, function(x, z)
-		return Regions.dist(x, z, M) > 315 and not (x < M.x and math.abs(z - M.z) < 40)
+	local foot = scatter(M.x, M.z, 195, 20, 9, function(x, z)
+		return Regions.dist(x, z, M) > 160 and not (x < M.x and math.abs(z - M.z) < 25)
 	end)
 	for _, p in foot do
 		rockNode(p, Color3.fromHex("E07A3F"), "ore_mouth")
 	end
 	local caverns = {
-		{ "ore_mouth", Color3.fromHex("E07A3F"), { { -5, -7 }, { 5, -7 }, { -5, 7 }, { 5, 7 } } },
-		{ "ore_deep", Color3.fromHex("B07CFF"), { { 7, -6 }, { -1, -8 }, { -8, -6 }, { 8, 3 }, { 2, -3 } } },
-		{ "ore_crystal", Color3.fromHex("B07CFF"), { { -7, -5 }, { -7, 5 }, { 7, -5 }, { 7, 5 }, { 0, 8 } } },
+		{ "ore_mouth", Color3.fromHex("E07A3F"), { { -4, -6 }, { 4, -6 }, { -4, 6 }, { 4, 6 } } },
+		{ "ore_deep", Color3.fromHex("B07CFF"), { { 6, -5 }, { -1, -7 }, { -7, -5 }, { 7, 2 } } },
+		{ "ore_crystal", Color3.fromHex("B07CFF"), { { -6, -4 }, { -6, 4 }, { 6, -4 }, { 6, 4 } } },
 	}
 	for _, c in caverns do
 		local s = Terrain.SPOTS[c[1] :: string]
@@ -170,7 +170,7 @@ function Nodes.build(): { trees: number, rocks: number, spots: number }
 		waterNode(V(L.x + (L.r - 9) * math.cos(a), Terrain.WATER_Y, L.z + (L.r - 9) * math.sin(a)), "fish")
 	end
 	waterNode(V(S.fish_deep.x, Terrain.WATER_Y, S.fish_deep.z), "fish_deep")
-	for _, side in { -250, 150, 380 } do
+	for _, side in { -120, 60, 150 } do
 		local p = Regions.along(Regions.SEA_D + 9, side)
 		waterNode(V(p.x, Terrain.WATER_Y, p.z), "fish_deep")
 	end

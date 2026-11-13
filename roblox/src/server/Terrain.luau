@@ -1,5 +1,5 @@
 --!strict
--- Deterministic big map (~2000 studs across), generated at server start so git stays the source of truth.
+-- Deterministic map (~1000 studs across), generated at server start so git stays the source of truth.
 -- height(), material() and materialAt() are pure (math.noise only) so roblox/tests/Terrain.spec.luau checks the layout;
 -- build() writes them with chunked WriteVoxels and carves the mine caverns.
 -- Layout lives in shared/Regions.luau (village at the origin, lake north, mine east, coast south-east, ring around).
@@ -28,32 +28,32 @@ local function lerp(a: number, b: number, t: number): number
 end
 
 function Terrain.height(x: number, z: number): number
-	local h = math.max(2, 14 + math.noise(x / 350, z / 350, 0.37) * 20 + math.noise(x / 80, z / 80, 1.7) * 4)
-	h = lerp(0, h, smooth((dist(x, z, VILLAGE) - VILLAGE.r) / 160)) -- village flat at y 0
+	local h = math.max(2, 12 + math.noise(x / 250, z / 250, 0.37) * 14 + math.noise(x / 80, z / 80, 1.7) * 3)
+	h = lerp(0, h, smooth((dist(x, z, VILLAGE) - VILLAGE.r) / 100)) -- village flat at y 0
 	local dm = dist(x, z, MINE)
-	h = lerp(MINE_FLOOR, h, smooth((dm - 380) / 160))
+	h = lerp(MINE_FLOOR, h, smooth((dm - 220) / 80))
 	local mt = 1 - smooth(dm / MINE.r)
 	if mt > 0 then
-		h = math.max(h, mt * (150 + math.noise(x / 60, z / 60, 3.3) * 15))
+		h = math.max(h, mt * (100 + math.noise(x / 40, z / 40, 3.3) * 10))
 	end
 	local rt = smooth((dist(x, z, CENTER) - Regions.RING_IN) / (Regions.RING_OUT - Regions.RING_IN))
 	if rt > 0 then
-		h = math.max(h, rt * (250 + math.noise(x / 150, z / 150, 5.1) * 40))
+		h = math.max(h, rt * (180 + math.noise(x / 100, z / 100, 5.1) * 25))
 	end
-	-- Lake basin with a 120-stud beach ramp.
+	-- Lake basin with a 70-stud beach ramp.
 	local dl = dist(x, z, LAKE)
 	if dl < LAKE.r then
 		h = WATER_Y - 1 - 13 * (1 - (dl / LAKE.r) ^ 2)
-	elseif dl < LAKE.r + 120 then
-		h = lerp(WATER_Y + 0.5, h, smooth((dl - LAKE.r) / 120))
+	elseif dl < LAKE.r + 70 then
+		h = lerp(WATER_Y + 0.5, h, smooth((dl - LAKE.r) / 70))
 	end
-	-- Sea past the coast line, inside the ring; 140-stud beach ramp.
+	-- Sea past the coast line, inside the ring; 80-stud beach ramp.
 	if dist(x, z, CENTER) < Regions.RING_IN then
 		local cd = Regions.coastD(x, z)
 		if cd > Regions.SEA_D then
-			h = WATER_Y - 1 - math.min(22, (cd - Regions.SEA_D) * 0.25)
-		elseif cd > Regions.SEA_D - 140 then
-			h = lerp(WATER_Y + 0.5, h, smooth((Regions.SEA_D - cd) / 140))
+			h = WATER_Y - 1 - math.min(16, (cd - Regions.SEA_D) * 0.3)
+		elseif cd > Regions.SEA_D - 80 then
+			h = lerp(WATER_Y + 0.5, h, smooth((Regions.SEA_D - cd) / 80))
 		end
 	end
 	return h
@@ -63,9 +63,9 @@ end
 local function surface(x: number, z: number, h: number, slope: number): string
 	if h < WATER_Y - 0.25 then
 		return if h < WATER_Y - 8 then "Mud" else "Sand"
-	elseif h < WATER_Y + 3 and (dist(x, z, LAKE) < LAKE.r + 120 or Regions.coastD(x, z) > Regions.SEA_D - 140) then
+	elseif h < WATER_Y + 3 and (dist(x, z, LAKE) < LAKE.r + 70 or Regions.coastD(x, z) > Regions.SEA_D - 80) then
 		return "Sand"
-	elseif h >= 170 then
+	elseif h >= 130 then
 		return "Snow"
 	elseif slope > 0.9 then
 		return "Rock"
@@ -97,8 +97,8 @@ end
 local function v(x: number, y: number, z: number): V
 	return { x = x, y = y, z = z }
 end
-Terrain.TUNNEL = { v(350, 6, 300), v(490, 6, 300), v(520, 6, 300), v(606, -22, 300), v(606, -40, 412) }
-local CAVERNS = { { at = 2, r = 14 }, { at = 4, r = 16 }, { at = 5, r = 16 } }
+Terrain.TUNNEL = { v(175, 6, 150), v(245, 6, 150), v(260, 6, 150), v(303, -14, 150), v(303, -32, 206) }
+local CAVERNS = { { at = 2, r = 12 }, { at = 4, r = 13 }, { at = 5, r = 13 } }
 -- Air balls carved after the heightmap: radius 7 every 3 studs along the floor, plus the caverns.
 local BALLS: { { c: V, r: number } } = {}
 do
@@ -113,7 +113,8 @@ do
 	end
 	for _, cv in CAVERNS do
 		local p = T[cv.at]
-		table.insert(BALLS, { c = v(p.x, p.y + cv.r, p.z), r = cv.r })
+		-- Bowl bottom 1.5 above the floor line so the cavern edge never dips below the tunnel path.
+		table.insert(BALLS, { c = v(p.x, p.y + cv.r + 1.5, p.z), r = cv.r })
 	end
 end
 
@@ -153,12 +154,12 @@ Terrain.SPOTS = {
 	fish_deep = v(seaSpot.x, WATER_Y, seaSpot.z), -- end of the sea pier
 	lake_pier = ground(0, LAKE.z - LAKE.r - 20),
 	sea_pier = ground(seaPier.x, seaPier.z),
-	mine_mouth = ground(340, 300),
+	mine_mouth = ground(165, 150),
 	ore_mouth = T[2],
 	ore_deep = T[4],
 	ore_crystal = T[5],
-	pine = ground(-550, 760),
-	woods = ground(-450, 200),
+	pine = ground(-275, 380),
+	woods = ground(-225, 100),
 	grove = ground(Regions.GROVE.x, Regions.GROVE.z),
 }
 
@@ -250,7 +251,7 @@ function Terrain.build(onProgress: ((number) -> ())?)
 	for _, name in { "Air", "Water", "Grass", "LeafyGrass", "Sand", "Mud", "Snow", "Rock", "Ground" } do
 		mats[name] = (Enum.Material :: any)[name]
 	end
-	local ext = Regions.RING_OUT + 96
+	local ext = Regions.RING_OUT + 64
 	local x0, x1 = math.floor((CENTER.x - ext) / CH) * CH, math.ceil((CENTER.x + ext) / CH) * CH
 	local z0, z1 = math.floor((CENTER.z - ext) / CH) * CH, math.ceil((CENTER.z + ext) / CH) * CH
 	local chunks = {}
