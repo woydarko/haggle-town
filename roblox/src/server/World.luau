@@ -90,7 +90,7 @@ local function label(parent: BasePart, text: string, color: Color3, height: numb
 	local t = Instance.new("TextLabel")
 	t.Size = UDim2.fromScale(1, 1)
 	t.BackgroundTransparency = 1
-	t.Font = Theme.display
+	t.FontFace = Theme.display
 	t.TextSize = 24
 	t.TextColor3 = color
 	t.TextStrokeTransparency = 0.4
@@ -108,7 +108,7 @@ local function signText(p: BasePart, text: string, color: Color3)
 	local t = Instance.new("TextLabel")
 	t.Size = UDim2.fromScale(1, 1)
 	t.BackgroundColor3 = CLOTH
-	t.Font = Theme.display
+	t.FontFace = Theme.display
 	t.TextScaled = true
 	t.TextColor3 = color
 	t.Text = text

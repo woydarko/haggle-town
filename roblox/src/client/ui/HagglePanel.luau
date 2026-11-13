@@ -35,11 +35,11 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16), Ui.new("UIScale", { Name = "Scale" }) })
 
-	local title = Ui.text({ Parent = panel, Size = UDim2.new(1, -140, 0, 32), Font = Theme.display, TextSize = 28 })
+	local title = Ui.text({ Parent = panel, Size = UDim2.new(1, -140, 0, 32), FontFace = Theme.display, TextSize = 28 })
 	local patience = Ui.text({ Parent = panel, Position = UDim2.new(1, -140, 0, 4), Size = UDim2.fromOffset(140, 24), TextColor3 = Theme.warning, TextXAlignment = Enum.TextXAlignment.Right })
 	local bubble = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 40), Size = UDim2.new(1, 0, 0, 96), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.pad(10) })
 	local line = Ui.text({ Parent = bubble, Size = UDim2.new(1, 0, 0, 48), TextSize = 20 })
-	local counter = Ui.text({ Parent = bubble, Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.5, 0, 0, 26), Font = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary })
+	local counter = Ui.text({ Parent = bubble, Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.5, 0, 0, 26), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary })
 	local reasoning = Ui.text({ Parent = bubble, Position = UDim2.new(0.5, 0, 0, 50), Size = UDim2.new(0.5, 0, 0, 26), TextSize = 16, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right })
 	local chips = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 146), Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1 }, {
 		Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
@@ -49,7 +49,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		Position = UDim2.fromOffset(0, 188),
 		Size = UDim2.new(1, -110, 0, 44),
 		BackgroundColor3 = Theme.surface,
-		Font = Theme.body,
+		FontFace = Theme.body,
 		TextSize = 18,
 		TextColor3 = Theme.text,
 		PlaceholderText = "Make an offer, e.g. 40 for 5 wood",

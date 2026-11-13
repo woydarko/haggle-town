@@ -51,7 +51,7 @@ function Run.play(gui: ScreenGui, node: string, params: Params, opts: Opts?): nu
 		Size = if inWorld then UDim2.fromOffset(360, 72) else UDim2.fromOffset(340, 400),
 		BackgroundColor3 = Theme.surface,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(12) })
-	local hintLabel = Ui.text({ Parent = panel, Size = UDim2.new(1, 0, 0, if inWorld then 26 else 44), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = if inWorld then 18 else 20, Text = "" })
+	local hintLabel = Ui.text({ Parent = panel, Size = UDim2.new(1, 0, 0, if inWorld then 26 else 44), TextXAlignment = Enum.TextXAlignment.Center, FontFace = Theme.display, TextSize = if inWorld then 18 else 20, Text = "" })
 
 	local held, pressed = false, false
 	ContextActionService:BindActionAtPriority("HaggleMinigame", function(_, state: Enum.UserInputState)

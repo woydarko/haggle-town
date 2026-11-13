@@ -24,7 +24,7 @@ function ClassCard.mount(gui: ScreenGui, h: Handlers)
 		Size = UDim2.fromOffset(420, 360),
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16) })
-	local title = Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 36), Font = Theme.display, TextSize = 30 })
+	local title = Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 36), FontFace = Theme.display, TextSize = 30 })
 	local perks = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 170), TextSize = 18, TextYAlignment = Enum.TextYAlignment.Top })
 	local cost = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 220), Size = UDim2.new(1, 0, 0, 44), TextSize = 16, TextColor3 = Theme.muted })
 	local become = Ui.button("Become", true, { Parent = card, Position = UDim2.fromOffset(0, 272), Size = UDim2.fromOffset(240, 48) })

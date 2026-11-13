@@ -9,11 +9,11 @@ local Boards = {}
 
 local lastAsk: { [string]: number } = {}
 
-local function label(parent: Instance, text: string, color: Color3, size: number, height: number, font: Enum.Font?): TextLabel
+local function label(parent: Instance, text: string, color: Color3, size: number, height: number, font: Font?): TextLabel
 	local t = Instance.new("TextLabel")
 	t.Size = UDim2.new(1, 0, 0, height)
 	t.BackgroundTransparency = 1
-	t.Font = font or Theme.body
+	t.FontFace = font or Theme.body
 	t.TextSize = size
 	t.TextColor3 = color
 	t.TextXAlignment = Enum.TextXAlignment.Left

@@ -41,7 +41,7 @@ function Chopping.play(ctx: any, params: any): number?
 	Ui.new("Frame", { Parent = spot, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.fromScale(0.5, 0), Size = UDim2.fromScale(0.3, 1), BackgroundColor3 = Theme.warning })
 	local needle = Ui.new("Frame", { Parent = bar, Position = UDim2.new(0, -3, 0, -6), Size = UDim2.new(0, 6, 1, 12), BackgroundColor3 = Theme.text })
 	-- Status sits under the hint in the slim strip (in-world bar) or lower in the full panel.
-	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, if bb then 26 else 210), Size = UDim2.new(1, 0, 0, if bb then 22 else 60), TextXAlignment = Enum.TextXAlignment.Center, Font = Theme.display, TextSize = if bb then 18 else 30, Text = "" })
+	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, if bb then 26 else 210), Size = UDim2.new(1, 0, 0, if bb then 22 else 60), TextXAlignment = Enum.TextXAlignment.Center, FontFace = Theme.display, TextSize = if bb then 18 else 30, Text = "" })
 
 	local function newSpot(): number
 		local c = width / 2 + math.random() * (1 - width)

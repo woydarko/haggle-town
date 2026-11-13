@@ -29,7 +29,7 @@ function Loading.show()
 	title.Position = UDim2.fromScale(0.5, 0.48)
 	title.Size = UDim2.new(0.8, 0, 0, 48)
 	title.BackgroundTransparency = 1
-	title.Font = Theme.display
+	title.FontFace = Theme.display
 	title.TextScaled = true
 	title.TextColor3 = Theme.text
 	title.Text = "Building the valley..."

@@ -18,9 +18,9 @@ function Hud.mount(gui: ScreenGui, onStats: () -> ())
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center }) })
 
-	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), Font = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "Coin ..." })
-	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), Font = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
-	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), Font = Theme.numeric, TextSize = 20, Text = "Bag 0" })
+	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "Coin ..." })
+	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), FontFace = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
+	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), FontFace = Theme.numeric, TextSize = 20, Text = "Bag 0" })
 	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
 	stats.Activated:Connect(onStats)
 	local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }

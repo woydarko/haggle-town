@@ -25,9 +25,9 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(14), Ui.new("UIListLayout", { Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }) })
 
 	local n = 0
-	local function line(text: string, color: Color3?, font: Enum.Font?, size: number?)
+	local function line(text: string, color: Color3?, font: Font?, size: number?)
 		n += 1
-		Ui.text({ Parent = panel, LayoutOrder = n, Size = UDim2.new(1, 0, 0, (size or 18) + 6), Text = text, TextColor3 = color or Theme.text, Font = font or Theme.body, TextSize = size or 18 })
+		Ui.text({ Parent = panel, LayoutOrder = n, Size = UDim2.new(1, 0, 0, (size or 18) + 6), Text = text, TextColor3 = color or Theme.text, FontFace = font or Theme.body, TextSize = size or 18 })
 	end
 
 	local function render(s: any)

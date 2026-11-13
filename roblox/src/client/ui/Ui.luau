@@ -35,7 +35,7 @@ end
 function Ui.text(props: { [string]: any }): TextLabel
 	local base = {
 		BackgroundTransparency = 1,
-		Font = Theme.body,
+		FontFace = Theme.body,
 		TextSize = 18,
 		TextColor3 = Theme.text,
 		TextXAlignment = Enum.TextXAlignment.Left,
@@ -50,7 +50,7 @@ end
 function Ui.button(text: string, primary: boolean, props: { [string]: any }): TextButton
 	local base = {
 		Text = text,
-		Font = Theme.display,
+		FontFace = Theme.display,
 		TextSize = 20,
 		AutoButtonColor = true,
 		BackgroundColor3 = if primary then Theme.primary else Theme.surface,
@@ -71,7 +71,7 @@ function Ui.icon(name: string, tier: string, px: number, props: { [string]: any 
 	end
 	return Ui.new("Frame", base, {
 		Ui.new("UICorner", { CornerRadius = UDim.new(0.22, 0) }),
-		Ui.text({ Size = UDim2.fromScale(1, 1), Text = string.upper(string.sub(name, 1, 1)), Font = Theme.display, TextScaled = true, TextColor3 = Theme.onPrimary, TextXAlignment = Enum.TextXAlignment.Center }),
+		Ui.text({ Size = UDim2.fromScale(1, 1), Text = string.upper(string.sub(name, 1, 1)), FontFace = Theme.display, TextScaled = true, TextColor3 = Theme.onPrimary, TextXAlignment = Enum.TextXAlignment.Center }),
 	})
 end
 
@@ -82,7 +82,7 @@ function Ui.tierBadge(tier: string, props: { [string]: any }?): TextLabel
 		BackgroundTransparency = 0,
 		BackgroundColor3 = Theme.tiers[tier] or Theme.muted,
 		Text = string.upper(tier),
-		Font = Theme.display,
+		FontFace = Theme.display,
 		TextSize = 16,
 		TextColor3 = Theme.onPrimary,
 		TextXAlignment = Enum.TextXAlignment.Center,

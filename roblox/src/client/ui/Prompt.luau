@@ -40,10 +40,10 @@ function Prompt.start()
 			BackgroundColor3 = Theme.primary,
 			Text = keyText(prompt, input),
 			TextScaled = true,
-			Font = Theme.display,
+			FontFace = Theme.display,
 			TextColor3 = Theme.onPrimary,
 		}, { Ui.corner(), Ui.pad(6) })
-		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 6), Size = UDim2.new(1, -66, 0, 24), Font = Theme.display, TextSize = 20, Text = prompt.ActionText })
+		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 6), Size = UDim2.new(1, -66, 0, 24), FontFace = Theme.display, TextSize = 20, Text = prompt.ActionText })
 		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 30), Size = UDim2.new(1, -66, 0, 20), TextSize = 15, TextColor3 = Theme.muted, Text = prompt.ObjectText })
 		card.Activated:Connect(function()
 			prompt:InputHoldBegin()

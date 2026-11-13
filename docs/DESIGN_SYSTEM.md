@@ -24,9 +24,9 @@ Two surfaces share one look: the **Roblox game UI** (ScreenGui, Luau) and the **
 | color.tier.common / rare / epic / legendary | #5B626C / #2A5FB4 / #8A3FC2 / #8A5E00 | Item rarity text (boards, bag, chips); each >= 4.86:1 on background and surface |
 | color.error | #A12C2C | Failed deal, refused (always with text label) |
 | color.focus | #1F5FBF | Focus ring (web) |
-| font.display | Fraunces 600 (web); Enum.Font.FredokaOne (Roblox) | Titles, merchant names |
-| font.body | IBM Plex Sans 400, 16/24 (web); Enum.Font.BuilderSans 18 px min (Roblox) | Body copy, chat |
-| font.numeric | IBM Plex Mono 500 (web); Enum.Font.RobotoMono (Roblox) | Prices, balances |
+| font.display | Fraunces 600 (web); Fondamento (Roblox, `Font.fromName`) | Titles, merchant names. Reason: hand-lettered market-sign voice, readable from 20 px |
+| font.body | IBM Plex Sans 400, 16/24 (web); Merriweather 18 px min (Roblox) | Body copy, chat. Reason: screen-reading serif that matches the parchment look |
+| font.numeric | IBM Plex Mono 500 (web); Merriweather Bold (Roblox) | Prices, balances. Reason: a mono face reads as terminal, not market board (changed 2026-11-13, v4) |
 | space.unit | 4 px (web); 4 px scale in Offset (Roblox) | Spacing scale 4/8/12/16/24/32/48 |
 | radius.control | 8 px (web); UICorner 8 px (Roblox) | Inputs, buttons, bubbles |
 

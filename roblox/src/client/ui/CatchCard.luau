@@ -36,7 +36,7 @@ function CatchCard.mount(gui: ScreenGui)
 		Enabled = false,
 	})
 	local holder = Ui.new("Frame", { Parent = card, BackgroundTransparency = 1, Size = UDim2.fromOffset(80, 80) })
-	local name = Ui.text({ Parent = card, Position = UDim2.fromOffset(92, 0), Size = UDim2.new(1, -92, 0, 32), Font = Theme.display, TextSize = 26, Text = "" })
+	local name = Ui.text({ Parent = card, Position = UDim2.fromOffset(92, 0), Size = UDim2.new(1, -92, 0, 32), FontFace = Theme.display, TextSize = 26, Text = "" })
 	local qty = Ui.text({ Parent = card, Position = UDim2.fromOffset(92, 62), Size = UDim2.new(1, -92, 0, 18), TextSize = 16, TextColor3 = Theme.muted, Text = "" })
 	local badge: TextLabel? = nil
 	local shownId = 0

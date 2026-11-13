@@ -14,9 +14,11 @@ local Theme = {
 	success = Color3.fromHex("2F7A3B"),
 	warning = Color3.fromHex("B07A12"),
 	error = Color3.fromHex("A12C2C"),
-	display = Enum.Font.FredokaOne,
-	body = Enum.Font.BuilderSans,
-	numeric = Enum.Font.RobotoMono,
+	-- Fondamento: hand-lettered market-sign voice for titles and names (readable from 20 px).
+	-- Merriweather: screen-reading serif for body and chat, matches the parchment look; bold for prices.
+	display = Font.fromName("Fondamento"),
+	body = Font.fromName("Merriweather"),
+	numeric = Font.fromName("Merriweather", Enum.FontWeight.Bold),
 	radius = UDim.new(0, 8),
 	space = 8,
 }

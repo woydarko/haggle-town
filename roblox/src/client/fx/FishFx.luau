@@ -167,7 +167,7 @@ function FishFx.bite(c: Cast)
 	t.BackgroundTransparency = 1
 	t.Text = "!"
 	t.TextScaled = true
-	t.Font = Enum.Font.FredokaOne
+	t.FontFace = Font.fromName("Fondamento")
 	t.TextColor3 = Color3.fromHex("FFD089")
 	t.TextStrokeTransparency = 0
 	t.Parent = bb
