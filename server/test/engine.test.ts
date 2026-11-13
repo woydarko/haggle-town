@@ -215,3 +215,24 @@ test("accepting twice -> 409", async () => {
   await engine.accept("roblox:1", q.counter!.dealId);
   await assert.rejects(engine.accept("roblox:1", q.counter!.dealId), (e: any) => e.statusCode === 409);
 });
+
+test("a settled deal ends the haggle session: later haggles start fresh", async () => {
+  const { say, engine } = await setup();
+  for (let i = 1; i <= 7; i++) {
+    const q = await say("roblox:1", "8 for 1 wood");
+    assert.ok(q.counter, `haggle ${i} gets a counter`);
+    assert.equal((await engine.accept("roblox:1", q.counter!.dealId)).status, "settled");
+  }
+});
+
+test("five rounds used: last live quote is offered again; once it expired a fresh session starts", async () => {
+  const { say, clock } = await setup();
+  for (let i = 1; i <= 5; i++) assert.ok((await say("roblox:1", "8 for 1 wood")).counter, `round ${i}`);
+  const sixth = await say("roblox:1", "8 for 1 wood");
+  assert.equal(sixth.line, "Let's settle or part ways.");
+  assert.ok(sixth.counter, "the last quote is still on the table");
+  clock.t += 31_000; // that quote expires: the haggle is over, the player is not locked out
+  const fresh = await say("roblox:1", "8 for 1 wood");
+  assert.notEqual(fresh.line, "Let's settle or part ways.");
+  assert.ok(fresh.counter, "new session quotes again");
+});

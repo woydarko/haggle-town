@@ -112,7 +112,13 @@ export class HaggleEngine {
     this.lastMsg.set(playerId, t);
 
     const persona = PERSONAS[merchant];
-    const session = this.session(playerId, merchant);
+    let session = this.session(playerId, merchant);
+    // All rounds used and the last quote lapsed: that haggle is over, so this message opens a new one.
+    // Without this a player would be stuck on "settle or part ways" with this merchant for good.
+    if (session.rounds >= MAX_ROUNDS && !this.lastCounter(session.id)) {
+      this.closeSession(session.id);
+      session = this.session(playerId, merchant);
+    }
     const side: Side = offer.side ?? "buy";
     const qty = Math.min(Math.max(offer.qty ?? 1, 1), 10);
     // Item: named in this message, else the one being haggled in this session, else (selling) the rarest one held, else common.
@@ -200,6 +206,7 @@ export class HaggleEngine {
     try {
       const { txHash } = await this.d.queue(() => this.d.chain.call("settle_deal", { deal, merchant_sig }));
       this.d.db.prepare("UPDATE deal SET status = 'settled', tx_hash = ? WHERE id = ?").run(txHash, row.id);
+      this.closeSession(row.session_id); // a deal ends the haggle; the next message starts with fresh rounds
       await this.d.market.refresh().catch(() => undefined);
       return { status: "settled", balances: await this.d.players.balances(playerId), txHash };
     } catch (e) {
@@ -290,6 +297,10 @@ export class HaggleEngine {
     const id = randomUUID();
     this.d.db.prepare("INSERT INTO haggle_session (id, player_id, merchant, opened_at) VALUES (?, ?, ?, ?)").run(id, playerId, merchant, this.now());
     return { id, rounds: 0 };
+  }
+
+  private closeSession(sessionId: string) {
+    this.d.db.prepare("UPDATE haggle_session SET closed_at = ? WHERE id = ? AND closed_at IS NULL").run(this.now(), sessionId);
   }
 
   private lastQuoted(sessionId: string, side: Side): number | undefined {
