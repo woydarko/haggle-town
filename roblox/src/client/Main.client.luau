@@ -105,6 +105,19 @@ local card = ClassCard.mount(gui, {
 	end,
 })
 
+-- Phones in landscape are ~375 px tall: scale every panel down so the tallest (Stats, 440) still fits.
+local function fit()
+	local s = math.min(1, workspace.CurrentCamera.ViewportSize.Y / 520)
+	for _, c in gui:GetChildren() do
+		if c:IsA("GuiObject") then
+			local u = c:FindFirstChildOfClass("UIScale") or Instance.new("UIScale", c)
+			u.Scale = s
+		end
+	end
+end
+fit()
+workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
+
 StateChanged.OnClientEvent:Connect(function(state)
 	hud.offline(state.offline == true)
 	if state.balances then

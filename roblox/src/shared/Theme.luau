@@ -8,11 +8,11 @@ local Theme = {
 	muted = Color3.fromHex("6E5D4A"),
 	primary = Color3.fromHex("B4471F"),
 	onPrimary = Color3.fromHex("FFF9EE"),
-	wood = Color3.fromHex("A8661C"),
-	fish = Color3.fromHex("1E7A78"),
+	wood = Color3.fromHex("965A16"), -- wood, fish, warning darkened in v4 to pass 4.5:1 as text on background
+	fish = Color3.fromHex("1B7270"),
 	iron = Color3.fromHex("4F5D6B"),
 	success = Color3.fromHex("2F7A3B"),
-	warning = Color3.fromHex("B07A12"),
+	warning = Color3.fromHex("8C5F07"),
 	error = Color3.fromHex("A12C2C"),
 	-- Fondamento: hand-lettered market-sign voice for titles and names (readable from 20 px).
 	-- Merriweather: screen-reading serif for body and chat, matches the parchment look; bold for prices.

@@ -16,11 +16,11 @@ Two surfaces share one look: the **Roblox game UI** (ScreenGui, Luau) and the **
 | color.text | #2B2118 (ink) | Primary copy |
 | color.muted | #6E5D4A | Secondary copy, captions |
 | color.primary | #B4471F (stamp red) | Main actions: Accept, Fast-forward |
-| color.accent.wood | #A8661C | Wood series, icons |
-| color.accent.fish | #1E7A78 | Fish series, icons |
+| color.accent.wood | #965A16 | Wood series, icons |
+| color.accent.fish | #1B7270 | Fish series, icons |
 | color.accent.iron | #4F5D6B | Iron series, icons |
 | color.success | #2F7A3B | Deal done, price down for buyer |
-| color.warning | #B07A12 | Pending deal, low patience |
+| color.warning | #8C5F07 | Pending deal, low patience |
 | color.tier.common / rare / epic / legendary | #5B626C / #2A5FB4 / #8A3FC2 / #8A5E00 | Item rarity text (boards, bag, chips); each >= 4.86:1 on background and surface |
 | color.error | #A12C2C | Failed deal, refused (always with text label) |
 | color.focus | #1F5FBF | Focus ring (web) |
@@ -127,7 +127,7 @@ Web: h1 40/48 Fraunces 600, h2 28/36, h3 22/28, h4 18/24, body 16/24 Plex Sans, 
 Roblox: titles FredokaOne 28 px, body BuilderSans 18-20 px, numbers RobotoMono 20 px; TextScaled off, sizes fixed with UIScale for small screens.
 
 ### 5. Color roles
-Background #F4ECDD, surface #FFF9EE, border #D9C7A6, text #2B2118, muted #6E5D4A, primary #B4471F, accents wood #A8661C / fish #1E7A78 / iron #4F5D6B, success #2F7A3B, warning #B07A12, error #A12C2C, focus #1F5FBF. Light theme only. Contrast ratios: Not run (check in Phase 5; text on background target >= 4.5:1).
+Background #F4ECDD, surface #FFF9EE, border #D9C7A6, text #2B2118, muted #6E5D4A, primary #B4471F, accents wood #965A16 / fish #1B7270 / iron #4F5D6B, success #2F7A3B, warning #8C5F07, error #A12C2C, focus #1F5FBF. Light theme only. Contrast ratios (antislop-contrast, 2026-11-13): text 13.4, muted 5.4, primary 4.6, wood 4.7, fish 4.9, iron 5.8, warning 4.8 on background; light text on primary 5.2, on tiers 5.4-5.9.
 
 ### 6. Spacing and grid
 4 px base, scale 4/8/12/16/24/32/48; container 1200 px; breakpoints 390/768/1280; mobile-first CSS.

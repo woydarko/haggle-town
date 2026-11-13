@@ -2,6 +2,7 @@
 -- First-session guide: a "next step" card top-left under the Roblox menu buttons and a marker (arrow + distance)
 -- over the target in the world. Steps come from shared/Quest.luau; it guides, it never blocks.
 local Players = game:GetService("Players")
+local GuiService = game:GetService("GuiService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared:WaitForChild("Theme"))
@@ -80,7 +81,21 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 				doneAt = doneAt or os.clock()
 				folded = os.clock() - (doneAt :: number) > 10
 			end
-			card.Visible, toggle.Visible = not folded, folded
+			-- Step aside while a panel (haggle, trade, stats) is open so it never peeks out from behind it.
+			local busy = false
+			for _, n in { "HagglePanel", "ClassCard", "StatsPanel" } do
+				local f = gui:FindFirstChild(n) :: GuiObject?
+				busy = busy or (f ~= nil and f.Visible)
+			end
+			card.Visible, toggle.Visible = not folded and not busy, folded and not busy
+			-- Sit under Roblox's chat window (top-left) while it is shown; it is hidden on phones until opened.
+			local chat = player.PlayerGui:FindFirstChild("Chat")
+			local frame = chat and chat:FindFirstChild("Frame") :: GuiObject?
+			local y = 64
+			if frame and frame.Visible and (chat :: ScreenGui).Enabled then
+				y = math.max(y, frame.AbsolutePosition.Y + frame.AbsoluteSize.Y + GuiService:GetGuiInset().Y + 8)
+			end
+			card.Position, toggle.Position = UDim2.fromOffset(16, y), UDim2.fromOffset(16, y)
 			task.wait(0.25)
 		end
 	end)

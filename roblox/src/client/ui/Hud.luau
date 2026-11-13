@@ -32,7 +32,8 @@ function Hud.mount(gui: ScreenGui, onStats: () -> ())
 	local offline = Ui.text({
 		Parent = gui,
 		Visible = false,
-		Position = UDim2.new(0.5, -220, 0, 90),
+		AnchorPoint = Vector2.new(0.5, 0),
+		Position = UDim2.new(0.5, 0, 0, 90),
 		Size = UDim2.fromOffset(440, 40),
 		BackgroundTransparency = 0,
 		BackgroundColor3 = Theme.error,
