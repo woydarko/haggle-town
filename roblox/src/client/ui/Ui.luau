@@ -63,7 +63,8 @@ function Ui.button(text: string, primary: boolean, props: { [string]: any }): Te
 	return Ui.new("TextButton", base, { Ui.corner(), Ui.stroke() })
 end
 
--- Item icon: a tier-coloured rounded tile with the item's initial (fallback until uploaded icon images exist).
+-- Item icon: a tier-coloured rounded tile with the item's initial. Only the coin has an image (shared/Icons.luau):
+-- ForgeGUI credits ran out after 5 of 13 icons and a half-image, half-tile bag would look inconsistent.
 function Ui.icon(name: string, tier: string, px: number, props: { [string]: any }?): Frame
 	local base = { Size = UDim2.fromOffset(px, px), BackgroundColor3 = Theme.tiers[tier] or Theme.muted }
 	for k, v in props or {} do

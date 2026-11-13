@@ -5,6 +5,7 @@ local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
 local Ui = require(script.Parent.Ui)
 local Items = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Items"))
+local Icons = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Icons"))
 
 local Hud = {}
 
@@ -16,9 +17,11 @@ function Hud.mount(gui: ScreenGui, onStats: () -> ())
 		Position = UDim2.new(0.5, 0, 0, 8),
 		Size = UDim2.fromOffset(480, 44), -- 130+90+80+100 + 3x16 gaps + padding
 		BackgroundColor3 = Theme.background,
-	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center }) })
+	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }) })
 
-	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "Coin ..." })
+	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "..." })
+	Ui.new("UIPadding", { Parent = coin, PaddingLeft = UDim.new(0, 34) })
+	Ui.new("ImageLabel", { Parent = coin, Name = "CoinIcon", Position = UDim2.fromOffset(-34, 2), Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1, Image = Icons.coin })
 	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), FontFace = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
 	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), FontFace = Theme.numeric, TextSize = 20, Text = "Bag 0" })
 	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
@@ -41,7 +44,7 @@ function Hud.mount(gui: ScreenGui, onStats: () -> ())
 	local api = {}
 
 	function api.balances(b: { [string]: number })
-		coin.Text = `Coin {b.coin or 0} C`
+		coin.Text = `{b.coin or 0} C`
 		bag.Text = `Bag {Items.bagCount(b)}`
 	end
 

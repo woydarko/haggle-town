@@ -16,6 +16,7 @@ Every model in `roblox/assets/` comes from the Roblox Creator Store (free). Scri
 | Village/House3 | 4989402992 (Low Poly Medieval House) | anomon | Free model, credit requested by the creator | Village house |
 | Village/Well1 | 5103977622 (well) | B_annedB | Free model (Creator Store) | Town square |
 | Mine/Crystal1-2 | 138344717707782 (Low Poly Crystal pack) | Pimasova17 | Free model (Creator Store; 4 scripts + 2 sounds removed) | Deep + crystal caverns |
+| Icons.coin (shared/Icons.luau, image, not a model) | 114408141984568 (Image, uploaded via ForgeGUI) | lyrzabil (generated with ForgeGUI) | Own upload | HUD coin count |
 
 Pipeline: Studio MCP `insert_asset` into `ServerStorage._AssetStaging` (outside the synced Assets folder) -> strip scripts, anchor,
 scale, rename, move to `Assets/<Category>` -> save place -> `rojo syncback roblox/assets.project.json --input
