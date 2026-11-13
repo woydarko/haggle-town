@@ -48,7 +48,7 @@ local function box(parent: Instance, size: UDim2, order: number?): Frame
 	return f
 end
 
-local function canvas(board: BasePart, title: string): Frame
+local function canvas(board: BasePart, title: string, titleSize: number?): Frame
 	local gui = board:FindFirstChild("Gui") :: SurfaceGui
 	local old = gui:FindFirstChild("Canvas")
 	if old then
@@ -63,7 +63,7 @@ local function canvas(board: BasePart, title: string): Frame
 	pad.PaddingLeft, pad.PaddingRight = UDim.new(0, 24), UDim.new(0, 24)
 	pad.PaddingTop, pad.PaddingBottom = UDim.new(0, 16), UDim.new(0, 16)
 	pad.Parent = f
-	label(f, title, Theme.text, 44, 56, Theme.display)
+	label(f, title, Theme.text, titleSize or 44, 56, Theme.display)
 	f.Parent = gui
 	return f
 end
@@ -134,7 +134,8 @@ end
 
 -- Top five by net worth: name left, coin value right (two labels, so the numbers line up).
 function Boards.renderLeaders(board: BasePart, leaders: { any }?)
-	local f = canvas(board, "Richest traders")
+	-- Net worth, not coin: the backend ranks coin plus every item at its merchant's bid (server/src/game/leaderboard.ts).
+	local f = canvas(board, "Richest traders (coin + goods)", 34)
 	if not leaders or #leaders == 0 then
 		label(f, "No trades yet. Be the first!", Theme.muted, 26, 36).LayoutOrder = 1
 		return
