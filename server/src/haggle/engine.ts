@@ -121,10 +121,12 @@ export class HaggleEngine {
       this.closeSession(session.id);
       session = this.session(playerId, merchant);
     }
-    const side: Side = offer.side ?? "buy";
-    const qty = Math.min(Math.max(offer.qty ?? 1, 1), 10);
-    // Item: named in this message, else the one being haggled in this session, else (selling) the rarest one held, else common.
-    const itemId = asked?.id ?? this.lastItem(session.id) ?? (side === "sell" ? await this.rarestHeld(playerId, category) : itemOf(category, "common").id);
+    // Side, quantity and item: from this message, else the deal being haggled in this session (follow-ups such as
+    // "Make it 15 each" name none of them), else buy x1 / (selling) the rarest item held / the common item.
+    const last = this.lastDeal(session.id);
+    const side: Side = offer.side ?? last?.side ?? "buy";
+    const qty = Math.min(Math.max(offer.qty ?? last?.qty ?? 1, 1), 10);
+    const itemId = asked?.id ?? last?.good ?? (side === "sell" ? await this.rarestHeld(playerId, category) : itemOf(category, "common").id);
     const item = itemById(itemId)!;
     const view = this.view(merchant, itemId);
     let patience = this.patience(playerId, merchant, view.day);
@@ -262,11 +264,11 @@ export class HaggleEngine {
     return v;
   }
 
-  private lastItem(sessionId: string): string | undefined {
-    const r = this.d.db.prepare("SELECT good FROM deal WHERE session_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1").get(sessionId) as
-      | { good: string }
-      | undefined;
-    return r && itemById(r.good) ? r.good : undefined;
+  private lastDeal(sessionId: string): { good: string; side: Side; qty: number } | undefined {
+    const r = this.d.db
+      .prepare("SELECT good, side, qty FROM deal WHERE session_id = ? ORDER BY created_at DESC, rowid DESC LIMIT 1")
+      .get(sessionId) as { good: string; side: Side; qty: number } | undefined;
+    return r && itemById(r.good) ? r : undefined;
   }
 
   private async rarestHeld(playerId: string, category: string): Promise<string> {

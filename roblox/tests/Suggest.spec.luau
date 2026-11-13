@@ -49,4 +49,13 @@ for _ in all do
 	n += 1
 end
 check(n >= 10, `six rounds show at least 10 different lines ({n})`)
+-- Chip prices (haggle panel buttons) are the same numbers the sentences use.
+local sell = Suggest.prices({ side = "sell", unitPrice = 25, itemName = "Sardine", qty = 1, round = 1 })
+check(sell.meet == 28 and sell.counter == 25 and sell.firm == 30, "sell chips: meet 28, counter 25, firm 30")
+local buy = Suggest.prices({ side = "buy", unitPrice = 50, itemName = "Oak", qty = 2, round = 1 })
+check(buy.meet == 45 and buy.firm == 40, "buy chips: meet 45, firm 40")
+local tiny = Suggest.prices({ side = "buy", unitPrice = 2, itemName = "Pine", qty = 1, round = 1 })
+check(tiny.meet == 1 and tiny.firm >= 1, "buy chips never go below 1")
+local l = Suggest.lines({ side = "sell", unitPrice = 25, itemName = "Sardine", qty = 1, round = 1 }, {})
+check(string.find(l[1], "28", 1, true) ~= nil and string.find(l[3], "30", 1, true) ~= nil, "sentences carry the chip prices")
 print("Suggest.spec passed")

@@ -70,14 +70,21 @@ local function pick(bank: { string }, round: number, v: { [string]: string }, re
 	return fill(bank[1], v)
 end
 
-function Suggest.lines(ctx: Ctx, recent: { string }): { string }
+-- The three prices behind the lines: meet in the middle, the counter itself, and a firm push. The haggle panel's
+-- price chips show meet and firm.
+function Suggest.prices(ctx: Ctx): { meet: number, counter: number, firm: number }
 	local c = math.max(1, math.floor(ctx.unitPrice))
 	local buying = ctx.side == "buy"
 	-- Player buying wants lower prices, selling wants higher; small prices still move by at least 1.
 	local m = if buying then math.max(1, math.min(c - 1, math.floor(c * 0.9 + 0.5))) else math.max(c + 1, math.floor(c * 1.1 + 0.5))
 	local f = if buying then math.max(1, math.min(m - 1, math.floor(c * 0.8 + 0.5))) else math.max(m + 1, math.floor(c * 1.2 + 0.5))
-	local v = { m = tostring(m), c = tostring(c), f = tostring(f), item = string.lower(ctx.itemName), q = tostring(ctx.qty) }
-	local side = if buying then "buy" else "sell"
+	return { meet = m, counter = c, firm = f }
+end
+
+function Suggest.lines(ctx: Ctx, recent: { string }): { string }
+	local p = Suggest.prices(ctx)
+	local v = { m = tostring(p.meet), c = tostring(p.counter), f = tostring(p.firm), item = string.lower(ctx.itemName), q = tostring(ctx.qty) }
+	local side = if ctx.side == "buy" then "buy" else "sell"
 	return {
 		pick(MEET[side], ctx.round, v, recent),
 		pick(ACCEPT, ctx.round, v, recent),

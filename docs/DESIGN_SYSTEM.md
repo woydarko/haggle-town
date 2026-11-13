@@ -102,12 +102,15 @@ W2 HUD (top-left)
 W3 Haggle panel (bottom-center)
 ```
 +------------------------------------------------+
-| WOODCUTTER  (pleased)            patience o o o |
+| Woodcutter pleased                patience * * * |
 | "Too much wood, friend. 4 C each, take it."     |
-| Counter: 4 C x 5 = 20 C      (i) stock 140/100  |
-| [ Make an offer...                     ] [Send] |
+| [pine icon] 4 C  x5 = 20 C                [Why?] |
+| [ 5 C  fair ] [ 6 C  bold ]   or type your own   |
+| [ e.g. 2 oak for 90                    ] [Send] |
 | [ Accept 20 C ]                        [ Leave ] |
 +------------------------------------------------+
+v6: reasoning (stock, room) sits behind Why?; price chips send a sentence in one tap; before a counter the chip
+row shows the bag items this merchant buys as pixel icons with counts.
 ```
 W4 Web dashboard (desktop)
 ```

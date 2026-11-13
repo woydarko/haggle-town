@@ -105,6 +105,17 @@ test("named item is haggled and sticks for the session", async () => {
   assert.equal(b.counter?.item, "fish_trout");
 });
 
+test("a follow-up line without side or quantity keeps the session's side and quantity", async () => {
+  // The haggle panel's price chips send sentences like "Make it 15 each and they're yours."
+  const { say } = await setup({ held: { fish_trout: "3" } });
+  const a = await say("roblox:1", "sell 3 trout for 120", "fishmonger");
+  assert.equal(a.counter?.side, "sell");
+  const b = await say("roblox:1", "Make it 45 each and they're yours.", "fishmonger");
+  assert.equal(b.counter?.item, "fish_trout");
+  assert.equal(b.counter?.side, "sell");
+  assert.equal(b.counter?.qty, 3);
+});
+
 test("selling without a name picks the rarest item held of that category", async () => {
   const { say } = await setup({ held: { wood_pine: "5", wood_oak: "1" } });
   const r = await say("roblox:1", "I want to sell");
