@@ -169,7 +169,13 @@ end
 -- title/action default to the merchant's name and "Haggle"; facing defaults to +Z.
 local function npc(name: string, pos: Vector3, shirt: Color3, title: string?, action: string?, facing: Vector3?): BasePart
 	local tag, verb, dir = title or Theme.merchantNames[name], action or "Haggle", facing or Vector3.new(0, 0, 1)
+	-- Dressed avatars (Studio avatar generation, credits in roblox/ASSETS.md) from Assets/NPCs/<name>; pivot = root part.
+	local dressed = ServerStorage:FindFirstChild("Assets") and (ServerStorage :: any).Assets:FindFirstChild("NPCs")
+	local src = dressed and dressed:FindFirstChild(name)
 	local ok, model = pcall(function()
+		if src then
+			return src:Clone()
+		end
 		local d = Instance.new("HumanoidDescription")
 		local skin = Color3.fromHex("E8C39E")
 		d.HeadColor, d.LeftArmColor, d.RightArmColor = skin, skin, skin
@@ -183,7 +189,11 @@ local function npc(name: string, pos: Vector3, shirt: Color3, title: string?, ac
 		local hum = m:FindFirstChildOfClass("Humanoid") :: Humanoid
 		hum.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		local hrp = m:WaitForChild("HumanoidRootPart") :: BasePart
-		m:PivotTo(CFrame.lookAt(pos + Vector3.new(0, 3, 0), pos + Vector3.new(0, 3, 0) + dir))
+		-- Feet on the ground whatever the rig: lift the pivot by its height above the model's lowest point
+		-- (generated avatars carry a pivot offset, so the root part's height is not the pivot's).
+		local box, size = m:GetBoundingBox()
+		local lift = m:GetPivot().Position.Y - (box.Position.Y - size.Y / 2)
+		m:PivotTo(CFrame.lookAt(pos + Vector3.new(0, lift, 0), pos + Vector3.new(0, lift, 0) + dir))
 		for _, d in m:GetDescendants() do
 			if d:IsA("BasePart") then
 				d.Anchored = true
@@ -392,7 +402,6 @@ end
 
 export type Built = {
 	merchants: { [string]: BasePart },
-	ledger: Part,
 }
 
 -- Grass, bushes, flowers, fences and market clutter (Creator Store props in Assets/Props, credits in roblox/ASSETS.md).
@@ -562,9 +571,6 @@ function World.build(onProgress: ((number) -> ())?): Built
 			fishmonger = stall("fishmonger", "fish", Vector3.new(Village.STALLS.fishmonger.x, 0, Village.STALLS.fishmonger.z), Theme.fish),
 			smith = stall("smith", "iron", Vector3.new(Village.STALLS.smith.x, 0, Village.STALLS.smith.z), Theme.iron),
 		},
-		-- Market Ledger on the square's south edge, front facing the spawn road (server/Ledger.luau draws it).
-		-- 30 x 16 studs = 1200 x 640 px: three merchants x four rows need 506 px under the 84 px header.
-		ledger = board("MarketLedger", CFrame.new(Village.LEDGER.x, 11.5, Village.LEDGER.z), 30, 16),
 	}
 end
 

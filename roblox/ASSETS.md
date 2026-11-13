@@ -23,6 +23,7 @@ Every model in `roblox/assets/` comes from the Roblox Creator Store (free). Scri
 | Props/Bush2 | 7191673673 (Low Poly Bush) | ChickenNuggets2go | Free model (Creator Store) | Gardens, village edges, meadows |
 | Props/Flower1-4 | 9454164504 (Flowers low poly) | omarllollo | Free model (Creator Store) | Flower beds |
 | Props/Fence1 | 121130511685847 (Low-Poly Wooden Fence Pack, one small section) | ChickenMaster4565 | Free model (Creator Store) | Garden fences behind houses |
+| NPCs/GuildMentor, NPCs/woodcutter, NPCs/fishmonger, NPCs/smith | generated in Studio (generate_avatar, pipeline npc) from text prompts, meshes and textures uploaded to the owner's account | lyrzabil (Roblox avatar generation) | Own upload, user OK 2026-11-14 | Guild mentor and the three stall merchants (World.npc) |
 | Icons.coin (shared/Icons.luau, image, not a model) | 114408141984568 (Image, uploaded via ForgeGUI) | lyrzabil (generated with ForgeGUI) | Own upload | HUD coin count |
 
 Pipeline: Studio MCP `insert_asset` into `ServerStorage._AssetStaging` (outside the synced Assets folder) -> strip scripts, anchor,

@@ -53,15 +53,14 @@ for i, p in Village.PLOTS do
 end
 
 -- Fixed places of the town are on the flat ground and off the roads they do not belong to.
-for name, p in { well = Village.WELL, ledger = Village.LEDGER, guild = Village.GUILD, spawn = Village.SPAWN } do
+for name, p in { well = Village.WELL, guild = Village.GUILD, spawn = Village.SPAWN } do
 	check(fromCentre(p) <= V.r, name .. " on flat village ground")
 end
 for name, st in Village.STALLS do
 	check(math.abs(st.x - S.x) <= S.w / 2 and math.abs(st.z - S.z) <= S.d / 2, name .. " stall on the square")
 end
 check(math.abs(Village.WELL.x - S.x) <= S.w / 2 and math.abs(Village.WELL.z - S.z) <= S.d / 2, "well on the square")
-check(math.abs(Village.LEDGER.z - (S.z - S.d / 2)) <= 3, "ledger on the square's south edge")
-check(Village.SPAWN.z < Village.LEDGER.z and Village.SPAWN.z > Village.GUILD.z - 30, "spawn between the guild yard and the square")
+check(Village.SPAWN.z < S.z - S.d / 2 and Village.SPAWN.z > Village.GUILD.z - 30, "spawn between the guild yard and the square")
 
 -- Four gates at the ends of their roads, each road starting at the square's edge.
 local names = {}
@@ -78,4 +77,5 @@ end
 for _, n in { "Woods", "Lake", "Mine", "Coast" } do
 	check(names[n], `gate {n} exists`)
 end
+check(Village.LEDGER == nil, "no ledger board in the square (v6: the ledger is a pop-up)")
 print("Village.spec passed")

@@ -24,13 +24,12 @@ local function targetPos(step: any): Vector3?
 	elseif step.target == "market" and step.stall then
 		local st = Village.STALLS[step.stall]
 		return st and Vector3.new(st.x, 10, st.z)
-	elseif step.target == "ledger" then
-		return Vector3.new(Village.LEDGER.x, 20, Village.LEDGER.z)
 	end
 	return nil
 end
 
 -- getState returns { class, bagCount, deals } as the client knows them.
+-- Returns { ledgerOpened } for the Ledger pop-up: the guide's last step completes when the player opens it.
 function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, bagCount: number, deals: number })
 	local player = Players.LocalPlayer
 	local card = Ui.new("Frame", { Name = "QuestCard", Parent = gui, Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(300, 108), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(10) })
@@ -70,9 +69,6 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 				anchor.WorldPosition = at
 				dist.Text = `{math.floor(d)} studs`
 				marker.Enabled = d > 14
-				if step.target == "ledger" and d < 30 then
-					ledgerSeen = true
-				end
 			else
 				marker.Enabled = false
 			end
@@ -83,7 +79,7 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 			end
 			-- Step aside while a panel (haggle, trade, stats) is open so it never peeks out from behind it.
 			local busy = false
-			for _, n in { "HagglePanel", "ClassCard", "StatsPanel" } do
+			for _, n in { "HagglePanel", "ClassCard", "StatsPanel", "LedgerPanel" } do
 				local f = gui:FindFirstChild(n) :: GuiObject?
 				busy = busy or (f ~= nil and f.Visible)
 			end
@@ -99,6 +95,11 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 			task.wait(0.25)
 		end
 	end)
+	return {
+		ledgerOpened = function()
+			ledgerSeen = true
+		end,
+	}
 end
 
 return QuestTracker

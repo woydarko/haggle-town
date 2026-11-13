@@ -25,7 +25,7 @@ Nodes.tools()
 local counts = Nodes.build()
 Nodes.start()
 print(string.format("[HaggleTown] map built in %.1f s (%d trees, %d rocks, %d fishing spots)", os.clock() - buildStart, counts.trees, counts.rocks, counts.spots))
-require(script.Parent.Ledger).start(world.ledger)
+local ledger = require(script.Parent.Ledger).start()
 local lobby = Lobby.build()
 Boards.renderLeaders(lobby.leaderBoard, nil)
 
@@ -46,6 +46,10 @@ end
 local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinish")
 local CastAt = rf("CastAt")
 local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
+-- Market Ledger pop-up: the latest public market view (prices, recent deals, top traders); no player data.
+rf("GetLedger").OnServerInvoke = function()
+	return ledger.latest()
+end
 local StateChanged, OpenHaggle, Toast, PlayMinigame = re("StateChanged"), re("OpenHaggle"), re("Toast"), re("PlayMinigame")
 local OpenClassCard = re("OpenClassCard")
 local GatherFx = re("GatherFx")

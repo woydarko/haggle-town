@@ -1,5 +1,5 @@
 --!strict
--- Top bar: coin, class badge, bag count, Stats button; toast line + offline banner (DESIGN_SYSTEM W2).
+-- Top bar: coin, class badge, bag count, Ledger and Stats buttons; toast line + offline banner (DESIGN_SYSTEM W2).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
@@ -9,13 +9,13 @@ local Icons = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ico
 
 local Hud = {}
 
-function Hud.mount(gui: ScreenGui, onStats: () -> ())
+function Hud.mount(gui: ScreenGui, onStats: () -> (), onLedger: () -> ())
 	local bar = Ui.new("Frame", {
 		Name = "Hud",
 		Parent = gui,
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 8),
-		Size = UDim2.fromOffset(480, 44), -- 130+90+80+100 + 3x16 gaps + padding
+		Size = UDim2.fromOffset(590, 44), -- 130+90+80+94+100 + 4x16 gaps + padding
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }) })
 
@@ -24,7 +24,9 @@ function Hud.mount(gui: ScreenGui, onStats: () -> ())
 	Ui.new("ImageLabel", { Parent = coin, Name = "CoinIcon", Position = UDim2.fromOffset(-34, 2), Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1, Image = Icons.coin })
 	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), FontFace = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
 	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), FontFace = Theme.numeric, TextSize = 20, Text = "Bag 0" })
-	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
+	local ledger = Ui.button("Ledger (L)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(94, 30), TextSize = 16 })
+	ledger.Activated:Connect(onLedger)
+	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 5, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
 	stats.Activated:Connect(onStats)
 	local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
 

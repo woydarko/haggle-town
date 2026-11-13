@@ -44,6 +44,8 @@ check(v.merchants[2].items[2].trend == "up", "trout went up")
 check(math.abs(wood.items[1].stockPct - 125) < 0.5, "stock as percent of normal")
 check(v.deals[1] == "Mia bought 2 Trout from the Fishmonger for 60 C, just now", `newest deal first: {v.deals[1]}`)
 check(v.deals[2] == "Darko sold 1 Pine to the Woodcutter for 12 C, 2 min ago", `deal line: {v.deals[2]}`)
+-- Each deal line has its item id alongside (the pop-up draws the item icon next to it).
+check(v.dealItems[1] == "fish_trout" and v.dealItems[2] == "wood_pine", "deal items line up with the lines")
 check(#v.leaders == 5 and v.leaders[1].name == "Mia" and v.leaders[1].worth == 3100, "top 5 traders")
 
 -- The API may list deals newest first; the board still shows newest first.
@@ -54,6 +56,7 @@ check(string.find(v.deals[1], "^Mia") ~= nil, "newest first whatever the API ord
 -- Empty feed.
 v = LedgerView.build({ market = market, feed = { deals = {} }, leaders = {}, config = config, now = NOW, ok = true })
 check(#v.deals == 1 and v.deals[1] == "No deals yet today. Be the first.", "empty feed message")
+check(#v.dealItems == 0, "no deal items when the feed is empty")
 
 -- Backend down after a good fetch: keep the last data and say how old it is.
 v = LedgerView.build({ market = market, feed = feed, leaders = leaders, config = config, now = NOW, ok = false, lastOk = NOW - 5 * 60_000 })

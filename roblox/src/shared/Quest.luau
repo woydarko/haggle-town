@@ -34,7 +34,7 @@ function Quest.step(s: State): Step
 		}
 	end
 	if not s.ledgerSeen then
-		return { index = 4, title = "Check the Market Ledger", detail = "The big board in the square shows every price. Your deal just moved one.", target = "ledger" }
+		return { index = 4, title = "Check the Market Ledger", detail = "Tap Ledger in the top bar (or press L) to see every price. Your deal just moved one.", target = "ledger" }
 	end
 	return { index = 5, title = "You know the market", detail = "Gather rarer goods, sell where the price is high, climb the top traders.", target = nil }
 end

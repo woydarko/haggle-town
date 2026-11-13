@@ -1,7 +1,7 @@
 --!strict
--- Content of the Market Ledger board in the square, from the same API the web dashboard uses
+-- Content of the Market Ledger pop-up (client/ui/LedgerPanel.luau), from the same API the web dashboard uses
 -- (/api/market, /api/feed, /api/leaderboard, /api/config). Pure, checked by roblox/tests/LedgerView.spec.luau;
--- server/Ledger.luau fetches and draws it.
+-- server/Ledger.luau fetches it and serves the latest view to clients.
 local Items: any = if script then require(script.Parent.Items) else (require :: any)("./Items")
 
 local LedgerView = {}
@@ -50,7 +50,7 @@ end
 function LedgerView.build(input: Input)
 	local market = input.market
 	if not market then
-		return { state = "loading", header = "Opening the ledger...", merchants = {}, deals = {}, leaders = {}, note = nil }
+		return { state = "loading", header = "Opening the ledger...", merchants = {}, deals = {}, dealItems = {}, leaders = {}, note = nil }
 	end
 	local byItem: { [string]: any } = {}
 	for _, r in market do
@@ -81,7 +81,7 @@ function LedgerView.build(input: Input)
 		table.insert(merchants, { id = m, name = NAMES[m], purse = purse, items = items })
 	end
 
-	local deals = {}
+	local deals, dealItems = {}, {}
 	local list = table.clone((input.feed and input.feed.deals) or {})
 	table.sort(list, function(a, b)
 		return (a.at or 0) > (b.at or 0)
@@ -93,6 +93,7 @@ function LedgerView.build(input: Input)
 		local what = `{d.qty} {item and item.name or d.good}`
 		local verb = if d.side == "sell" then `sold {what} to the {who}` else `bought {what} from the {who}`
 		table.insert(deals, `{d.player} {verb} for {d.qty * d.unitPrice} C, {ago(input.now - d.at)}`)
+		table.insert(dealItems, d.good)
 	end
 	if #deals == 0 then
 		deals = { "No deals yet today. Be the first." }
@@ -112,6 +113,7 @@ function LedgerView.build(input: Input)
 		header = header(market, input.config, input.now),
 		merchants = merchants,
 		deals = deals,
+		dealItems = dealItems,
 		leaders = leaders,
 		note = if stale then `Can't reach the market. Prices from {if input.lastOk then ago(input.now - input.lastOk) else "earlier"}.` else nil,
 	}

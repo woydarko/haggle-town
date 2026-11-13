@@ -6,7 +6,7 @@
 --                        |
 --        house  house    |    house  house
 --   Woods gate ---- [  SQUARE  ] ---- Mine gate
---        house  house  ledger \   house  house
+--        house  house         \   house  house
 --                        |     \ Coast gate (84, -60)
 --                   guild yard + spawn
 --
@@ -23,7 +23,6 @@ Village.STALLS = {
 	smith = { x = 22, z = 8 },
 }
 Village.WELL = { x = 0, z = 12 }
-Village.LEDGER = { x = 0, z = -14, yaw = 180 } -- on the square's south edge, facing the spawn road
 Village.GUILD = { x = 0, z = -80 } -- guild yard with the mentors (Lobby.luau builds it here)
 Village.SPAWN = { x = 0, z = -72 }
 

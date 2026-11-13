@@ -24,6 +24,7 @@ local PlayMinigame = remotes:WaitForChild("PlayMinigame") :: RemoteEvent
 local GatherFinish = remotes:WaitForChild("GatherFinish") :: RemoteFunction
 local ChooseClass = remotes:WaitForChild("ChooseClass") :: RemoteFunction
 local GetStats = remotes:WaitForChild("GetStats") :: RemoteFunction
+local GetLedger = remotes:WaitForChild("GetLedger") :: RemoteFunction
 local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
 local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
 local CastAt = remotes:WaitForChild("CastAt") :: RemoteFunction
@@ -53,7 +54,18 @@ local stats = StatsPanel.mount(gui, {
 		return GetStats:InvokeServer()
 	end,
 })
-local hud = Hud.mount(gui, stats.toggle)
+local quest: any = nil -- set below; the Ledger pop-up completes the guide's last step
+local ledgerPanel = require(script.Parent.ui.LedgerPanel).mount(gui, {
+	fetch = function()
+		return GetLedger:InvokeServer()
+	end,
+	onOpen = function()
+		if quest then
+			quest.ledgerOpened()
+		end
+	end,
+})
+local hud = Hud.mount(gui, stats.toggle, ledgerPanel.toggle)
 local catchCard = require(script.Parent.ui.CatchCard).mount(gui)
 -- Guide: the tracker needs class, bag and deal count; deals come from the stats remote every 8 s.
 local dealCount = 0
@@ -68,7 +80,7 @@ task.spawn(function()
 		task.wait(8)
 	end
 end)
-require(script.Parent.ui.QuestTracker).mount(gui, function()
+quest = require(script.Parent.ui.QuestTracker).mount(gui, function()
 	return { class = class, bagCount = Items.bagCount(balances), deals = dealCount }
 end)
 require(script.Parent.ui.Prompt).start()
@@ -144,6 +156,8 @@ end)
 UserInputService.InputBegan:Connect(function(input, processed)
 	if not processed and input.KeyCode == Enum.KeyCode.Tab then
 		stats.toggle()
+	elseif not processed and input.KeyCode == Enum.KeyCode.L then
+		ledgerPanel.toggle()
 	end
 end)
 
