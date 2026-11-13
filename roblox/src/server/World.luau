@@ -6,6 +6,7 @@ local Players = game:GetService("Players")
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+local Village = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Village"))
 local Terrain = require(script.Parent.Terrain)
 local ServerStorage = game:GetService("ServerStorage")
 
@@ -139,10 +140,10 @@ local function place(folder: string, prefix: string, cf: CFrame, index: number?)
 end
 
 local houseCount = 0
-local function house(pos: Vector3, yaw: number, wall: Color3)
+local function house(pos: Vector3, yaw: number, wall: Color3, kind: number?)
 	local cf = CFrame.new(pos) * CFrame.Angles(0, math.rad(yaw), 0)
 	houseCount += 1
-	if place("Village", "House", cf, houseCount) then
+	if place("Village", "House", cf, kind or houseCount) then
 		return
 	end
 	part({ Name = "HouseWall", Size = Vector3.new(12, 8, 10), CFrame = cf * CFrame.new(0, 4, 0), Color = wall, Material = Enum.Material.Plaster })
@@ -158,7 +159,7 @@ end
 local function path(from: Vector3, to: Vector3)
 	local mid = (from + to) / 2
 	local len = (to - from).Magnitude
-	part({ Name = "Path", Size = Vector3.new(5, 0.25, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.12, 0), to + Vector3.new(0, 0.12, 0)), Color = Color3.fromHex("B8A88A"), Material = Enum.Material.Cobblestone })
+	part({ Name = "Path", Size = Vector3.new(6, 0.25, len), CFrame = CFrame.lookAt(mid + Vector3.new(0, 0.12, 0), to + Vector3.new(0, 0.12, 0)), Color = Color3.fromHex("B8A88A"), Material = Enum.Material.Cobblestone })
 end
 
 -- title/action default to the merchant's name and "Haggle"; facing defaults to +Z.
@@ -387,36 +388,42 @@ function World.build(onProgress: ((number) -> ())?): Built
 	ambience()
 
 	Terrain.build(onProgress) -- big map: village, lake, woods, mine mountain + caverns, coast, mountain ring
-	part({ Name = "Square", Size = Vector3.new(60, 0.2, 50), Position = Vector3.new(0, 0.1, 5), Color = Color3.fromHex("CDBB9A"), Material = Enum.Material.Cobblestone })
-	part({ Name = "Fountain", Shape = Enum.PartType.Cylinder, Size = Vector3.new(1.2, 8, 8), CFrame = CFrame.new(0, 0.6, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = STONE, Material = Enum.Material.Cobblestone })
-	part({ Name = "FountainWater", Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 7, 7), CFrame = CFrame.new(0, 1.15, 14) * CFrame.Angles(0, 0, math.rad(90)), Color = Color3.fromHex("5FA8C9"), Material = Enum.Material.Glass, Transparency = 0.3 })
-
-	-- The spawn lives in the lobby (Lobby.luau).
-
-	house(Vector3.new(-40, 0, -8), 90, Color3.fromHex("EADBC3"))
-	house(Vector3.new(-40, 0, 16), 90, Color3.fromHex("E2CDA8"))
-	house(Vector3.new(40, 0, 16), -90, Color3.fromHex("EADBC3"))
-	house(Vector3.new(-20, 0, -32), 0, Color3.fromHex("E2CDA8"))
-	house(Vector3.new(22, 0, -32), 0, Color3.fromHex("EADBC3"))
-	for _, p in { Vector3.new(-28, 0, -18), Vector3.new(28, 0, -18), Vector3.new(-28, 0, 28), Vector3.new(28, 0, 28) } do
-		lamp(p)
+	-- Village from shared/Village.luau: square, streets with lamps, houses facing their street, signposts at the gates.
+	-- The spawn and the mentors are in the guild yard (Lobby.luau).
+	local SQ = Village.SQUARE
+	part({ Name = "Square", Size = Vector3.new(SQ.w, 0.2, SQ.d), Position = Vector3.new(SQ.x, 0.1, SQ.z), Color = Color3.fromHex("CDBB9A"), Material = Enum.Material.Cobblestone })
+	for _, r in Village.ROADS do
+		local a, b = Vector3.new(r.from.x, 0, r.from.z), Vector3.new(r.to.x, 0, r.to.z)
+		path(a, b)
+		local dir = (b - a).Unit
+		local side = Vector3.new(-dir.Z, 0, dir.X) * 4.5 -- lamps on one side of the street, every 24 studs
+		for d = 12, (b - a).Magnitude, 24 do
+			lamp(a + dir * d + side)
+		end
 	end
-	path(Vector3.new(-30, 0, -10), Vector3.new(-45, 0, -28))
-	path(Vector3.new(9, 0, 24), Vector3.new(2, 0, 50))
+	for i, p in Village.PLOTS do
+		house(Vector3.new(p.x, 0, p.z), p.yaw, if i % 2 == 0 then Color3.fromHex("EADBC3") else Color3.fromHex("E2CDA8"), p.kind)
+	end
+	for _, g in Village.GATES do
+		local at = Vector3.new(g.x, 0, g.z)
+		local dest = spot(g.dest)
+		local post = part({ Name = "Signpost", Size = Vector3.new(0.6, 7, 0.6), Position = at + Vector3.new(3.5, 3.5, 0), Color = WOOD_DARK, Material = Enum.Material.Wood })
+		label(post, `{g.label}  {math.floor((dest - at).Magnitude)} studs`, Theme.text, 2.5)
+	end
 	-- Piers; trees, rocks and fishing spots are gather nodes (Nodes.luau). Lanterns light the caverns.
 	pier(spot("fish"), spot("lake_pier"))
 	pier(spot("fish_deep"), spot("sea_pier"))
 	for _, name in { "ore_mouth", "ore_deep", "ore_crystal" } do
 		lamp(spot(name) + Vector3.new(5, 0, 4))
 	end
-	place("Village", "Well", CFrame.new(-14, 0, 22))
+	place("Village", "Well", CFrame.new(Village.WELL.x, 0, Village.WELL.z))
 	mineDecor()
 
 	return {
 		merchants = {
-			woodcutter = stall("woodcutter", "wood", Vector3.new(-22, 0, 8), Theme.wood),
-			fishmonger = stall("fishmonger", "fish", Vector3.new(0, 0, 30), Theme.fish),
-			smith = stall("smith", "iron", Vector3.new(22, 0, 8), Theme.iron),
+			woodcutter = stall("woodcutter", "wood", Vector3.new(Village.STALLS.woodcutter.x, 0, Village.STALLS.woodcutter.z), Theme.wood),
+			fishmonger = stall("fishmonger", "fish", Vector3.new(Village.STALLS.fishmonger.x, 0, Village.STALLS.fishmonger.z), Theme.fish),
+			smith = stall("smith", "iron", Vector3.new(Village.STALLS.smith.x, 0, Village.STALLS.smith.z), Theme.iron),
 		},
 		priceBoard = board("PriceBoard", CFrame.new(-9, 8, -14)),
 		leaderBoard = board("LeaderBoard", CFrame.new(9, 8, -14)),

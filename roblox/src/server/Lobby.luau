@@ -75,7 +75,6 @@ function Lobby.build(): Built
 	end
 	local beam = k.part({ Name = "GateBeam", Size = Vector3.new(14, 1.6, 2), Position = C + Vector3.new(0, 11.2, 24), Color = Color3.fromHex("6B4A2B"), Material = Enum.Material.Wood })
 	k.label(beam, "To the market", Theme.primary, 2.5)
-	k.path(C + Vector3.new(0, 0, 26), Vector3.new(0, 0, -20))
 
 	return { mentors = mentors, leaderBoard = leaders }
 end

@@ -126,7 +126,7 @@ function Nodes.build(): { trees: number, rocks: number, spots: number }
 	folder.Parent = workspace
 
 	-- Trees: a starter copse by the lobby, pine forest (NW), oak/maple woods (W), ancient grove (far W).
-	for i, p in scatter(-72, -44, 22, 12, 8) do
+	for i, p in scatter(-70, -62, 16, 12, 8) do -- starter copse west of the guild yard
 		treeNode(p, (i - 1) % 3, "wood")
 	end
 	for _, p in scatter(-275, 380, 120, 30, 10) do
