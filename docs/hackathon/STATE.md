@@ -39,7 +39,7 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 - Roblox Studio: installed (detected in %LOCALAPPDATA%\Roblox\Versions)
 - Accounts, keys (names only), hosting, repo access: Open - NEAR testnet account, NEAR mainnet payout account, NEAR AI Cloud key (`NEAR_AI_API_KEY`), Railway (backend), Vercel (web), GitHub repo
 - Web3: faucet funds requested at [pending - after near CLI install], balances in DEPLOYMENTS.md: Open
-- AI: provider ai.sumopod.com OpenAI-compatible gateway, model glm-5.3-flash (LLM_TIMEOUT_MS 12000, LLM_THINKING off), key from user, set in .env + Railway 2026-11-14 (kenari.id minimax-m2-7-highspeed returned 503 all_providers_failed on 2026-11-13). NEAR AI Cloud not used (sign-in failed); switchable via env.
+- AI: provider ai.sumopod.com OpenAI-compatible gateway, model deepseek-v4.1-flash-1017 (~0.5-0.9 s; LLM_TIMEOUT_MS 6000, LLM_THINKING on; glm-5.3-flash took 6-11 s), key from user, set in .env + Railway 2026-11-14 (kenari.id minimax-m2-7-highspeed returned 503 all_providers_failed on 2026-11-13). NEAR AI Cloud not used (sign-in failed); switchable via env.
 
 ## Phase cursor and clock
 Current phase: 4 build v2 (plan docs/superpowers/plans/2026-11-11-haggle-town-v2.md, ledger .superpowers/sdd/2026-11-11-haggle-town-v2/progress.md)
