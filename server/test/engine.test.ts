@@ -9,6 +9,7 @@ import { Players } from "../src/game/players.ts";
 import { HaggleEngine, type LlmReply } from "../src/haggle/engine.ts";
 import { buyRoom } from "../src/haggle/pricing.ts";
 import { FakeChain, PLAYER_VIEW, marketView } from "./fakes.ts";
+import { PERSONAS } from "../src/haggle/fallback.ts";
 
 const WOOD = "woodcutter";
 const STOCK = 168; // pine overstocked (target 120)
@@ -229,10 +230,13 @@ test("five rounds used: last live quote is offered again; once it expired a fres
   const { say, clock } = await setup();
   for (let i = 1; i <= 5; i++) assert.ok((await say("roblox:1", "8 for 1 wood")).counter, `round ${i}`);
   const sixth = await say("roblox:1", "8 for 1 wood");
-  assert.equal(sixth.line, "Let's settle or part ways.");
+  assert.ok(PERSONAS.woodcutter.wrapUp.includes(sixth.line), `wrap-up line: ${sixth.line}`);
   assert.ok(sixth.counter, "the last quote is still on the table");
+  const seventh = await say("roblox:1", "8 for 1 wood");
+  const eighth = await say("roblox:1", "8 for 1 wood");
+  assert.equal(new Set([sixth.line, seventh.line, eighth.line]).size, 3, "three wrap-ups in a row never repeat");
   clock.t += 31_000; // that quote expires: the haggle is over, the player is not locked out
   const fresh = await say("roblox:1", "8 for 1 wood");
-  assert.notEqual(fresh.line, "Let's settle or part ways.");
+  assert.ok(!PERSONAS.woodcutter.wrapUp.includes(fresh.line), "new session haggles again");
   assert.ok(fresh.counter, "new session quotes again");
 });

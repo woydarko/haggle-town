@@ -28,6 +28,7 @@ const CTX: HaggleContext = {
   offer: {},
   patience: 3,
   history: [],
+  recentLines: ["Pile's high today.", "Twelve each, friend.", "Fine, deal."],
   message: "how much?",
 };
 
@@ -152,4 +153,11 @@ test("timeout -> engine falls back fast", async () => {
   assert.equal(r.source, "fallback");
   assert.equal(r.counter?.unitPrice, 8);
   assert.ok(Date.now() - t0 < 5_000);
+});
+
+test("prompt lists the merchant's last lines and forbids reusing them", async () => {
+  const { buildMessages } = await import("../src/llm/prompt.ts");
+  const system = buildMessages(CTX).find((m) => m.role === "system")!.content;
+  for (const l of CTX.recentLines) assert.ok(system.includes(l), `missing recent line: ${l}`);
+  assert.match(system, /never reuse/i);
 });

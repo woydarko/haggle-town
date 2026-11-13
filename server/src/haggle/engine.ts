@@ -10,7 +10,7 @@ import { buyRoom, sellRoom } from "./pricing.ts";
 import { parseOffer, type Offer } from "./offer.ts";
 import { signDeal, newNonce, type ChainDeal } from "./deal.ts";
 import { reasoningLine } from "./reasoning.ts";
-import { fallbackReply, PERSONAS } from "./fallback.ts";
+import { fallbackReply, pickLine, PERSONAS } from "./fallback.ts";
 import { CLASS_CATEGORY, ITEMS, MERCHANT_CATEGORY, itemById, itemOf, type Tier } from "../items.ts";
 
 export const MERCHANTS = MERCHANT_CATEGORY;
@@ -38,6 +38,8 @@ export type HaggleContext = {
   offer: Offer;
   patience: number;
   history: { role: string; text: string }[];
+  /** This merchant's last lines to this player (any session), so the reply can avoid repeating them. */
+  recentLines: string[];
   message: string;
 };
 export interface LlmLike {
@@ -129,16 +131,19 @@ export class HaggleEngine {
     const room = this.room(view, side, qty, playerId);
     const reasoning = reasoningLine(view, side, room);
 
+    const recent = this.recentLines(playerId, merchant);
     if (patience <= 0) {
-      this.chat(session.id, text, persona.refuse, "annoyed", "fallback", reasoning);
-      return { line: persona.refuse, mood: "annoyed", patience: 0, reasoning, source: "fallback", refused: { until: this.nextDay(view) } };
+      const line = pickLine(persona.refuse, recent);
+      this.chat(session.id, text, line, "annoyed", "fallback", reasoning);
+      return { line, mood: "annoyed", patience: 0, reasoning, source: "fallback", refused: { until: this.nextDay(view) } };
     }
     if (!room) {
-      this.chat(session.id, text, persona.broke, "neutral", "fallback", reasoning);
-      return { line: persona.broke, mood: "neutral", patience, reasoning, source: "fallback" };
+      const line = pickLine(persona.broke, recent);
+      this.chat(session.id, text, line, "neutral", "fallback", reasoning);
+      return { line, mood: "neutral", patience, reasoning, source: "fallback" };
     }
     if (session.rounds >= MAX_ROUNDS) {
-      const line = "Let's settle or part ways.";
+      const line = pickLine(persona.wrapUp, recent);
       this.chat(session.id, text, line, "neutral", "fallback", reasoning);
       return { line, mood: "neutral", patience, reasoning, source: "fallback", counter: this.lastCounter(session.id) };
     }
@@ -168,11 +173,12 @@ export class HaggleEngine {
         offer,
         patience,
         history: this.history(session.id),
+        recentLines: recent,
         message: text,
       });
       reply = { ...r, source: r.source ?? "llm" };
     } catch {
-      reply = { ...fallbackReply({ merchant, room, current, offerUnit, lowball }), source: "fallback" };
+      reply = { ...fallbackReply({ merchant, room, current, offerUnit, lowball }, recent), source: "fallback" };
     }
 
     let price = Number.isFinite(reply.unitPrice) ? clamp(Math.round(reply.unitPrice), room) : current;
@@ -315,6 +321,16 @@ export class HaggleEngine {
       .prepare("SELECT * FROM deal WHERE session_id = ? AND status = 'quoted' AND expires_at > ? ORDER BY created_at DESC, rowid DESC LIMIT 1")
       .get(sessionId, this.now()) as DealRow | undefined;
     return r ? counterOf(r) : undefined;
+  }
+
+  /** The merchant's last `n` lines to this player across sessions, oldest first. */
+  private recentLines(playerId: string, merchant: string, n = 3): string[] {
+    const rows = this.d.db
+      .prepare(
+        "SELECT t.text FROM chat_turn t JOIN haggle_session s ON s.id = t.session_id WHERE s.player_id = ? AND s.merchant = ? AND t.role = 'merchant' ORDER BY t.id DESC LIMIT ?",
+      )
+      .all(playerId, merchant, n) as { text: string }[];
+    return rows.map((r) => r.text).reverse();
   }
 
   private history(sessionId: string) {

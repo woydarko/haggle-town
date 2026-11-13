@@ -35,7 +35,7 @@ for (const model of models) {
     const ctx: HaggleContext = {
       merchant: c.merchant, persona: PERSONAS[c.merchant].style, item: item.id, itemName: item.name, tier: item.tier,
       side: c.side, qty, stock, target: item.target,
-      purse, room, currentCounter: c.side === "buy" ? room[1] : room[0], offer, patience: 3, history: [], message: c.message,
+      purse, room, currentCounter: c.side === "buy" ? room[1] : room[0], offer, patience: 3, history: [], recentLines: [], message: c.message,
     };
     const t0 = Date.now();
     try {
