@@ -2,7 +2,7 @@
 -- Tiny helper to build UI instances with Theme tokens.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
-local Sprites = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Sprites"))
+local SpriteGui = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("SpriteGui"))
 
 local Ui = {}
 
@@ -64,25 +64,15 @@ function Ui.button(text: string, primary: boolean, props: { [string]: any }): Te
 	return Ui.new("TextButton", base, { Ui.corner(), Ui.stroke() })
 end
 
--- Item icon: the item's 12x12 pixel sprite (shared/Sprites.luau), one Frame per same-colour run. Pixels are whole
--- offsets (px // 12) so edges stay crisp; transparent background, the caller draws the slot.
+-- Item icon: the item's 12x12 pixel sprite (shared/SpriteGui.luau); transparent background, the caller draws the slot.
 function Ui.icon(id: string, px: number, props: { [string]: any }?): Frame
-	local base = { Size = UDim2.fromOffset(px, px), BackgroundTransparency = 1 }
+	local icon = SpriteGui.new(id, px)
 	for k, v in props or {} do
-		base[k] = v
+		if k ~= "Parent" then
+			(icon :: any)[k] = v
+		end
 	end
-	local icon = Ui.new("Frame", base)
-	local p = px // Sprites.SIZE
-	local o = (px - p * Sprites.SIZE) // 2
-	for _, run in Sprites.runs(id) do
-		Ui.new("Frame", {
-			Parent = icon,
-			BorderSizePixel = 0,
-			BackgroundColor3 = Color3.fromHex(run.hex),
-			Position = UDim2.fromOffset(o + (run.col - 1) * p, o + (run.row - 1) * p),
-			Size = UDim2.fromOffset(run.len * p, p),
-		})
-	end
+	icon.Parent = props and props.Parent
 	return icon
 end
 

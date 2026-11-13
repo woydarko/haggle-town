@@ -4,7 +4,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared:WaitForChild("Theme"))
-local Items = require(Shared:WaitForChild("Items"))
 local World = require(script.Parent.World)
 local Boards = require(script.Parent.Boards)
 local Terrain = require(script.Parent.Terrain)
@@ -19,21 +18,6 @@ export type Built = { mentors: { [string]: BasePart }, leaderBoard: Part }
 
 local function facingCenter(at: Vector3): CFrame
 	return CFrame.lookAt(C + at, C + Vector3.new(0, at.Y, at.Z))
-end
-
-local function rarityLines(): { { any } }
-	local lines = {}
-	for _, tier in Items.TIERS do
-		local names = {}
-		for _, item in Items.list do
-			if item.tier == tier then
-				table.insert(names, item.name)
-			end
-		end
-		table.insert(lines, { `{tier:sub(1, 1):upper()}{tier:sub(2)}: {table.concat(names, ", ")}`, Theme.tiers[tier] })
-	end
-	table.insert(lines, { "Prices move with supply and demand.", Theme.muted })
-	return lines
 end
 
 function Lobby.build(): Built
@@ -57,16 +41,14 @@ function Lobby.build(): Built
 	end
 
 	local how = k.board("HowToPlay", facingCenter(Vector3.new(-24, 8.4, -6)))
-	Boards.renderText(how, "How trading works", {
-		{ "1. Pick a trade from a mentor here." },
-		{ "2. Press 1, 2 or 3 for axe, pickaxe or rod." },
-		{ "   Click a tree, a rock or the water." },
-		{ "3. Play the little game well for rarer finds." },
-		{ "4. Sell at the stalls. Name your own price." },
-		{ "Tab: stats and bag. The square's ledger shows prices.", Theme.muted },
-	})
+	Boards.renderSteps(how, "How trading works", {
+		{ pictures = { "fish_sardine", "wood_pine", "ore_copper" }, text = "1. Pick a trade from a mentor" },
+		{ pictures = { "rod", "axe", "pickaxe" }, text = "2. Click water, a tree or a rock" },
+		{ pictures = { "fish_sardine", "fish_koi" }, text = "3. Play well for rarer finds" },
+		{ pictures = { "coin" }, text = "4. Haggle at the stalls" },
+	}, "Keys 1, 2, 3 pick your tool. Tab opens your bag. The big board in the square shows prices.")
 	local rarity = k.board("Rarity", facingCenter(Vector3.new(24, 8.4, -6)))
-	Boards.renderText(rarity, "Rarity", rarityLines())
+	Boards.renderRarity(rarity)
 	local leaders = k.board("LobbyLeaders", facingCenter(Vector3.new(-24, 8.4, 12)))
 
 	-- Gate to the town square.

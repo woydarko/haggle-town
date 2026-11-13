@@ -1,12 +1,13 @@
 --!strict
 -- Market Ledger: the in-world dashboard on the square. Polls the same public API the web dashboard uses every
 -- 10 s, shapes it with shared/LedgerView.luau and draws it on the board's SurfaceGui.
--- Layout (1200 x 560 px): header row; prices per merchant (left, the focal point); recent deals; top traders.
+-- Layout (1200 x 640 px): header row; prices per merchant (left, the focal point); recent deals; top traders.
 -- The "stamped price" (bold number on a light tile with an ink outline) is the shared motif with the haggle panel.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared:WaitForChild("Theme"))
 local LedgerView = require(Shared:WaitForChild("LedgerView"))
+local SpriteGui = require(Shared:WaitForChild("SpriteGui"))
 local Backend = require(script.Parent.Backend)
 
 local Ledger = {}
@@ -95,7 +96,10 @@ local function draw(gui: SurfaceGui, v: any)
 		y += 32
 		for _, it in m.items do
 			local row = frame(prices, { Position = UDim2.fromOffset(0, y), Size = UDim2.new(1, 0, 0, 30) })
-			label(row, { Size = UDim2.fromOffset(250, 30), TextSize = 20, TextColor3 = Theme.tiers[it.tier] or Theme.text, Text = `{it.name} {TREND[it.trend] or ""}` })
+			local icon = SpriteGui.new(it.id, 24)
+			icon.Position = UDim2.fromOffset(0, 3)
+			icon.Parent = row
+			label(row, { Position = UDim2.fromOffset(30, 0), Size = UDim2.fromOffset(220, 30), TextSize = 20, TextColor3 = Theme.tiers[it.tier] or Theme.text, Text = `{it.name} {TREND[it.trend] or ""}` })
 			stamp(row, `{it.buy} C`, COL.buy, 90)
 			stamp(row, `{it.sell} C`, COL.sell, 90)
 			local bar = frame(row, { Position = UDim2.fromOffset(COL.stock, 10), Size = UDim2.fromOffset(160, 10), BackgroundTransparency = 0, BackgroundColor3 = Theme.border })

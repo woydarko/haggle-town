@@ -53,6 +53,20 @@ for id, def in DEFS do
 	SPRITES[id] = { rows = rows, palette = def.palette }
 end
 
+-- Tools for the lobby how-to board (one-offs, so full rows): w handle, m metal, h edge, l line, k hook, r grip.
+SPRITES.axe = {
+	rows = { E, "......mm..w.", ".....mmmmw..", "....hmmmw...", "....hmmw....", ".....hw.....", ".....w......", "....w.......", "...w........", "..w.........", ".w..........", E },
+	palette = { w = "7A4E24", m = "6F7880", h = "C9D0D6" },
+}
+SPRITES.pickaxe = {
+	rows = { E, "....mmmmmmm.", "...mmmmmmwmm", "........w.mm", ".......w..mm", "......w...mm", ".....w....m.", "....w....m..", "...w........", "..w.........", ".w..........", E },
+	palette = { w = "7A4E24", m = "6F7880" },
+}
+SPRITES.rod = {
+	rows = { E, "..........wl", ".........w.l", "........w..l", ".......w...l", "......w....l", ".....w.....l", "....w......l", "...w......kk", "..w.........", ".r..........", E },
+	palette = { w = "7A4E24", l = "5B626C", k = "5B626C", r = "B4471F" },
+}
+
 local Sprites = { SIZE = 12 }
 
 function Sprites.get(id: string): Sprite?

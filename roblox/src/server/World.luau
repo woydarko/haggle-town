@@ -426,7 +426,8 @@ function World.build(onProgress: ((number) -> ())?): Built
 			smith = stall("smith", "iron", Vector3.new(Village.STALLS.smith.x, 0, Village.STALLS.smith.z), Theme.iron),
 		},
 		-- Market Ledger on the square's south edge, front facing the spawn road (server/Ledger.luau draws it).
-		ledger = board("MarketLedger", CFrame.new(Village.LEDGER.x, 10.5, Village.LEDGER.z), 30, 14),
+		-- 30 x 16 studs = 1200 x 640 px: three merchants x four rows need 506 px under the 84 px header.
+		ledger = board("MarketLedger", CFrame.new(Village.LEDGER.x, 11.5, Village.LEDGER.z), 30, 16),
 	}
 end
 
