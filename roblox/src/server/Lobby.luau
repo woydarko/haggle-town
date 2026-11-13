@@ -57,12 +57,13 @@ function Lobby.build(): Built
 	end
 
 	local how = k.board("HowToPlay", facingCenter(Vector3.new(-24, 8.4, -6)))
-	Boards.renderText(how, "How to play", {
-		{ "1. Talk to a mentor and pick a class." },
-		{ "2. Pick a tool (1-3), click a tree, rock or fishing spot." },
-		{ "3. Play well in the minigame for better luck." },
-		{ "4. Haggle with the merchants for coin." },
-		{ "Press Tab for your stats and bag.", Theme.muted },
+	Boards.renderText(how, "How trading works", {
+		{ "1. Pick a trade from a mentor here." },
+		{ "2. Press 1, 2 or 3 for axe, pickaxe or rod." },
+		{ "   Click a tree, a rock or the water." },
+		{ "3. Play the little game well for rarer finds." },
+		{ "4. Sell at the stalls. Name your own price." },
+		{ "Tab: stats and bag. The square's ledger shows prices.", Theme.muted },
 	})
 	local rarity = k.board("Rarity", facingCenter(Vector3.new(24, 8.4, -6)))
 	Boards.renderText(rarity, "Rarity", rarityLines())

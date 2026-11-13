@@ -6,6 +6,7 @@ local StarterGui = game:GetService("StarterGui")
 local UserInputService = game:GetService("UserInputService")
 
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+local Items = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Items"))
 require(script.Parent.ui.Loading).show() -- before waiting on Remotes: the server builds the map first
 local Hud = require(script.Parent.ui.Hud)
 local HagglePanel = require(script.Parent.ui.HagglePanel)
@@ -54,6 +55,22 @@ local stats = StatsPanel.mount(gui, {
 })
 local hud = Hud.mount(gui, stats.toggle)
 local catchCard = require(script.Parent.ui.CatchCard).mount(gui)
+-- Guide: the tracker needs class, bag and deal count; deals come from the stats remote every 8 s.
+local dealCount = 0
+task.spawn(function()
+	while true do
+		local ok, s = pcall(function()
+			return GetStats:InvokeServer()
+		end)
+		if ok and type(s) == "table" and type(s.deals) == "number" then
+			dealCount = s.deals
+		end
+		task.wait(8)
+	end
+end)
+require(script.Parent.ui.QuestTracker).mount(gui, function()
+	return { class = class, bagCount = Items.bagCount(balances), deals = dealCount }
+end)
 require(script.Parent.ui.Prompt).start()
 
 local function setBalances(b: { [string]: number })

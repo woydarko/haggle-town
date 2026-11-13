@@ -189,7 +189,7 @@ local function onJoin(p: Player)
 	local ok, r = Backend.post("/rbx/join", { userId = uid(p), name = p.DisplayName })
 	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board } else { offline = true })
 	if ok and r.class == nil then
-		Toast:FireClient(p, "Talk to a mentor in the lobby to pick a class")
+		Toast:FireClient(p, "Pick a trade from a mentor in the guild yard")
 	end
 end
 Players.PlayerAdded:Connect(onJoin)
