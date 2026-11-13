@@ -133,7 +133,7 @@ Background #F4ECDD, surface #FFF9EE, border #D9C7A6, text #2B2118, muted #6E5D4A
 4 px base, scale 4/8/12/16/24/32/48; container 1200 px; breakpoints 390/768/1280; mobile-first CSS.
 
 ### 7. Icons and imagery
-Web: Lucide icons (ISC license). Roblox: simple flat decals for Coin/Wood/Fish/Iron drawn as basic shapes in Studio or free Creator Store models with attribution in README. Logo: wordmark "Haggle Town" in Fraunces with a stamped coin.
+Roblox items (v4): 12x12 pixel-art sprites drawn in code (roblox/src/shared/Sprites.luau), one silhouette per category and a palette per tier; the coin is the one image (roblox/ASSETS.md). Web: Lucide icons (ISC license). Roblox: simple flat decals for Coin/Wood/Fish/Iron drawn as basic shapes in Studio or free Creator Store models with attribution in README. Logo: wordmark "Haggle Town" in Fraunces with a stamped coin.
 
 ### 8. Motion
 Durations 120 ms (hover), 200 ms (panel open), 400 ms (price board tick); easing ease-out. Animate: panel open/close, price arrow change, "+1" ghost counters, fast-forward chart. `prefers-reduced-motion`: no chart animation, step buttons instead. Wow moment: fast-forward week chart drawing itself while the day counter ticks 1 -> 7.

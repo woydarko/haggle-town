@@ -5,6 +5,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Theme = require(Shared:WaitForChild("Theme"))
 local M = require(Shared:WaitForChild("Minigame"))
@@ -13,6 +14,40 @@ local Ui = require(script.Parent.Parent.ui.Ui)
 
 local GLOW = Color3.fromHex("FFD089") -- same warm glow as the town lamps
 local Mining = {}
+
+-- A weak spot reads as a glowing ore vein: a cut gem (rotated square, lamp-glow gradient, ember outline, light fleck)
+-- and a ring that closes in on it as time runs out, so the timer is visible instead of a plain fade.
+type Spot = { button: TextButton, update: (frac: number) -> (), burst: (got: boolean) -> () }
+local function weakSpot(parent: Instance, size: number): Spot
+	local button = Ui.new("TextButton", { Parent = parent, Text = "", AutoButtonColor = false, BackgroundTransparency = 1, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(size, size) })
+	local stroke = Ui.new("UIStroke", { Color = Color3.fromHex("5A240C"), Thickness = 3 })
+	local gem = Ui.new("Frame", { Parent = button, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(0.68, 0.68), Rotation = 45, BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1) }, {
+		Ui.new("UICorner", { CornerRadius = UDim.new(0.18, 0) }),
+		-- Rotation 45 on a 45-degree frame runs the gradient top (bright) to bottom (ember) on screen.
+		Ui.new("UIGradient", { Rotation = 45, Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromHex("FFF3C4")), ColorSequenceKeypoint.new(0.4, Color3.fromHex("FFB52E")), ColorSequenceKeypoint.new(1, Color3.fromHex("E0561B")) }) }),
+		stroke,
+	})
+	Ui.new("Frame", { Parent = gem, Position = UDim2.fromScale(0.16, 0.16), Size = UDim2.fromScale(0.24, 0.24), BorderSizePixel = 0, BackgroundColor3 = Color3.new(1, 1, 1) }, { Ui.new("UICorner", { CornerRadius = UDim.new(0.3, 0) }) })
+	local ringStroke = Ui.new("UIStroke", { Color = GLOW, Thickness = 3 })
+	local ring = Ui.new("Frame", { Parent = button, AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromScale(1.7, 1.7), BackgroundTransparency = 1 }, { Ui.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), ringStroke })
+	return {
+		button = button,
+		-- frac: share of the fade time used (0..1). The ring reaches the gem's tips (~0.96) at the end.
+		update = function(frac: number)
+			local s = 1.7 - 0.74 * frac
+			ring.Size = UDim2.fromScale(s, s)
+			ringStroke.Transparency = 0.6 * frac
+			local fade = math.max(0, frac - 0.6) * 1.5 -- the gem dims only in the last 40%
+			gem.BackgroundTransparency, stroke.Transparency = fade, fade
+		end,
+		burst = function(got: boolean)
+			ring.Visible = false
+			local to = if got then 1.05 else 0.3
+			TweenService:Create(gem, TweenInfo.new(0.15), { Size = UDim2.fromScale(to, to), BackgroundTransparency = 1 }):Play()
+			TweenService:Create(stroke, TweenInfo.new(0.15), { Transparency = 1 }):Play()
+		end,
+	}
+end
 
 function Mining.play(ctx: any, params: any): number?
 	local panel: Frame = ctx.panel
@@ -43,7 +78,7 @@ function Mining.play(ctx: any, params: any): number?
 	for i = 1, M.MINE_POINTS do
 		local got, clicked = false, false
 		local holder: Instance
-		local point: GuiObject
+		local spot: Spot
 		if core then
 			local a = spotOnRock(core)
 			local bb = Instance.new("BillboardGui")
@@ -51,26 +86,21 @@ function Mining.play(ctx: any, params: any): number?
 			bb.Adornee = a
 			bb.AlwaysOnTop = true
 			bb.Active = true
-			bb.Size = UDim2.fromOffset(size, size)
+			bb.Size = UDim2.fromOffset(size * 1.8, size * 1.8) -- room for the closing ring around the gem
 			bb.Parent = player:WaitForChild("PlayerGui")
-			point = Ui.new("TextButton", { Parent = bb, Text = "", AutoButtonColor = false, Size = UDim2.fromScale(1, 1), BackgroundColor3 = GLOW }, { Ui.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }), Ui.stroke() })
+			spot = weakSpot(bb, size)
 			holder = a
 			a.Destroying:Once(function()
 				bb:Destroy()
 			end)
 		else
 			local area = (rock :: Frame).AbsoluteSize
-			point = Ui.new("TextButton", {
-				Parent = rock,
-				Text = "",
-				AutoButtonColor = false,
-				Position = UDim2.fromOffset(math.random() * math.max(area.X - size, 0), math.random() * math.max(area.Y - size, 0)),
-				Size = UDim2.fromOffset(size, size),
-				BackgroundColor3 = GLOW,
-			}, { Ui.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }) })
-			holder = point
+			spot = weakSpot(rock :: Frame, size)
+			spot.button.Position = UDim2.fromOffset(size / 2 + math.random() * math.max(area.X - size, 0), size / 2 + math.random() * math.max(area.Y - size, 0))
+			holder = spot.button
 		end
-		;(point :: any).Activated:Connect(function()
+		local point = spot.button
+		point.Activated:Connect(function()
 			got, clicked = true, true
 		end)
 		local t = 0
@@ -90,7 +120,7 @@ function Mining.play(ctx: any, params: any): number?
 				end
 				ctx.fx(if got then "good" else "miss")
 			end
-			point.BackgroundTransparency = 0.8 * t / fade
+			spot.update(math.min(t / fade, 1))
 		end
 		if clicked then -- a click on the button itself ended the wait before the loop body ran
 			if hum then
@@ -98,7 +128,10 @@ function Mining.play(ctx: any, params: any): number?
 			end
 			ctx.fx("good")
 		end
-		holder:Destroy()
+		spot.burst(got)
+		task.delay(0.18, function()
+			holder:Destroy()
+		end)
 		hit += if got then 1 else 0
 		ctx.hint(`Weak spots {hit}/{i}`)
 		task.wait(0.25)

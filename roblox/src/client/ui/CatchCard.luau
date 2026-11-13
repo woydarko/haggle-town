@@ -35,7 +35,7 @@ function CatchCard.mount(gui: ScreenGui)
 		Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.6), NumberSequenceKeypoint.new(0.5, 0), NumberSequenceKeypoint.new(1, 0.6) }),
 		Enabled = false,
 	})
-	local holder = Ui.new("Frame", { Parent = card, BackgroundTransparency = 1, Size = UDim2.fromOffset(80, 80) })
+	local holder = Ui.new("Frame", { Parent = card, BackgroundColor3 = Theme.background, Size = UDim2.fromOffset(80, 80) }, { Ui.corner() })
 	local name = Ui.text({ Parent = card, Position = UDim2.fromOffset(92, 0), Size = UDim2.new(1, -92, 0, 32), FontFace = Theme.display, TextSize = 26, Text = "" })
 	local qty = Ui.text({ Parent = card, Position = UDim2.fromOffset(92, 62), Size = UDim2.new(1, -92, 0, 18), TextSize = 16, TextColor3 = Theme.muted, Text = "" })
 	local badge: TextLabel? = nil
@@ -61,7 +61,7 @@ function CatchCard.mount(gui: ScreenGui)
 		shownId += 1
 		local mine = shownId
 		holder:ClearAllChildren()
-		Ui.icon(c.name, c.tier, 80, { Parent = holder })
+		Ui.icon(c.item, 72, { Parent = holder, Position = UDim2.fromOffset(4, 4) })
 		name.Text = c.name
 		qty.Text = if c.qty > 1 then `x{c.qty} - added to your bag` else "Added to your bag"
 		if badge then
