@@ -1,11 +1,13 @@
 --!strict
 -- Bottom-center haggle panel (DESIGN_SYSTEM W3): merchant bubble, counter, reasoning, patience,
--- quick-sell chips for bag items this merchant buys, input, Accept/Leave.
+-- quick-sell chips for bag items this merchant buys (before a counter), three sentence suggestions
+-- (after a counter, shared/Suggest.luau), input, Accept/Leave.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
 local Ui = require(script.Parent.Ui)
 local Items = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Items"))
+local Suggest = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Suggest"))
 
 local HagglePanel = {}
 
@@ -22,7 +24,7 @@ export type Handlers = {
 	bag: () -> { [string]: number },
 }
 
-local HEIGHT = 336
+local HEIGHT = 348
 
 function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local panel = Ui.new("Frame", {
@@ -41,12 +43,12 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local line = Ui.text({ Parent = bubble, Size = UDim2.new(1, 0, 0, 48), TextSize = 20 })
 	local counter = Ui.text({ Parent = bubble, Position = UDim2.fromOffset(0, 50), Size = UDim2.new(0.5, 0, 0, 26), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary })
 	local reasoning = Ui.text({ Parent = bubble, Position = UDim2.new(0.5, 0, 0, 50), Size = UDim2.new(0.5, 0, 0, 26), TextSize = 16, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right })
-	local chips = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 146), Size = UDim2.new(1, 0, 0, 32), BackgroundTransparency = 1 }, {
+	local chips = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 146), Size = UDim2.new(1, 0, 0, 44), BackgroundTransparency = 1 }, {
 		Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
 	local input = Ui.new("TextBox", {
 		Parent = panel,
-		Position = UDim2.fromOffset(0, 188),
+		Position = UDim2.fromOffset(0, 200),
 		Size = UDim2.new(1, -110, 0, 44),
 		BackgroundColor3 = Theme.surface,
 		FontFace = Theme.body,
@@ -58,10 +60,10 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		Text = "",
 		TextXAlignment = Enum.TextXAlignment.Left,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8) })
-	local send = Ui.button("Send", false, { Parent = panel, Position = UDim2.new(1, -100, 0, 188), Size = UDim2.fromOffset(100, 44) })
-	local accept = Ui.button("Accept", true, { Parent = panel, Position = UDim2.fromOffset(0, 244), Size = UDim2.fromOffset(240, 48) })
-	local leave = Ui.button("Leave", false, { Parent = panel, Position = UDim2.new(1, -140, 0, 244), Size = UDim2.fromOffset(140, 48) })
-	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 298), Size = UDim2.new(1, 0, 0, 22), TextSize = 16, TextColor3 = Theme.muted })
+	local send = Ui.button("Send", false, { Parent = panel, Position = UDim2.new(1, -100, 0, 200), Size = UDim2.fromOffset(100, 44) })
+	local accept = Ui.button("Accept", true, { Parent = panel, Position = UDim2.fromOffset(0, 256), Size = UDim2.fromOffset(240, 48) })
+	local leave = Ui.button("Leave", false, { Parent = panel, Position = UDim2.new(1, -140, 0, 256), Size = UDim2.fromOffset(140, 48) })
+	local status = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 310), Size = UDim2.new(1, 0, 0, 22), TextSize = 16, TextColor3 = Theme.muted })
 
 	local merchant: string? = nil
 	local deal: any = nil
@@ -123,6 +125,27 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		end
 	end
 
+	-- After a counter: three ready sentences (meet in the middle, accept, push back) that change every round.
+	local round, shown = 0, {}
+	local function renderSuggestions(c: any)
+		for _, ch in chips:GetChildren() do
+			if ch:IsA("GuiObject") then
+				ch:Destroy()
+			end
+		end
+		round += 1
+		local item = Items.byId[c.item]
+		shown = Suggest.lines({ side = c.side, unitPrice = c.unitPrice, itemName = c.itemName or (item and item.name) or "goods", qty = c.qty, round = round }, shown)
+		for i, text in shown do
+			local chip = Ui.button(text, false, { Parent = chips, LayoutOrder = i, Size = UDim2.new(1 / 3, -6, 1, 0), FontFace = Theme.body, TextSize = 14, TextWrapped = true })
+			chip.Activated:Connect(function()
+				input.Text = text
+				input:CaptureFocus()
+				input.CursorPosition = #input.Text + 1
+			end)
+		end
+	end
+
 	local function showError(text: string)
 		status.TextColor3 = Theme.error
 		status.Text = text
@@ -143,6 +166,9 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 			showError(string.format("Come back tomorrow (in %d:%02d).", secs // 60, secs % 60))
 		else
 			setCounter(r.counter)
+			if r.counter then
+				renderSuggestions(r.counter)
+			end
 		end
 	end
 
@@ -194,6 +220,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		elseif r.status == "requoted" then
 			line.Text = `"{r.line}"`
 			setCounter(r.counter)
+			renderSuggestions(r.counter)
 			status.TextColor3 = Theme.warning
 			status.Text = "Prices just moved. Accept the new price or leave."
 		else
@@ -219,6 +246,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		setCounter(nil)
 		setPatience(3)
 		setBusy(false)
+		round, shown = 0, {}
 		renderChips()
 		panel.Visible = true
 		panel.Size = UDim2.fromOffset(560, 0)
