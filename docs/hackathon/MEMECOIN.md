@@ -19,7 +19,8 @@ real, on-chain balance sheet.
   `ft_metadata` (6 decimals); NEP-145 `storage_deposit` to receive without backing. Events: NEP-297 `ft_mint`,
   `ft_transfer`, and `haggle_coin/rebase` with day, worth, step and supply.
 - Parameters are set in `new()` and readable by anyone (`info()`): cap 500 bp, claim 1000, claims 1000. The contract
-  has no owner field and no method that changes them. `rebases(from, limit)` is the full mint/burn log.
+  has no owner field and no method that changes them, and every access key of the three coin accounts has been deleted
+  (locked; see DEPLOYMENTS.md for the txs), so not even the deployer can redeploy the code. `rebases(from, limit)` is the full mint/burn log.
 
 ## Choosing the cap: 60-day simulation (`cargo run -p sim -- --coins`)
 Same bots, pricing and Forge as the game; 3 seeds each; supply multiple at day 60 for fish/wood/ore.
