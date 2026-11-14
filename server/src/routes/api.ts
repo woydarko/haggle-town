@@ -18,7 +18,28 @@ export interface ApiDeps {
   config: Config;
   /** Backer coin contract ids (defaults to config.COIN_IDS). */
   coins?: string[];
+  /** JSON GET for the NearBlocks indexer (tests pass a stub). */
+  fetchJson?: (url: string) => Promise<any>;
 }
+
+/** Every NEP-141 mint and transfer of a coin, from the NearBlocks v3 indexer (the locked contracts keep no holder list). */
+async function coinEvents(fetchJson: (url: string) => Promise<any>, network: string, id: string) {
+  const host = network === "mainnet" ? "api.nearblocks.io" : "api-testnet.nearblocks.io";
+  const r = await fetchJson(`https://${host}/v3/fts/${id}/txns?per_page=25`);
+  return ((r?.data ?? []) as any[]).map((e) => ({
+    account: e.affected_account_id as string,
+    cause: e.cause as string,
+    amount: e.delta_amount as string,
+    at: Math.floor(Number(e.block_timestamp) / 1e6),
+    txHash: e.transaction_hash as string,
+  }));
+}
+
+const getJson = async (url: string) => {
+  const r = await fetch(url, { signal: AbortSignal.timeout(4_000) });
+  if (!r.ok) throw new Error(`${url} ${r.status}`);
+  return r.json();
+};
 
 /** Public read-only routes for the web dashboard. Never secrets. Player ids appear only on the players
  *  routes; they are already public on chain as settle_deal / gather_batch arguments. */
@@ -63,15 +84,17 @@ export function apiRoutes(d: ApiDeps) {
       dayLengthMs: d.config.DAY_LENGTH_MS,
     }));
     app.get("/api/market", async () => d.market.get());
-    // Backer coins: each contract's info plus its last 30 rebases, cached 10 s (RPC views).
+    // Backer coins: each contract's info, its last 30 rebases and its mint/transfer events, cached 30 s.
+    // events is null when the indexer is down: the coins work without it, only the list is missing.
     let coinCache: { at: number; body: unknown } | null = null;
     app.get("/api/coins", async () => {
-      if (coinCache && Date.now() - coinCache.at < 10_000) return coinCache.body;
+      if (coinCache && Date.now() - coinCache.at < 30_000) return coinCache.body;
       const body = await Promise.all(
         (d.coins ?? d.config.COIN_IDS).map(async (id) => {
           const info = await d.chain.view<{ rebases: number } & Record<string, unknown>>("info", {}, id);
           const recent = await d.chain.view("rebases", { from: Math.max(0, info.rebases - 30), limit: 30 }, id);
-          return { id, ...info, recent };
+          const events = await coinEvents(d.fetchJson ?? getJson, d.config.NEAR_NETWORK, id).catch(() => null);
+          return { id, ...info, recent, events };
         }),
       );
       coinCache = { at: Date.now(), body };

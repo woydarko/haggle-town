@@ -32,7 +32,7 @@ async function setup() {
   const app = buildApp({
     config: loadConfig(TEST_ENV),
     db,
-    routes: [apiRoutes({ db, chain, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV) })],
+    routes: [apiRoutes({ db, chain, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV), fetchJson: async () => { throw new Error("offline in tests"); } })],
   });
   return { app, db, market, chain };
 }
@@ -118,4 +118,21 @@ test("/api/coins returns each coin's info and its recent rebases", async () => {
   assert.equal(coins.length, 3, "one per merchant (config default)");
   assert.equal(coins[0].recent[0].step_bp, 120);
   assert.ok(asked.some((a) => JSON.stringify(a) === JSON.stringify(["rebases", coins[0].id, { from: 10, limit: 30 }])), "last 30 rebases of that coin");
+  assert.equal(coins[0].events, null, "no indexer in tests -> events null, the rest still served");
+});
+
+test("/api/coins lists each coin's backers from the indexer's NEP-141 events", async () => {
+  const chain = new FakeChain();
+  chain.view = (async (method: string) => (method === "info" ? { symbol: "SMITH", rebases: 1 } : [])) as any;
+  const db = openDb(":memory:");
+  const market = new MarketCache(chain);
+  const urls: string[] = [];
+  const fetchJson = async (url: string) => {
+    urls.push(url);
+    return { data: [{ affected_account_id: "ana.testnet", cause: "MINT", delta_amount: "1000000000", block_timestamp: "1794659931614821483", transaction_hash: "BY6n" }] };
+  };
+  const app = buildApp({ config: loadConfig(TEST_ENV), db, routes: [apiRoutes({ db, chain, market, leaderboard: () => [], config: loadConfig(TEST_ENV), coins: ["smith-coin.testnet"], fetchJson })] });
+  const coin = (await app.inject({ method: "GET", url: "/api/coins" })).json()[0];
+  assert.deepEqual(coin.events, [{ account: "ana.testnet", cause: "MINT", amount: "1000000000", at: 1794659931614, txHash: "BY6n" }]);
+  assert.equal(urls[0], "https://api-testnet.nearblocks.io/v3/fts/smith-coin.testnet/txns?per_page=25");
 });

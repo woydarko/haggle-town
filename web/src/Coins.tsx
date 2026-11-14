@@ -113,6 +113,30 @@ export function Coins({ config }: { config: Config | null }) {
                   </table>
                 </details>
                 <details>
+                  <summary>Backers and transfers{c.events ? ` (${c.events.filter((e) => e.cause === "MINT").length})` : ""}</summary>
+                  {!c.events ? (
+                    <p className="muted">The indexer is not answering right now; the coin itself is unaffected.</p>
+                  ) : c.events.length === 0 ? (
+                    <p className="muted">No backers yet. Be the first.</p>
+                  ) : (
+                    <ul className="feed">
+                      {c.events.map((e) => (
+                        <li key={e.txHash + e.account + e.cause}>
+                          <strong>{e.account}</strong> {e.cause === "MINT" ? "backed" : e.amount.startsWith("-") ? "sent" : "received"}{" "}
+                          <span className="num">{Math.abs(units(e.amount)).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>{" "}
+                          <span className="muted">{new Date(e.at).toLocaleString()}</span>{" "}
+                          {config && (
+                            <a href={`${config.explorerBase}/txns/${e.txHash}`} target="_blank" rel="noreferrer">
+                              tx
+                            </a>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  <p className="muted">From NEP-141 events (NearBlocks indexer). Rebases change every balance at once, so they are logged above instead.</p>
+                </details>
+                <details>
                   <summary>Back it (near CLI)</summary>
                   <p className="muted">Contract: {account(c.id)}</p>
                   <code style={{ display: "block", whiteSpace: "pre-wrap", fontSize: "var(--fs-small)" }}>

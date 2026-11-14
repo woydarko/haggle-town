@@ -32,6 +32,8 @@ export type CoinView = {
   last_worth: string;
   last_day: number;
   recent: Rebase[];
+  /** NEP-141 mints (backers) and transfers from the NearBlocks indexer; null when it is unavailable. */
+  events: { account: string; cause: string; amount: string; at: number; txHash: string }[] | null;
 };
 export type History = { item: string; points: { ts: number; ask: number; bid: number; stock: number; purse: number }[] }[];
 export type Config = { contractId: string; network: string; explorerBase: string };

@@ -28,6 +28,20 @@ The rules only protect the merchant. If you sell under its bid or pay over its a
 
 Pricing in one readable file: `economy/src/pricing.rs` (ask = base × target / stock, clamped to 0.5–3× base; bid = 80% of ask; up to 40% discount when overstocked, up to 40% premium when short). The contract, the simulator and the backend's TypeScript port (tested against 768 Rust vectors) all use it.
 
+## The merchants as agents (Agent Economy)
+
+What the three merchant agents do, mapped to the track's asks, and what they do not do yet:
+
+| Ask | Haggle Town |
+| --- | --- |
+| An agent with its own wallet that earns and spends | Each merchant has its own NEAR account, holds Coin and stock in the market contract, buys from and sells to players, and signs every deal with its own ed25519 key; the contract checks that signature. |
+| Negotiation: counter with reasoning, then accept or walk away | Players haggle in plain chat; the merchant counters in character with a reasoning line ("Why?"), accepts in-range offers, and stops talking after three lowballs that day. |
+| Spending stays inside a policy | The price room from `pricing.rs` is the agent's policy: the backend pulls the LLM's prices back into it (Guardrail panel) and the contract refuses anything outside it, even when signed ([proof](https://testnet.nearblocks.io/txns/FLb7YA38r3r1ESFuHoapirMX5bFsbGteK8mTVfVgN2zN)). |
+| A receipt for every task | Every deal is a settled transaction listed on the dashboard with the merchant's line and reasoning; every Forge burn and tool purchase too. |
+| Hiring other agents, paying for APIs, NEAR Intents, USDC | **Not built.** Merchants trade only with players, the LLM bill is paid by the backend, and payments are in-game Coin. Next step: merchant-to-merchant restock deals signed by both agents, and paying the model per call from the merchant's own purse. |
+
+Custody is covered under "How it works" below: one backend holds all three keys today.
+
 ## Backer coins: $WOOD, $FISH, $SMITH (Memecoins With Mechanics)
 
 Every AI merchant has an NEP-141 memecoin whose supply follows that merchant's on-chain net worth (purse + stock at its own bid), rebased for every holder once per market day, capped at 5% a day (chosen with a 60-day simulation). Anyone can call `tick()`; the coin reads the market contract directly, so no backend can switch it off. Parameters are fixed at launch with no admin method. Back the house, or bet on the hagglers. Web dashboard only (tab "Backer coins"), never inside Roblox. Details, simulation table and sybil limits: [docs/hackathon/MEMECOIN.md](docs/hackathon/MEMECOIN.md).
