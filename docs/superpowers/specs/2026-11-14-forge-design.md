@@ -36,6 +36,12 @@ Levels start at 1 and only go up. No Coin fee (skipped; a fee paid into the Smit
    level, logs a forge event (dashboard feed). Toast + sound; the tool in hand gets a level outline.
 5. Gathering: the catch card says "x2 - Sturdy Axe bonus" when the tool roll hit.
 
+## Tool ownership (user, 2026-11-14)
+New players hold no tools. Picking a trade grants its tool (kept after switching). Other tools cost
+`TOOL_PRICE` = 150 C (economy/src/pricing.rs), paid to that trade's merchant via `buy_tool(player_id, category)`.
+The backend refuses gathering without the tool (403 no_tool); Roblox hands out only owned tools (ServerStorage.ToolTemplates).
+Existing players keep their trade tool and every tool they forged.
+
 ## On chain
 `use_items(player_id, items: [(item_id, amount)])`: relayer only, 1-4 entries, amount 1-20, items only (no
 Coin), burns via NEP-245 `mt_burn`. No new contract state (state layout unchanged; levels live in the
