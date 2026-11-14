@@ -4,9 +4,26 @@
     {
       "name": "backend",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["--env-file=../.env", "src/main.ts"],
+      "runtimeArgs": [
+        "--env-file=../.env",
+        "src/main.ts"
+      ],
       "cwd": "server",
       "port": 8080
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "cwd": "web",
+      "port": 4173
     }
   ]
 }

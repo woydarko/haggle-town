@@ -5,7 +5,8 @@ A Roblox market town where you gather wood, fish and ore and **haggle in plain c
 NEAR HACKATHON tracks: **Games With Real Economies** (main), **Agent Economy** and **Memecoins With Mechanics**.
 
 - Play: Roblox experience link _(added at publish)_
-- Dashboard (on-chain side: prices, merchant purses, deals with explorer links, guardrail, fast-forward week): https://backend-production-fccb03fb.up.railway.app
+- Website: https://backend-production-fccb03fb.up.railway.app (landing page)
+- Dashboard (on-chain side: prices, merchant purses, deals with explorer links, guardrail, fast-forward week): https://backend-production-fccb03fb.up.railway.app/app/
 - Contract: [`haggletown-v2.testnet`](https://testnet.nearblocks.io/address/haggletown-v2.testnet) (NEAR testnet, NEP-245 multi-token)
 
 ## Why it is different: AI agents you can't sweet-talk into ruin

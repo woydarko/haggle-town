@@ -55,7 +55,7 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 
 ## Backend + dashboard hosting
 - Railway project `haggle-town`, service `backend` (Dockerfile), volume `/data` for SQLite.
-- Public URL: https://backend-production-fccb03fb.up.railway.app (dashboard at `/`, `/health`, `/api/*`; Roblox calls `/rbx/*` with HMAC).
+- Public URL: https://backend-production-fccb03fb.up.railway.app (landing at `/`, dashboard at `/app/`, `/health`, `/api/*`; Roblox calls `/rbx/*` with HMAC).
 - Deployed 2026-11-10 ~22:30 +0700; verified /health, /api/config, /api/market, /sim/week.json 200; unsigned /rbx 401; signed join + haggle 200 against testnet.
 - NEAR Builders project: `haggle-town` (id proj_1794324838912_9twhgjb, private, owner goatdarko.near).
 

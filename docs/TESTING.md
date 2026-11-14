@@ -53,6 +53,7 @@ Before demo: the golden path (PRD J1) works on testnet from a clean checkout; no
 - Luau: `lute run roblox/tests/Hmac.spec.luau`, `lute run roblox/tests/Validate.spec.luau`, `lute run roblox/tests/Minigame.spec.luau`, `lute run roblox/tests/Items.spec.luau`, `lute run roblox/tests/Terrain.spec.luau`; parse all: `LUTE=lute bash roblox/tests/check-syntax.sh` (Lute via `winget install Luau.Lute`)
 - Unit/integration: `cd server && NODE_ENV=test npm test` (Node 24 test runner, native TS); `cargo test -p economy`; `cargo test -p haggle-contract --lib` (Rust; Windows dev box uses `rustup override set stable-x86_64-pc-windows-gnu` because MSVC Build Tools are not installed)
 - End-to-end: Not configured
+- Web: `cd web && npm test` (landing stat helpers, Node 24 test runner); `cd web && npm run build` (tsc + vite, two pages)
 - Build/type check: `cd server && npm run typecheck`
 
 ## Release criteria
@@ -128,3 +129,4 @@ Every run records: command, result, failures, untested limitations. Not run stay
 - 2026-11-14 NPC pose fix (user: all NPCs in T-pose). Cause: every part anchored and no animation, and the generated rigs move on AnimationConstraints. Now only the root part is anchored and each NPC loops Roblox's standard R15 idle (Anims.Idle 507766388, priority Idle) through its Animator. Play: 4/4 NPCs with one playing track (3.7 s loop), left hand 0.8-1.5 studs below the root instead of out to the side, feet still on the ground; screenshots show the woodcutter (plaid shirt, vest, beard) at his stall and the mentor (green robe, grey beard) standing relaxed in the lobby.
 - 2026-11-10 testnet: `bash scripts/deploy.sh` + `bash scripts/seed.sh` -> deployed haggletown.testnet; `get_market` returns 3 merchants with ask 50/80/150, bid 40/64/120, stock 100, purse 10000. Passed.
 - Not run: near-workspaces sandbox integration test (near-sandbox has no Windows binary); covered by testnet smokes.
+- 2026-11-15 landing page: `cd web && npm test` -> 4 passed; `npm run build` PASS (dist/index.html + dist/app/index.html); `cd server && NODE_ENV=test npm test` -> 147 passed; typecheck PASS. Browser (vite preview): no console errors, 390 px no horizontal scroll, `/#/coins` -> `/app/#/coins`, fastify-static `/app` -> 301 `/app/`. Not run: API-down rendering in a browser (checked by reading code), real reduced-motion emulation.

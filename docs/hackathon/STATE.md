@@ -43,7 +43,8 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 
 ## Phase cursor and clock
 Current phase: 5-6 verify + submit (plan docs/superpowers/plans/2026-11-14-final-fixes.md; feature freeze)
-Last updated: 2026-11-14 19:40 +0700
+Last updated: 2026-11-15 00:30 +0700
+Freeze exception (user, 2026-11-14 ~21:00): web landing page at `/`, dashboard moved to `/app/` (spec docs/superpowers/specs/2026-11-14-landing-page-design.md, plan docs/superpowers/plans/2026-11-14-landing-page.md). Old `/#/...` links forward to `/app/#/...`.
 
 | Phase | Status | Budget | Planned start -> end | Actual end | Notes |
 | --- | --- | --- | --- | --- | --- |
