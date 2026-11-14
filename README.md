@@ -47,8 +47,8 @@ Custody, honestly: in this hackathon build all merchant keys live as environment
 Hosted demo above. To check the code locally (no keys needed):
 
 ```bash
-cargo test -p economy -p haggle-contract          # pricing rules + contract (47 tests)
-cd server && npm ci && npm test && npm run typecheck   # backend (130 tests)
+cargo test -p economy -p haggle-contract          # pricing rules + contract (51 tests)
+cd server && npm ci && npm test && npm run typecheck   # backend (139 tests)
 cd web && npm ci && npm run build                  # dashboard
 cargo run -p sim -- --days 7 --bots 10 --seed 42 --out web/public/sim/week.json   # fast-forward week
 ```
