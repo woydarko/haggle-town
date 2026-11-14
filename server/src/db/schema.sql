@@ -108,3 +108,16 @@ CREATE TABLE IF NOT EXISTS item_price (
   purse INTEGER NOT NULL,
   PRIMARY KEY (item, ts)
 ) STRICT;
+
+-- Guardrail: every LLM price the backend had to pull back into the pricing room.
+CREATE TABLE IF NOT EXISTS guard_event (
+  id INTEGER PRIMARY KEY,
+  merchant TEXT NOT NULL,
+  item TEXT NOT NULL,
+  side TEXT NOT NULL,
+  wanted REAL NOT NULL,
+  lo INTEGER NOT NULL,
+  hi INTEGER NOT NULL,
+  sent INTEGER NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;

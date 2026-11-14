@@ -44,6 +44,10 @@ export function apiRoutes(d: ApiDeps) {
      FROM chat_turn c JOIN haggle_session s ON s.id = c.session_id
      WHERE c.role = 'merchant' ORDER BY c.id DESC LIMIT 50`,
   );
+  const guard = d.db.prepare(
+    "SELECT created_at AS at, merchant, item, side, wanted, lo, hi, sent FROM guard_event ORDER BY id DESC LIMIT 20",
+  );
+  const guardCount = d.db.prepare("SELECT COUNT(*) AS n FROM guard_event");
 
   return (app: FastifyInstance) => {
     app.get("/api/config", async () => ({
@@ -54,7 +58,11 @@ export function apiRoutes(d: ApiDeps) {
     }));
     app.get("/api/market", async () => d.market.get());
     app.get("/api/leaderboard", async () => d.leaderboard());
-    app.get("/api/feed", async () => ({ deals: deals.all(), chat: chat.all() }));
+    app.get("/api/feed", async () => ({
+      deals: deals.all(),
+      chat: chat.all(),
+      guard: { count: (guardCount.get() as { n: number }).n, recent: guard.all() },
+    }));
     app.get("/api/players", async () => players.all());
     app.get<{ Params: { id: string } }>("/api/players/:id", async (req) => {
       const id = req.params.id;

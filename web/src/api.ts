@@ -15,7 +15,8 @@ export type Market = {
 };
 export type Deal = { at: number; player: string; merchant: string; good: string; qty: number; unitPrice: number; side: string; txHash: string };
 export type Chat = { at: number; merchant: string; line: string; mood: string; source: string; reasoning: string | null };
-export type Feed = { deals: Deal[]; chat: Chat[] };
+export type Guard = { at: number; merchant: string; item: string; side: string; wanted: number; lo: number; hi: number; sent: number };
+export type Feed = { deals: Deal[]; chat: Chat[]; guard: { count: number; recent: Guard[] } };
 export type Leader = { name: string; netWorth: number };
 export type History = { item: string; points: { ts: number; ask: number; bid: number; stock: number; purse: number }[] }[];
 export type Config = { contractId: string; network: string; explorerBase: string };

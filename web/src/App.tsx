@@ -209,6 +209,26 @@ export function App() {
             </section>
 
             <section className="card">
+              <h2>Guardrail</h2>
+              <p className="muted">
+                The AI picks the words and proposes a price. Prices outside the rules in pricing.rs are pulled back before a deal is offered, and the
+                contract rejects any that slip through. Pulled back so far: <span className="num">{data.feed.guard?.count ?? 0}</span>
+              </p>
+              {data.feed.guard?.recent.length ? (
+                <ul className="feed">
+                  {data.feed.guard.recent.map((g, i) => (
+                    <li key={i}>
+                      <strong>{MERCHANT_NAME[g.merchant] ?? g.merchant}</strong> wanted <span className="num">{g.wanted} C</span> for {itemName(g.item)}, rules
+                      allow <span className="num">{g.lo}-{g.hi} C</span>, offered <span className="num">{g.sent} C</span> <span className="muted">{ago(g.at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">No AI price has crossed the rules yet. Try talking a merchant into a free deal.</p>
+              )}
+            </section>
+
+            <section className="card">
               <h2>What the merchants are saying</h2>
               {data.feed.chat.length ? (
                 <ul className="feed">

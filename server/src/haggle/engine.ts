@@ -183,8 +183,15 @@ export class HaggleEngine {
       reply = { ...fallbackReply({ merchant, room, current, offerUnit, lowball }, recent), source: "fallback" };
     }
 
-    let price = Number.isFinite(reply.unitPrice) ? clamp(Math.round(reply.unitPrice), room) : current;
+    const wanted = Number.isFinite(reply.unitPrice) ? Math.round(reply.unitPrice) : undefined;
+    let price = wanted !== undefined ? clamp(wanted, room) : current;
+    const guarded = wanted !== undefined && price !== wanted;
     if (reply.accept && offerUnit !== undefined && offerUnit >= room[0] && offerUnit <= room[1]) price = offerUnit;
+    if (guarded) {
+      this.d.db
+        .prepare("INSERT INTO guard_event (merchant, item, side, wanted, lo, hi, sent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)")
+        .run(merchant, item.id, side, wanted, room[0], room[1], price, this.now());
+    }
 
     this.chat(session.id, text, reply.line, reply.mood, reply.source, reasoning);
     this.d.db.prepare("UPDATE haggle_session SET rounds = rounds + 1 WHERE id = ?").run(session.id);
