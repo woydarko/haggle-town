@@ -106,7 +106,7 @@ Over-budget warnings sent: none
 ## Unresolved
 - Solo or team? (assumed solo) - owner: nabil
 - LLM: DONE 2026-11-10 (minimax-m2-7-highspeed via kenari.id, eval 14/15)
-- Railway: DONE 2026-11-10 (https://backend-production-fccb03fb.up.railway.app); redeployed 2026-11-13 on haggletown-v2.testnet (v2-v6 backend, prod smoke settled on chain). Still open: OK to publish Roblox experience - owner: nabil
+- Railway: DONE 2026-11-10 (https://backend-production-fccb03fb.up.railway.app); redeployed 2026-11-13 on haggletown-v2.testnet (v2-v6 backend, prod smoke settled on chain). Roblox experience published by user 2026-11-15: https://www.roblox.com/games/87878138386141/Haggle-Town (place 87878138386141).
 - Roblox Studio golden path not run yet (needs user in Studio) - owner: nabil
 - NEAR mainnet payout account name - owner: nabil
 - Roblox HttpService blocks localhost? (unverified; plan uses cloudflared tunnel anyway) - owner: agent

@@ -202,7 +202,7 @@ const FAQ: [string, string][] = [
   ["What does the AI actually decide?", "What the merchant says and the price it proposes. The price room comes from fixed rules, and the contract rejects any deal outside it."],
   ["Why do prices change?", "Each of the 12 goods has its own supply and demand. Sell a pile of oak and the Woodcutter pays less for it; buy the shelf empty and the price climbs."],
   ["What are backer coins?", "Each merchant has a coin ($WOOD, $FISH, $SMITH) whose supply follows that merchant's net worth. It is rebased for every holder once per market day, by at most 5%, and only exists on this website, never inside the game."],
-  ["Where is the game?", "On Roblox. The public link goes here once the experience is published; until then the dashboard shows the same market live."],
+  ["Where is the game?", "On Roblox, as Haggle Town, playable on computer, phone and tablet. Use the Play on Roblox button at the top of this page."],
 ];
 
 export function Faq() {

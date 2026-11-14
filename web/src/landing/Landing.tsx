@@ -4,7 +4,7 @@ import { lastDealLine } from "./stats.ts";
 import { useLive, type Live } from "./useLive.ts";
 
 /** Public Roblox experience link; the "Play on Roblox" button stays hidden while this is empty. */
-const ROBLOX_URL = "";
+const ROBLOX_URL = "https://www.roblox.com/games/87878138386141/Haggle-Town";
 
 function Nav() {
   return (

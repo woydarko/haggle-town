@@ -3,7 +3,7 @@
 Deadline 2026-11-14 23:59 UTC = 2026-11-15 06:59 +0700. Form: https://nearhackathon.com/#apply
 
 ## Checklist (user)
-- [ ] Roblox experience published public; link pasted into README "Play"
+- [x] Roblox experience published (2026-11-15, https://www.roblox.com/games/87878138386141/Haggle-Town); link in README "Play". Confirm Privacy: Public and Allow HTTP Requests in the published experience settings.
 - [ ] GitHub repo `woydarko/haggle-town` set public, branch merged/pushed
 - [ ] Demo video recorded (script below)
 - [ ] X post with video, @NEARProtocol #NEARHackathon
