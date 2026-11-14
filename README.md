@@ -99,15 +99,13 @@
 The player types; the model talks; the rules and the contract decide. Every arrow below exists in the code.
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','actorBkg':'#1F3B42','actorBorder':'#284A52','actorTextColor':'#F4ECDD','actorLineColor':'#A8661C','signalColor':'#8A3415','signalTextColor':'#2B2118','sequenceNumberColor':'#FFF9EE','labelBoxBkgColor':'#1F3B42','labelTextColor':'#F4ECDD'}}}%%
 sequenceDiagram
     autonumber
-    participant P as Player
+    actor P as Player
     participant G as Roblox server
     participant B as Backend (Fastify)
     participant L as LLM
     participant C as Market contract (NEAR testnet)
-    rect rgb(244, 236, 221)
     P->>G: types "can u do 16?" at the Woodcutter
     G->>B: POST /rbx/haggle (HMAC signed)
     B->>B: parse the offer, read stock and purse, compute the price room (pricing.rs)
@@ -122,7 +120,6 @@ sequenceDiagram
     C->>C: verify merchant signature, nonce, expiry and the price room again
     C-->>B: settled (or refused with PriceOutOfRoom)
     B-->>G: new balances, shown in game as Coin
-    end
 ```
 
 ## Architecture
@@ -130,7 +127,6 @@ sequenceDiagram
 Three trust boundaries: the Roblox server can only ask, the backend holds the keys, and the contract has the last word on every price.
 
 ```mermaid
-%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FFF9EE','primaryTextColor':'#2B2118','primaryBorderColor':'#A8661C','lineColor':'#A8661C','clusterBkg':'#1F3B42','clusterBorder':'#284A52','titleColor':'#F4ECDD','edgeLabelBackground':'#F4ECDD'}}}%%
 flowchart TB
     subgraph RB["Roblox (public experience)"]
         RC["Game client<br/>no keys, no chain words"]
@@ -159,8 +155,6 @@ flowchart TB
     MC -- "views via /api" --> WEB
     ECO -. "compiled into" .-> MC
     ECO -. "ported to" .-> HE
-    classDef decides fill:#F2C66B,stroke:#8A3415,stroke-width:2px,color:#2B2118
-    class MC decides
 ```
 
 - **Players are not accounts.** A player is a contract-internal id (`roblox:<UserId>`). One game relayer account pays every fee, so nobody has to own NEAR to play.
