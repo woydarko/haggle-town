@@ -121,3 +121,22 @@ CREATE TABLE IF NOT EXISTS guard_event (
   sent INTEGER NOT NULL,
   created_at INTEGER NOT NULL
 ) STRICT;
+
+-- Forge: tool level per player (absent = level 1) and every upgrade with the goods it burned on chain.
+CREATE TABLE IF NOT EXISTS player_tool (
+  player_id TEXT NOT NULL,
+  tool TEXT NOT NULL,
+  level INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (player_id, tool)
+) STRICT;
+
+CREATE TABLE IF NOT EXISTS forge_event (
+  id INTEGER PRIMARY KEY,
+  player_id TEXT NOT NULL,
+  tool TEXT NOT NULL,
+  level INTEGER NOT NULL,
+  cost TEXT NOT NULL,
+  tx_hash TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+) STRICT;

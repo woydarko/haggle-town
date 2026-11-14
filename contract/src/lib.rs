@@ -14,6 +14,7 @@ pub use deals::{deal_message, Deal, SettleResult};
 
 const MAX_BATCH: usize = 100;
 const MAX_GATHER_QTY: u32 = 20;
+const MAX_USE: usize = 4;
 pub const CLASS_SWITCH_FEE: u128 = 100;
 
 #[derive(BorshStorageKey)]
@@ -179,6 +180,25 @@ impl Contract {
             }
             self.add(&e.player_id, &e.good, e.qty as u128);
             nep245::emit_mint(&e.player_id, &[&e.good], &[e.qty as u128]);
+        }
+    }
+
+    /// Consumes a player's goods (forging a tool). Relayer only, like set_class's fee; the goods are burned.
+    pub fn use_items(&mut self, player_id: String, items: Vec<(String, U128)>) {
+        self.assert_game();
+        if !self.players.contains(&player_id) {
+            env::panic_str("UnknownPlayer");
+        }
+        if items.is_empty() || items.len() > MAX_USE {
+            env::panic_str("BadItems");
+        }
+        for (good, amount) in &items {
+            item_of(good);
+            if amount.0 == 0 || amount.0 > MAX_GATHER_QTY as u128 {
+                env::panic_str("BadItems");
+            }
+            self.sub(&player_id, good, amount.0);
+            nep245::emit_burn(&player_id, &[good.as_str()], &[amount.0]);
         }
     }
 

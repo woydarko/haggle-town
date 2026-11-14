@@ -123,6 +123,37 @@ fn gather_mints_item() {
 }
 
 #[test]
+fn use_items_burns_goods() {
+    let mut c = setup([1; 32], 10_000);
+    c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "fish_trout".into(), qty: 3 }]);
+    c.use_items("roblox:1".into(), vec![("fish_trout".into(), U128(2))]);
+    assert_eq!(bal(&c, "roblox:1", "fish_trout"), 1);
+    assert_eq!(bal(&c, "roblox:1", "coin"), 1_000, "coin untouched");
+}
+
+#[test]
+#[should_panic(expected = "InsufficientGoods")]
+fn use_items_needs_the_goods() {
+    let mut c = setup([1; 32], 10_000);
+    c.use_items("roblox:1".into(), vec![("fish_trout".into(), U128(1))]);
+}
+
+#[test]
+#[should_panic(expected = "NotGame")]
+fn use_items_relayer_only() {
+    let mut c = setup([1; 32], 10_000);
+    ctx("roblox.testnet", 0, 1);
+    c.use_items("roblox:1".into(), vec![("fish_trout".into(), U128(1))]);
+}
+
+#[test]
+#[should_panic(expected = "BadGood")]
+fn use_items_rejects_coin() {
+    let mut c = setup([1; 32], 10_000);
+    c.use_items("roblox:1".into(), vec![("coin".into(), U128(1))]);
+}
+
+#[test]
 #[should_panic(expected = "BadGood")]
 fn gather_rejects_category_name() {
     let mut c = setup([1; 32], 10_000);

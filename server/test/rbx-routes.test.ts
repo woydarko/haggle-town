@@ -10,6 +10,7 @@ import { Gather } from "../src/game/gather.ts";
 import { Players } from "../src/game/players.ts";
 import { Classes } from "../src/game/classes.ts";
 import { rbxRoutes } from "../src/routes/rbx.ts";
+import { Forge } from "../src/game/forge.ts";
 import { FakeChain, marketView } from "./fakes.ts";
 import { TEST_ENV } from "./app.test.ts";
 
@@ -29,7 +30,8 @@ async function setup() {
   const gather = new Gather(db, chain, queue, () => clock.t, { rand: () => 0, classOf: (id) => classes.get(id) });
   const players = new Players(db, chain, queue, gather);
   const leaderboard = { get: () => [], rank: (id: string) => (id === "roblox:42" ? 1 : null) };
-  const app = buildApp({ config: loadConfig(TEST_ENV), db, routes: [rbxRoutes({ players, gather, market, classes, leaderboard })] });
+  const forge = new Forge(db, chain, queue, players, gather, () => clock.t);
+  const app = buildApp({ config: loadConfig(TEST_ENV), db, routes: [rbxRoutes({ players, gather, market, classes, leaderboard, forge })] });
   return { app, chain, db, clock, wallets };
 }
 
@@ -152,4 +154,22 @@ test("/rbx/state returns balances and the per-item board", async () => {
   assert.equal(r.json().board.length, 12);
   assert.equal(r.json().board.find((m: any) => m.item === "ore_crystal").ask, 900);
   assert.equal(r.json().balances.coin, 1000);
+});
+
+test("/rbx/forge burns the recipe and returns the new forge view; /rbx/state carries it", async () => {
+  const { app, chain, wallets } = await setup();
+  await post(app, "/rbx/join", { userId: "42", name: "Rina" });
+  wallets["roblox:42"].balances = { coin: "1000", ore_copper: "3", fish_sardine: "3" };
+  const short = await post(app, "/rbx/forge", { userId: "42", tool: "pickaxe" });
+  assert.equal(short.statusCode, 409);
+  assert.equal(short.json().error, "missing");
+  const r = await post(app, "/rbx/forge", { userId: "42", tool: "axe" });
+  assert.equal(r.statusCode, 200);
+  assert.equal(r.json().name, "Sturdy Axe");
+  assert.equal(r.json().forge[0].level, 2);
+  assert.ok(chain.calls.some((c) => c.method === "use_items"));
+  const bad = await post(app, "/rbx/forge", { userId: "42", tool: "hammer" });
+  assert.equal(bad.statusCode, 400);
+  const st = await get(app, "/rbx/state?userId=42");
+  assert.equal(st.json().forge[0].name, "Sturdy Axe");
 });

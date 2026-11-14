@@ -48,6 +48,10 @@ export function apiRoutes(d: ApiDeps) {
     "SELECT created_at AS at, merchant, item, side, wanted, lo, hi, sent FROM guard_event ORDER BY id DESC LIMIT 20",
   );
   const guardCount = d.db.prepare("SELECT COUNT(*) AS n FROM guard_event");
+  const forges = d.db.prepare(
+    `SELECT f.created_at AS at, COALESCE(p.display_name, 'Trader') AS player, f.tool, f.level, f.cost, f.tx_hash AS txHash
+     FROM forge_event f LEFT JOIN player_profile p ON p.player_id = f.player_id ORDER BY f.id DESC LIMIT 20`,
+  );
 
   return (app: FastifyInstance) => {
     app.get("/api/config", async () => ({
@@ -62,6 +66,7 @@ export function apiRoutes(d: ApiDeps) {
       deals: deals.all(),
       chat: chat.all(),
       guard: { count: (guardCount.get() as { n: number }).n, recent: guard.all() },
+      forges: (forges.all() as { cost: string }[]).map((f) => ({ ...f, cost: JSON.parse(f.cost) as Record<string, number> })),
     }));
     app.get("/api/players", async () => players.all());
     app.get<{ Params: { id: string } }>("/api/players/:id", async (req) => {

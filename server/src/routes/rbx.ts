@@ -5,6 +5,7 @@ import { NODES } from "../game/gather.ts";
 import type { MarketCache } from "../chain/market.ts";
 import { CLASSES, type Classes } from "../game/classes.ts";
 import { netWorth, type Row } from "../game/leaderboard.ts";
+import { TOOLS, type Forge } from "../game/forge.ts";
 
 export interface RbxDeps {
   players: Players;
@@ -14,6 +15,7 @@ export interface RbxDeps {
   /** Extra routes registered under the same HMAC-protected prefix (haggle, leaderboard). */
   extra?: (app: FastifyInstance) => void;
   leaderboard?: { get(): Row[]; rank(playerId: string): number | null };
+  forge?: Forge;
 }
 
 const userId = { type: "string", pattern: "^[0-9]{1,20}$" } as const;
@@ -29,7 +31,7 @@ export function rbxRoutes(d: RbxDeps) {
       async (req) => {
         const id = pid(req.body.userId);
         const balances = await d.players.join(id, req.body.name);
-        return { balances, class: d.classes.get(id) };
+        return { balances, class: d.classes.get(id), forge: d.forge?.view(id) };
       },
     );
 
@@ -83,7 +85,18 @@ export function rbxRoutes(d: RbxDeps) {
       async (req) => {
         const id = pid(req.query.userId);
         d.players.touch(id);
-        return { balances: await d.players.balances(id), board: d.market.get(), leaderboard: d.leaderboard?.get() ?? [] };
+        return { balances: await d.players.balances(id), board: d.market.get(), leaderboard: d.leaderboard?.get() ?? [], forge: d.forge?.view(id) };
+      },
+    );
+
+    app.post<{ Body: { userId: string; tool: string } }>(
+      "/rbx/forge",
+      body(["userId", "tool"], { userId, tool: { type: "string", enum: Object.keys(TOOLS) } }),
+      async (req, reply) => {
+        if (!d.forge) return reply.code(404).send({ error: "no_forge", message: "The forge is closed." });
+        const id = pid(req.body.userId);
+        const r = await d.forge.upgrade(id, req.body.tool);
+        return { ...r, balances: await d.players.balances(id), forge: d.forge.view(id) };
       },
     );
 

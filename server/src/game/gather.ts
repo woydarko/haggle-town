@@ -24,8 +24,14 @@ const DEEP_QUALITY_BONUS = 20;
 const BATCH = 100;
 
 export type StartResult = { sessionId: string; node: string; params: { zoneScale: number; fishSpeed: number; minMs: number } };
-export type Catch = { item: string; name: string; tier: Tier; qty: number };
-export type GatherOpts = { rand?: () => number; classOf?: (playerId: string) => string | null };
+/** bonus: why qty is 2 - "trade" (the class bonus) or the tool's name ("Sturdy Axe"). */
+export type Catch = { item: string; name: string; tier: Tier; qty: number; bonus?: string };
+export type GatherOpts = {
+  rand?: () => number;
+  classOf?: (playerId: string) => string | null;
+  /** Extra-catch chance of the player's tool for this category (Forge). */
+  toolBonus?: (playerId: string, category: Category) => { chance: number; name: string };
+};
 
 type SessionRow = { id: string; player_id: string; node: string; roll_bp: number; started_at: number; closed_at: number | null };
 
@@ -39,6 +45,7 @@ export class Gather {
   private now: () => number;
   private rand: () => number;
   private classOf: (playerId: string) => string | null;
+  private toolBonus: (playerId: string, category: Category) => { chance: number; name: string };
 
   constructor(db: Db, chain: Chain, queue: Queue, now: () => number = Date.now, opts: GatherOpts = {}) {
     this.db = db;
@@ -47,6 +54,7 @@ export class Gather {
     this.now = now;
     this.rand = opts.rand ?? Math.random;
     this.classOf = opts.classOf ?? (() => null);
+    this.toolBonus = opts.toolBonus ?? (() => ({ chance: 0, name: "" }));
   }
 
   /** Opens a session (closing any earlier open one: one minigame at a time). The tier roll is fixed now; quality shifts it at finish. */
@@ -92,10 +100,15 @@ export class Gather {
     let tier = rollTier(s.roll_bp, specialist, q);
     if (s.node === "ore_mouth" && tier === "legendary") tier = "epic"; // crystal only grows deep in the cave
     const item = itemOf(n.category, tier);
-    const qty = specialist && this.rand() < DOUBLE_DROP ? 2 : 1;
+    // One roll for a second item: the trade's chance first, the tool's on top (rand is only drawn when either applies).
+    const trade = specialist ? DOUBLE_DROP : 0;
+    const tool = this.toolBonus(playerId, n.category);
+    const r = trade + tool.chance > 0 ? this.rand() : 1;
+    const bonus = r < trade ? "trade" : r < trade + tool.chance ? tool.name : undefined;
+    const qty = bonus ? 2 : 1;
     this.db.prepare("UPDATE gather_session SET closed_at = ?, item = ?, qty = ? WHERE id = ?").run(t, item.id, qty, s.id);
     this.db.prepare("INSERT INTO pending_gather (player_id, good, qty, created_at) VALUES (?, ?, ?, ?)").run(playerId, item.id, qty, t);
-    return { item: item.id, name: item.name, tier, qty };
+    return bonus ? { item: item.id, name: item.name, tier, qty, bonus } : { item: item.id, name: item.name, tier, qty };
   }
 
   /** Highest-value item this player has ever caught. */
