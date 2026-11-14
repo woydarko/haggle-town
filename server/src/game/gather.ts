@@ -21,7 +21,7 @@ const SESSION_TTL_MS = 60_000;
 const SPECIALIST_ZONE = 1.3;
 const DOUBLE_DROP = 0.15;
 const DEEP_QUALITY_BONUS = 20;
-const BATCH = 100;
+const BATCH = 30; // rows per gather_batch: keeps it well inside the 50 Tgas the relayer reserves per call
 
 export type StartResult = { sessionId: string; node: string; params: { zoneScale: number; fishSpeed: number; minMs: number } };
 /** bonus: why qty is 2 - "trade" (the class bonus) or the tool's name ("Sturdy Axe"). */

@@ -26,7 +26,7 @@ export function startJobs(d: JobDeps): () => void {
         await d.queue(() => d.chain.call("day_tick", {}));
         await d.market.refresh();
         for (const c of d.coins ?? []) {
-          await d.queue(() => d.chain.call("tick", {}, { gas: 60_000_000_000_000n, contractId: c })).catch((e) => d.log.warn({ err: String(e), coin: c }, "coin tick failed"));
+          await d.queue(() => d.chain.call("tick", {}, { gas: 45_000_000_000_000n, contractId: c })).catch((e) => d.log.warn({ err: String(e), coin: c }, "coin tick failed"));
         }
       }),
       d.dayLengthMs,

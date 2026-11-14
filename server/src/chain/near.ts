@@ -38,7 +38,7 @@ export function createNearChain(config: Config): Chain {
     async call(method, args, opts) {
       const res: any = await game.signAndSendTransaction({
         receiverId: opts?.contractId ?? config.CONTRACT_ID,
-        actions: [actions.functionCall(method, args, opts?.gas ?? teraToGas("100"), 0n)],
+        actions: [actions.functionCall(method, args, opts?.gas ?? teraToGas("50"), 0n)],
         throwOnFailure: false,
       } as any);
       const txHash: string = res?.transaction?.hash ?? res?.transaction_outcome?.id ?? "";
