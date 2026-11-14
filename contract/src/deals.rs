@@ -83,7 +83,7 @@ impl Contract {
             pricing::sell_room(item, stock, purse, deal.qty, specialist).unwrap_or_else(|| env::panic_str("MerchantPurseEmpty"))
         };
         let p = deal.unit_price.0;
-        if p < lo || p > hi {
+        if !pricing::price_ok(buying, p, (lo, hi)) {
             env::panic_str("PriceOutOfRoom");
         }
 
@@ -256,6 +256,13 @@ mod tests {
         let mut c = world(10_000, 0);
         ctx(GAME, 0, FAR + 1);
         settle(&mut c, deal("fish_trout", "buy", 1, 60, 1));
+    }
+
+    #[test]
+    fn player_may_sell_under_bid() {
+        let mut c = world(10_000, 1);
+        let r = settle(&mut c, deal("fish_trout", "sell", 1, 5, 1)); // bid 48; the player chose 5
+        assert_eq!(r.player.balances["coin"], U128(1_005));
     }
 
     #[test]

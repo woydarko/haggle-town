@@ -85,6 +85,22 @@ test("fallback accepts an in-room offer", async () => {
   assert.equal(r.counter?.itemName, "Pine");
 });
 
+test("selling under bid is taken at the player's price, no LLM call", async () => {
+  let called = false;
+  const { say } = await setup({ held: { wood_pine: "3" }, llm: async () => ((called = true), { line: "x", mood: "neutral", unitPrice: 9, accept: false }) });
+  const r = await say("roblox:1", "sell 1 pine for 1");
+  assert.equal(r.counter?.side, "sell");
+  assert.equal(r.counter?.unitPrice, 1);
+  assert.equal(r.mood, "pleased");
+  assert.equal(called, false);
+});
+
+test("buying above ask is taken at the player's price", async () => {
+  const { say } = await setup();
+  const r = await say("roblox:1", `buy 1 pine for ${HI + 5}`);
+  assert.equal(r.counter?.unitPrice, HI + 5);
+});
+
 test("reasoning comes from the numbers and names the item", async () => {
   const { say } = await setup();
   const r = await say("roblox:1", "hi");

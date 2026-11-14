@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ask, bid, buyRoom, sellRoom, burn, restock, rollTier } from "../src/haggle/pricing.ts";
+import { ask, bid, buyRoom, sellRoom, burn, restock, rollTier, priceOk } from "../src/haggle/pricing.ts";
 import { ITEMS, itemById } from "../src/items.ts";
 
 const v = JSON.parse(readFileSync(new URL("../../economy/test-vectors.json", import.meta.url), "utf8"));
@@ -28,4 +28,10 @@ test("pricing port matches every Rust price vector", () => {
 
 test("drop rolls match every Rust roll vector", () => {
   for (const r of v.rolls) assert.equal(rollTier(r.roll, r.specialist, r.quality), r.tier, JSON.stringify(r));
+});
+
+test("priceOk mirrors pricing.rs price_ok_guards_only_the_merchant", () => {
+  assert.ok(priceOk(true, 6, [6, 10]) && priceOk(true, 50, [6, 10]) && !priceOk(true, 5, [6, 10]));
+  assert.ok(priceOk(false, 10, [6, 10]) && priceOk(false, 1, [6, 10]) && !priceOk(false, 11, [6, 10]));
+  assert.ok(!priceOk(false, 0, [6, 10]) && !priceOk(true, 0, [0, 10]));
 });

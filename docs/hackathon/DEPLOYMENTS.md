@@ -35,7 +35,9 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 ## Demo state
 - Pre-funded wallets: haggletown.testnet 7.97 NEAR (storage 256 KB), 4 sub-accounts 0.5 NEAR each (2026-11-10 21:10)
 - Seed data already on-chain: 3 merchants registered (woodcutter/wood, fishmonger/fish, smith/iron), 10000 coin, stock 100, target 100; get_market shows ask 50/80/150, bid 40/64/120
-- Reference transactions for the demo script: Not done
+- Reference transactions for the demo script:
+  - Guardrail proof (2026-11-14): a deal the Woodcutter really signed, pine at 1 coin (under the floor), refused with `PriceOutOfRoom`: [FLb7YA38r3r1ESFuHoapirMX5bFsbGteK8mTVfVgN2zN](https://testnet.nearblocks.io/txns/FLb7YA38r3r1ESFuHoapirMX5bFsbGteK8mTVfVgN2zN). Re-run: `cd server && node --env-file=../.env scripts/guardrail-proof.ts`.
+  - v2 code redeploy (2026-11-14, `price_ok` rule + `--cfg near` build so panics keep their error codes): [AD3fESQnVrLEgGczFzNfJaWF8hCq8zrFAg6EkmJYn961](https://testnet.nearblocks.io/txns/AD3fESQnVrLEgGczFzNfJaWF8hCq8zrFAg6EkmJYn961). Smoke after redeploy: SMOKE OK.
 - Fallback if RPC or chain is down: switch to fallback RPC; recorded demo video; LLM replay mode for merchant replies
 
 ## Backend + dashboard hosting

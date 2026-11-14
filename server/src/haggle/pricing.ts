@@ -61,6 +61,11 @@ export function burn(stock: number): number {
   return stock - Math.floor((stock * 10) / 100);
 }
 
+/** Port of pricing.rs price_ok: the room guards only the merchant; never 0. */
+export function priceOk(buying: boolean, price: number, [lo, hi]: [number, number]): boolean {
+  return price >= 1 && (buying ? price >= lo : price <= hi);
+}
+
 function pctOver(a: number, b: number, cap: number): number {
   if (a <= b || b === 0) return 0;
   return Math.min(Math.floor(((a - b) * 100) / b), cap);

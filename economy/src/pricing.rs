@@ -176,6 +176,13 @@ pub fn sell_room(item: Item, stock: u32, purse: u128, qty: u32, specialist: bool
     Some((b, ceil.min(purse / qty).max(b)))
 }
 
+/// Settle check for a unit price against its room (lo, hi). The room only guards the merchant:
+/// a player buying pays at least the floor, a player selling takes at most the ceiling. An offer that is
+/// better for the merchant than the room (pay above ask, sell under bid) is the player's own call. Never 0.
+pub fn price_ok(buying: bool, price: u128, room: (u128, u128)) -> bool {
+    price >= 1 && if buying { price >= room.0 } else { price <= room.1 }
+}
+
 /// Tier for a roll in 0..10000 basis points.
 pub fn roll_tier(roll_bp: u32, specialist: bool, quality: u32) -> Tier {
     let base = if specialist { SPECIALIST_ODDS } else { ODDS };
@@ -230,5 +237,10 @@ mod tests {
     #[test] fn restock_40_pct_of_gap() { assert_eq!(restock(37, 100), 25); assert_eq!(restock(90, 100), 4); assert_eq!(restock(99, 100), 0); }
     #[test] fn no_restock_at_or_above_target() { assert_eq!(restock(100, 100), 0); assert_eq!(restock(140, 100), 0); }
     #[test] fn idle_market_settles_near_target() { let mut s = 0u32; for _ in 0..200 { s += restock(s, 100); s = burn(s); } assert!((70..=85).contains(&s), "settled at {s}"); }
+    #[test] fn price_ok_guards_only_the_merchant() {
+        assert!(price_ok(true, 6, (6, 10)) && price_ok(true, 50, (6, 10)) && !price_ok(true, 5, (6, 10)));
+        assert!(price_ok(false, 10, (6, 10)) && price_ok(false, 1, (6, 10)) && !price_ok(false, 11, (6, 10)));
+        assert!(!price_ok(false, 0, (6, 10)) && !price_ok(true, 0, (0, 10)));
+    }
     #[test] fn burn_10_pct_floor() { assert_eq!(burn(100), 90); assert_eq!(burn(9), 9); assert_eq!(burn(15), 14); }
 }

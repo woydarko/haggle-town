@@ -6,7 +6,7 @@ import type { MarketCache } from "../chain/market.ts";
 import type { Players } from "../game/players.ts";
 import type { Balances, MarketView } from "../types.ts";
 import { HttpError } from "../errors.ts";
-import { buyRoom, sellRoom } from "./pricing.ts";
+import { buyRoom, priceOk, sellRoom } from "./pricing.ts";
 import { parseOffer, type Offer } from "./offer.ts";
 import { signDeal, newNonce, type ChainDeal } from "./deal.ts";
 import { reasoningLine } from "./reasoning.ts";
@@ -153,6 +153,14 @@ export class HaggleEngine {
     const offerUnit = offer.unitPrice ?? (offer.total !== undefined ? Math.floor(offer.total / qty) : undefined);
     const lowball = offerUnit !== undefined && (side === "buy" ? offerUnit < 0.8 * room[0] : offerUnit > 1.2 * room[1]);
     if (lowball) patience = this.losePatience(playerId, merchant, view.day);
+    // An offer better for the merchant than its room (pay above ask, sell under bid) is taken as is: the player's call.
+    if (offerUnit !== undefined && (offerUnit < room[0] || offerUnit > room[1]) && priceOk(side === "buy", offerUnit, room)) {
+      const line = pickLine(persona.accept, recent);
+      this.chat(session.id, text, line, "pleased", "fallback", reasoning);
+      this.d.db.prepare("UPDATE haggle_session SET rounds = rounds + 1 WHERE id = ?").run(session.id);
+      const counter = this.quote(session.id, playerId, merchant, item.id, side, qty, offerUnit);
+      return { line, mood: "pleased", patience, reasoning, source: "fallback", counter };
+    }
     const prev = this.lastQuoted(session.id, side);
     const current = prev ? clamp(prev, room) : side === "buy" ? room[1] : room[0];
 

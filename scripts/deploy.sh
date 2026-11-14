@@ -28,7 +28,8 @@ for s in "${SUBS[@]}"; do
 done
 
 # shortcut: plain cargo build (cargo-near not installable on this machine yet); switch to `cargo near build` when available.
-RUSTFLAGS="-C link-arg=-s" cargo build -p haggle-contract --target wasm32-unknown-unknown --release
+# --cfg near is what cargo-near sets: without it near-sdk compiles panic_str to a bare trap and every error code is lost.
+RUSTFLAGS="--cfg near -C link-arg=-s" cargo build -p haggle-contract --target wasm32-unknown-unknown --release
 
 INIT_ARGS="{\"owner\":\"$CONTRACT_ID\",\"game\":\"game.$CONTRACT_ID\"}"
 if near contract call-function as-read-only "$CONTRACT_ID" get_market json-args '{}' network-config $NET now >/dev/null 2>&1; then
