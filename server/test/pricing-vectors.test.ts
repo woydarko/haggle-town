@@ -1,10 +1,12 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { ask, bid, buyRoom, sellRoom, burn, restock, rollTier, priceOk } from "../src/haggle/pricing.ts";
+import { ask, bid, buyRoom, sellRoom, burn, restock, rollTier, priceOk, TOOL_PRICE } from "../src/haggle/pricing.ts";
 import { ITEMS, itemById } from "../src/items.ts";
 
 const v = JSON.parse(readFileSync(new URL("../../economy/test-vectors.json", import.meta.url), "utf8"));
+
+test("tool price matches pricing.rs", () => assert.equal(TOOL_PRICE, v.tool_price));
 
 test("items table matches the Rust ids", () => {
   assert.equal(ITEMS.length, 12);

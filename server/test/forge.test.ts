@@ -9,14 +9,14 @@ import { FakeChain, PLAYER_VIEW } from "./fakes.ts";
 
 const P = "roblox:1";
 
-function setup(held: Record<string, string> = {}) {
+function setup(held: Record<string, string> = {}, cls: string | null = "logger") {
   const chain = new FakeChain();
   chain.views.get_player = () => ({ ...PLAYER_VIEW, balances: { coin: "1000", ...held } });
   const db = openDb(":memory:");
   const queue = createQueue();
   const gather = new Gather(db, chain, queue);
   const players = new Players(db, chain, queue, gather);
-  const forge = new Forge(db, chain, queue, players, gather, () => 1_700_000_000_000);
+  const forge = new Forge(db, chain, queue, players, gather, () => 1_700_000_000_000, () => cls);
   return { chain, db, forge, gather };
 }
 
@@ -73,7 +73,7 @@ test("goods caught but not on chain yet -> 409 packing", async () => {
 });
 
 test("chain says the goods are gone -> 409 missing, level unchanged", async () => {
-  const { forge, chain } = setup({ wood_pine: "3", ore_copper: "3" });
+  const { forge, chain } = setup({ wood_pine: "3", ore_copper: "3" }, "fisher");
   chain.panicOn.use_items = ["InsufficientGoods"];
   await assert.rejects(forge.upgrade(P, "rod"), code(409, "missing"));
   assert.equal(forge.level(P, "rod"), 1);
@@ -105,4 +105,45 @@ test("a tool's bonus gives a second item and names the tool", () => {
   assert.equal(play(0.3, null).qty, 1);
   assert.equal(play(0.1, "logger").bonus, "trade", "the trade's 15% comes first");
   assert.equal(play(0.35, "logger").bonus, "Sturdy Axe", "tool chance sits on top: 0.15 + 0.25");
+});
+
+test("a trade's tool is owned, the others cost TOOL_PRICE", () => {
+  const { forge } = setup({}, "logger");
+  const v = forge.view(P);
+  assert.deepEqual(v.map((t) => [t.tool, t.owned, t.price]), [["axe", true, null], ["pickaxe", false, 150], ["rod", false, 150]]);
+  assert.deepEqual(setup({}, null).forge.view(P).map((t) => t.owned), [false, false, false], "no trade yet -> no tools");
+});
+
+test("buying a tool pays that trade's merchant on chain and keeps it", async () => {
+  const { forge, chain } = setup({}, "logger");
+  const r = await forge.buy(P, "rod");
+  assert.equal(r.price, 150);
+  assert.deepEqual(chain.calls.find((c) => c.method === "buy_tool")?.args, { player_id: P, category: "fish" });
+  assert.equal(forge.owns(P, "rod"), true);
+  await assert.rejects(forge.buy(P, "rod"), code(409, "owned"));
+  await assert.rejects(forge.buy(P, "axe"), code(409, "owned"), "the trade's tool is already yours");
+});
+
+test("not enough coin for a tool -> 409, still not owned", async () => {
+  const { forge, chain } = setup({}, "logger");
+  chain.panicOn.buy_tool = ["InsufficientFunds"];
+  await assert.rejects(forge.buy(P, "pickaxe"), code(409, "insufficient_funds"));
+  assert.equal(forge.owns(P, "pickaxe"), false);
+});
+
+test("a tool you do not own cannot be forged; a granted trade tool stays after switching", async () => {
+  const { forge } = setup({ wood_pine: "3", fish_sardine: "3" }, "logger");
+  await assert.rejects(forge.upgrade(P, "pickaxe"), code(409, "no_tool"));
+  forge.grant(P, "logger");
+  const after = setup({}, "miner");
+  after.forge.grant(P, "logger");
+  assert.equal(after.forge.owns(P, "axe"), true, "old trade tool kept");
+  assert.equal(after.forge.owns(P, "pickaxe"), true, "new trade tool");
+});
+
+test("gathering without the tool -> 403 no_tool", () => {
+  const db = openDb(":memory:");
+  const g = new Gather(db, new FakeChain(), createQueue(), () => 1, { canGather: (_, cat) => cat === "wood" });
+  assert.ok(g.start(P, "wood").sessionId);
+  assert.throws(() => g.start(P, "fish"), code(403, "no_tool"));
 });

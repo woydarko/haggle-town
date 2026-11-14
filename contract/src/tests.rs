@@ -123,6 +123,30 @@ fn gather_mints_item() {
 }
 
 #[test]
+fn buy_tool_pays_that_trades_merchant() {
+    let mut c = setup([1; 32], 10_000);
+    c.buy_tool("roblox:1".into(), "fish".into());
+    assert_eq!(bal(&c, "roblox:1", "coin"), 1_000 - TOOL_PRICE);
+    assert_eq!(bal(&c, FISH_M, "coin"), 10_000 + TOOL_PRICE);
+}
+
+#[test]
+#[should_panic(expected = "InsufficientFunds")]
+fn buy_tool_needs_the_coin() {
+    let mut c = setup([1; 32], 10_000);
+    for _ in 0..7 {
+        c.buy_tool("roblox:1".into(), "fish".into()); // 7 x 150 > 1000
+    }
+}
+
+#[test]
+#[should_panic(expected = "UnknownMerchant")]
+fn buy_tool_needs_a_merchant_for_the_trade() {
+    let mut c = setup([1; 32], 10_000);
+    c.buy_tool("roblox:1".into(), "ore".into());
+}
+
+#[test]
 fn use_items_burns_goods() {
     let mut c = setup([1; 32], 10_000);
     c.gather_batch(vec![GatherEntry { player_id: "roblox:1".into(), good: "fish_trout".into(), qty: 3 }]);

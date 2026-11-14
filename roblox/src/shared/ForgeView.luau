@@ -3,7 +3,7 @@
 -- The backend sends every tool's level and next recipe (/rbx/state "forge"); what the player holds comes from live balances.
 
 export type Cost = { item: string, name: string, qty: number, merchant: string }
-export type Tool = { tool: string, level: number, name: string, bonus: number, next: { level: number, name: string, bonus: number, cost: { Cost } }? }
+export type Tool = { tool: string, owned: boolean?, price: number?, level: number, name: string, bonus: number, next: { level: number, name: string, bonus: number, cost: { Cost } }? }
 export type Need = { item: string, name: string, qty: number, merchant: string }
 export type Hint = { tool: string, level: number, need: { name: string, qty: number, stall: string }? }
 
@@ -35,12 +35,12 @@ function ForgeView.focus(forge: { Tool }?, class: string?): Tool?
 	end
 	local want = class and ForgeView.CLASS_TOOL[class]
 	for _, t in forge do
-		if t.tool == want and t.next then
+		if t.tool == want and t.next and t.owned ~= false then
 			return t
 		end
 	end
 	for _, t in forge do
-		if t.next then
+		if t.next and t.owned ~= false then
 			return t
 		end
 	end

@@ -11,9 +11,9 @@ local Quest = {}
 Quest.COUNT = 5
 
 local BY_CLASS = {
-	logger = { gate = "Woods", stall = "woodcutter", detail = "Take the west gate to the woods. Press 1 for the axe and click a tree." },
-	miner = { gate = "Mine", stall = "smith", detail = "Take the east gate to the mine. Press 2 for the pickaxe and click a rock." },
-	fisher = { gate = "Lake", stall = "fishmonger", detail = "Take the north gate to the lake. Press 3 for the rod, hold and release to cast." },
+	logger = { gate = "Woods", stall = "woodcutter", detail = "Take the west gate to the woods. Press 1 for your axe and click a tree." },
+	miner = { gate = "Mine", stall = "smith", detail = "Take the east gate to the mine. Press 1 for your pickaxe and click a rock." },
+	fisher = { gate = "Lake", stall = "fishmonger", detail = "Take the north gate to the lake. Press 1 for your rod, hold and release to cast." },
 }
 local MERCHANT = { woodcutter = "Woodcutter", smith = "Smith", fishmonger = "Fishmonger" }
 

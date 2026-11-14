@@ -18,6 +18,7 @@ local MERCHANT = Theme.merchantNames
 export type Handlers = {
 	state: () -> { forge: { any }?, balances: { [string]: number }, class: string? },
 	forge: (tool: string) -> any,
+	buy: (tool: string) -> any,
 	onFind: (stall: string, text: string) -> (),
 	onForged: (r: any) -> (),
 }
@@ -80,6 +81,23 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 		render()
 	end
 
+	local function doBuy(tool: string)
+		if busy then
+			return
+		end
+		busy = true
+		say("Buying...")
+		local ok, r = pcall(h.buy, tool)
+		busy = false
+		if ok and type(r) == "table" and r.name then
+			Sfx.ui("sparkle")
+			say(`{ForgeView.LABEL[r.tool]} bought for {r.price} C. It is in your hotbar.`, Theme.success)
+		else
+			say(if ok and type(r) == "table" and r.message then r.message else "Could not buy it. Try again.", Theme.error)
+		end
+		render()
+	end
+
 	function render()
 		for _, c in rows:GetChildren() do
 			if c:IsA("GuiObject") then
@@ -93,6 +111,25 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 		end
 		for i, t in s.forge do
 			local row = Ui.new("Frame", { Parent = rows, LayoutOrder = i, Size = UDim2.new(1, 0, 0, 94), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(10) })
+			if t.owned == false then
+				-- Not yours yet: the plain tool, what it gathers, and Buy (coin to that trade's merchant).
+				local slot = Ui.new("Frame", { Parent = row, Size = UDim2.fromOffset(72, 72), BackgroundColor3 = Theme.background }, { Ui.corner() })
+				local icon = Ui.icon(`{t.tool}_1`, 64, { Parent = slot, Position = UDim2.fromOffset(4, 4) })
+				for _, px in icon:GetChildren() do
+					(px :: Frame).BackgroundTransparency = 0.55
+				end
+				Ui.text({ Parent = row, Position = UDim2.fromOffset(84, -2), Size = UDim2.fromOffset(250, 26), Style = "heading", TextColor3 = Theme.muted, Text = ForgeView.LABEL[t.tool] })
+				Ui.text({ Parent = row, Position = UDim2.fromOffset(84, 24), Size = UDim2.new(1, -230, 0, 44), Style = "caption", TextColor3 = Theme.muted, Text = `Not yours yet. Lets you gather {ForgeView.CATCH[t.tool]}; your trade's tool was free.` })
+				local price = t.price or 0
+				local can = (s.balances.coin or 0) >= price
+				local b = Ui.button(if can then `Buy {price} C` else `Need {price} C`, can, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), BackgroundColor3 = if can then Theme.primary else Theme.background, AutoButtonColor = can })
+				if can then
+					b.Activated:Connect(function()
+						doBuy(t.tool)
+					end)
+				end
+				continue
+			end
 			local slot = Ui.new("Frame", { Parent = row, Size = UDim2.fromOffset(72, 72), BackgroundColor3 = Theme.background }, { Ui.corner() })
 			Ui.icon(`{t.tool}_{t.level}`, 64, { Parent = slot, Position = UDim2.fromOffset(4, 4) })
 			local name = Ui.text({ Parent = row, Position = UDim2.fromOffset(84, -2), Size = UDim2.fromOffset(250, 26), Style = "heading", Text = t.name })

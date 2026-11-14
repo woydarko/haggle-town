@@ -47,6 +47,7 @@ local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinis
 local CastAt = rf("CastAt")
 local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
 local ForgeRF = rf("Forge")
+local BuyToolRF = rf("BuyTool")
 -- Market Ledger pop-up: the latest public market view (prices, recent deals, top traders); no player data.
 rf("GetLedger").OnServerInvoke = function()
 	return ledger.latest()
@@ -150,7 +151,7 @@ local function onToolUse(p: Player, toolName: string)
 	end
 	if not ok then
 		letGo(p)
-		Toast:FireClient(p, "Market offline - your goods are safe")
+		Toast:FireClient(p, if r.error == "no_tool" then r.message else "Market offline - your goods are safe")
 		return
 	end
 	slot.id = r.sessionId
@@ -183,6 +184,28 @@ local function applyLook(p: Player, t: Instance)
 	g.DepthMode = Enum.HighlightDepthMode.Occluded
 	g.Parent = t
 end
+-- Owned tools in the Backpack (bought or granted ones appear, the trade's tool first since it comes first).
+local function giveTools(p: Player)
+	local owned = toolLevels[p]
+	local bp = p:FindFirstChild("Backpack")
+	local templates = game:GetService("ServerStorage"):FindFirstChild("ToolTemplates")
+	if not (owned and bp and templates and p.Character) then
+		return
+	end
+	for _, name in { "Axe", "Pickaxe", "Rod" } do
+		local v = owned[name]
+		local has = bp:FindFirstChild(name) or (p.Character :: Model):FindFirstChild(name)
+		if v and v.owned ~= false and not has then
+			local t = templates:FindFirstChild(name)
+			if t then
+				t:Clone().Parent = bp
+			end
+		elseif v and v.owned == false and has then
+			has:Destroy()
+		end
+	end
+end
+
 local function setForge(p: Player, forge: any)
 	if type(forge) ~= "table" then
 		return
@@ -194,6 +217,7 @@ local function setForge(p: Player, forge: any)
 		end
 	end
 	toolLevels[p] = byTool
+	giveTools(p)
 	for _, holder in { p:FindFirstChild("Backpack"), p.Character } do
 		if holder then
 			for _, t in holder:GetChildren() do
@@ -218,6 +242,7 @@ local function hookTools(p: Player)
 		hook(t)
 	end
 	bp.ChildAdded:Connect(hook)
+	giveTools(p) -- a fresh Backpack after a respawn
 end
 
 -- CharacterAutoLoads is off, so the server spawns and respawns everyone itself.
@@ -283,7 +308,8 @@ ChooseClass.OnServerInvoke = function(p: Player, cls: any)
 		return { error = r.error or "offline", message = r.message or "Market offline - try again soon." }
 	end
 	statsCache[p] = nil
-	StateChanged:FireClient(p, { balances = r.balances, class = r.class })
+	setForge(p, r.forge) -- picking a trade hands over its tool
+	StateChanged:FireClient(p, { balances = r.balances, class = r.class, forge = r.forge })
 	return { class = r.class, fee = r.fee }
 end
 
@@ -353,7 +379,7 @@ CastAt.OnServerInvoke = function(p: Player, point: any)
 	end
 	if not ok then
 		gathering[p] = nil
-		return { message = "Market offline - your goods are safe" }
+		return { message = if r.error == "no_tool" then r.message else "Market offline - your goods are safe" }
 	end
 	slot.id = r.sessionId
 	return { node = node, params = r.params }
@@ -455,6 +481,25 @@ ForgeRF.OnServerInvoke = function(p: Player, tool: any)
 	setForge(p, r.forge)
 	StateChanged:FireClient(p, { balances = r.balances, forge = r.forge })
 	return { tool = r.tool, level = r.level, name = r.name, bonus = r.bonus }
+end
+
+-- Buying a tool outside your trade: the backend pays that trade's merchant on chain; the tool appears in the Backpack.
+BuyToolRF.OnServerInvoke = function(p: Player, tool: any)
+	if not (tool == "axe" or tool == "pickaxe" or tool == "rod") then
+		return { error = "invalid" }
+	end
+	if os.clock() - (lastForge[p] or 0) < 1 then
+		return { error = "slow_down", message = "One moment." }
+	end
+	lastForge[p] = os.clock()
+	local ok, r = Backend.post("/rbx/tool/buy", { userId = uid(p), tool = tool })
+	if not ok then
+		return { error = r.error or "offline", message = r.message or "Market offline - try again soon." }
+	end
+	statsCache[p] = nil
+	setForge(p, r.forge)
+	StateChanged:FireClient(p, { balances = r.balances, forge = r.forge })
+	return { tool = r.tool, name = r.name, price = r.price }
 end
 
 -- One state poll per player every 5 s keeps HUD and boards fresh (well under Roblox's 500 req/min).

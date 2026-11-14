@@ -8,7 +8,7 @@ import { Gather } from "./game/gather.ts";
 import { Players } from "./game/players.ts";
 import { Classes } from "./game/classes.ts";
 import { rbxRoutes } from "./routes/rbx.ts";
-import { Forge } from "./game/forge.ts";
+import { Forge, TOOL_OF } from "./game/forge.ts";
 import { haggleRoutes } from "./routes/haggle.ts";
 import { HaggleEngine } from "./haggle/engine.ts";
 import { createLlm } from "./llm/client.ts";
@@ -26,9 +26,9 @@ const chain = createNearChain(config);
 const queue = createQueue();
 const market = new MarketCache(chain);
 const classes = new Classes(db, chain, queue);
-const gather = new Gather(db, chain, queue, Date.now, { classOf: (id) => classes.get(id), toolBonus: (id, cat) => forge.bonus(id, cat) });
+const gather = new Gather(db, chain, queue, Date.now, { classOf: (id) => classes.get(id), toolBonus: (id, cat) => forge.bonus(id, cat), canGather: (id, cat) => forge.owns(id, TOOL_OF[cat]) });
 const players = new Players(db, chain, queue, gather);
-const forge = new Forge(db, chain, queue, players, gather);
+const forge = new Forge(db, chain, queue, players, gather, Date.now, (id) => classes.get(id));
 const leaderboard = new Leaderboard(db, chain, market);
 
 const engine = new HaggleEngine({

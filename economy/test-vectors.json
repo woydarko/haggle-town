@@ -1,4 +1,4 @@
-{"prices":[
+{"tool_price":150,"prices":[
 {"item":"fish_sardine","stock":0,"purse":50,"qty":1,"specialist":false,"ask":60,"bid":48,"buy_room":[60,60],"sell_room":[48,48],"burn":0,"restock":48},
 {"item":"fish_sardine","stock":0,"purse":50,"qty":1,"specialist":true,"ask":60,"bid":48,"buy_room":[60,60],"sell_room":[48,50],"burn":0,"restock":48},
 {"item":"fish_sardine","stock":0,"purse":50,"qty":5,"specialist":false,"ask":60,"bid":48,"buy_room":[60,60],"sell_room":null,"burn":0,"restock":48},

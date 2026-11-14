@@ -66,6 +66,9 @@ export function priceOk(buying: boolean, price: number, [lo, hi]: [number, numbe
   return price >= 1 && (buying ? price >= lo : price <= hi);
 }
 
+/** Port of pricing.rs TOOL_PRICE: a tool outside your trade, paid to that trade's merchant. */
+export const TOOL_PRICE = 150;
+
 function pctOver(a: number, b: number, cap: number): number {
   if (a <= b || b === 0) return 0;
   return Math.min(Math.floor(((a - b) * 100) / b), cap);

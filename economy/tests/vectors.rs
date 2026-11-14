@@ -41,5 +41,5 @@ fn write_vectors() {
         }
     }
     let path = concat!(env!("CARGO_MANIFEST_DIR"), "/test-vectors.json");
-    std::fs::write(path, format!("{{\"prices\":[\n{}\n],\"rolls\":[\n{}\n]}}\n", prices.join(",\n"), rolls.join(",\n"))).unwrap();
+    std::fs::write(path, format!("{{\"tool_price\":{},\"prices\":[\n{}\n],\"rolls\":[\n{}\n]}}\n", TOOL_PRICE, prices.join(",\n"), rolls.join(",\n"))).unwrap();
 }

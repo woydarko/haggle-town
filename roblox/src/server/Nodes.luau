@@ -184,9 +184,19 @@ function Nodes.build(): { trees: number, rocks: number, spots: number }
 	return count
 end
 
--- Tools given to everyone through StarterPack. Creator Store models from ServerStorage.Assets.Tools (credits in
+-- Tool templates in ServerStorage.ToolTemplates; Main.server gives each player only the tools they own (Forge). Creator Store models from ServerStorage.Assets.Tools (credits in
 -- roblox/ASSETS.md; curated upright, head up, pivot at the grip) are welded to a small invisible Handle at the grip;
 -- the greybox below stays as the fallback when the folder is missing.
+local function templates(): Folder
+	local f = ServerStorage:FindFirstChild("ToolTemplates")
+	if not f then
+		f = Instance.new("Folder")
+		f.Name = "ToolTemplates"
+		f.Parent = ServerStorage
+	end
+	return f :: Folder
+end
+
 local function fromAsset(name: string): boolean
 	local folder = ServerStorage:FindFirstChild("Assets") and (ServerStorage :: any).Assets:FindFirstChild("Tools")
 	local src = folder and folder:FindFirstChild(name)
@@ -218,7 +228,7 @@ local function fromAsset(name: string): boolean
 		a.Parent = h
 	end
 	t.GripPos = V(0, 0, 0)
-	t.Parent = StarterPack
+	t.Parent = templates()
 	return true
 end
 
@@ -240,7 +250,7 @@ function Nodes.tools()
 			w.Parent = p
 		end
 		t.GripPos = V(0, -1.2, 0)
-		t.Parent = StarterPack
+		t.Parent = templates()
 	end
 	make("Axe", V(0.35, 4, 0.35), { { V(0.25, 1.1, 1.5), CFrame.new(0, 1.5, -0.6), metal, Enum.Material.Metal } })
 	make("Pickaxe", V(0.35, 4, 0.35), { { V(0.3, 0.35, 2.8), CFrame.new(0, 1.8, 0), metal, Enum.Material.Metal } })

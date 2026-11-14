@@ -2,7 +2,7 @@
 //! category with per-item stock and their own purse, players with a class, gathering, signed deals,
 //! day tick. Pricing and drop rules live in the shared `economy` crate (economy/src/pricing.rs).
 
-use economy::pricing::{self, Category, Item, Tier, PLAYER_GRANT};
+use economy::pricing::{self, Category, Item, Tier, PLAYER_GRANT, TOOL_PRICE};
 use near_sdk::json_types::{U128, U64};
 use near_sdk::store::{IterableMap, LookupMap, LookupSet};
 use near_sdk::{env, near, AccountId, BorshStorageKey, PanicOnDefault, PublicKey};
@@ -181,6 +181,25 @@ impl Contract {
             self.add(&e.player_id, &e.good, e.qty as u128);
             nep245::emit_mint(&e.player_id, &[&e.good], &[e.qty as u128]);
         }
+    }
+
+    /// Buys a gathering tool for `category`: TOOL_PRICE coin goes from the player to that trade's merchant.
+    /// Relayer only; which tools a player owns is kept off-chain by the game.
+    pub fn buy_tool(&mut self, player_id: String, category: String) {
+        self.assert_game();
+        if !self.players.contains(&player_id) {
+            env::panic_str("UnknownPlayer");
+        }
+        let cat = Category::from_str(&category).unwrap_or_else(|| env::panic_str("BadCategory"));
+        let merchant = self
+            .merchants
+            .iter()
+            .find(|(_, m)| m.category == cat.as_str())
+            .map(|(a, _)| a.clone())
+            .unwrap_or_else(|| env::panic_str("UnknownMerchant"));
+        self.sub(&player_id, "coin", TOOL_PRICE);
+        self.add(merchant.as_str(), "coin", TOOL_PRICE);
+        nep245::emit_transfer(&player_id, merchant.as_str(), &["coin"], &[TOOL_PRICE]);
     }
 
     /// Consumes a player's goods (forging a tool). Relayer only, like set_class's fee; the goods are burned.

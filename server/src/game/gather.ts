@@ -31,7 +31,10 @@ export type GatherOpts = {
   classOf?: (playerId: string) => string | null;
   /** Extra-catch chance of the player's tool for this category (Forge). */
   toolBonus?: (playerId: string, category: Category) => { chance: number; name: string };
+  /** Does the player hold the tool for this category (Forge.owns)? Default: yes. */
+  canGather?: (playerId: string, category: Category) => boolean;
 };
+const TOOL_FOR: Record<Category, string> = { wood: "an Axe", ore: "a Pickaxe", fish: "a Rod" };
 
 type SessionRow = { id: string; player_id: string; node: string; roll_bp: number; started_at: number; closed_at: number | null };
 
@@ -46,6 +49,7 @@ export class Gather {
   private rand: () => number;
   private classOf: (playerId: string) => string | null;
   private toolBonus: (playerId: string, category: Category) => { chance: number; name: string };
+  private canGather: (playerId: string, category: Category) => boolean;
 
   constructor(db: Db, chain: Chain, queue: Queue, now: () => number = Date.now, opts: GatherOpts = {}) {
     this.db = db;
@@ -55,12 +59,14 @@ export class Gather {
     this.rand = opts.rand ?? Math.random;
     this.classOf = opts.classOf ?? (() => null);
     this.toolBonus = opts.toolBonus ?? (() => ({ chance: 0, name: "" }));
+    this.canGather = opts.canGather ?? (() => true);
   }
 
   /** Opens a session (closing any earlier open one: one minigame at a time). The tier roll is fixed now; quality shifts it at finish. */
   start(playerId: string, node: string): StartResult {
     const n = NODES[node];
     if (!n) throw new HttpError(400, "bad_node", "Nothing to gather here.");
+    if (!this.canGather(playerId, n.category)) throw new HttpError(403, "no_tool", `You need ${TOOL_FOR[n.category]}. Buy one at the Forge (F).`);
     const t = this.now();
     this.db.prepare("UPDATE gather_session SET closed_at = ? WHERE player_id = ? AND closed_at IS NULL").run(t, playerId);
     const id = randomUUID();

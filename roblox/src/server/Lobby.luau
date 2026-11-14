@@ -41,7 +41,7 @@ function Lobby.build(): Built
 		{ pictures = { "rod", "axe", "pickaxe" }, text = "2. Click water, a tree or a rock" },
 		{ pictures = { "fish_sardine", "fish_koi" }, text = "3. Play well for rarer finds" },
 		{ pictures = { "coin" }, text = "4. Haggle at the stalls" },
-	}, "Keys 1, 2, 3 pick your tool. Tab opens your bag. The big board in the square shows prices.")
+	}, "Your trade gives you its tool (key 1); buy others at the Forge (F). Tab opens your bag.")
 	local rarity = k.board("Rarity", facingCenter(Vector3.new(24, 8.4, -6)))
 	Boards.renderRarity(rarity)
 	local leaders = k.board("LobbyLeaders", facingCenter(Vector3.new(-24, 8.4, 12)))

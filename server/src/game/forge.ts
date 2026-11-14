@@ -6,11 +6,12 @@ import type { Queue } from "../chain/queue.ts";
 import type { Players } from "./players.ts";
 import type { Gather } from "./gather.ts";
 import { HttpError } from "../errors.ts";
-import { itemById, type Category } from "../items.ts";
+import { itemById, CLASS_CATEGORY, type Category } from "../items.ts";
+import { TOOL_PRICE } from "../haggle/pricing.ts";
 
 export type Tool = "axe" | "pickaxe" | "rod";
 export const TOOLS: Record<Tool, Category> = { axe: "wood", pickaxe: "ore", rod: "fish" };
-const TOOL_OF: Record<Category, Tool> = { wood: "axe", ore: "pickaxe", fish: "rod" };
+export const TOOL_OF: Record<Category, Tool> = { wood: "axe", ore: "pickaxe", fish: "rod" };
 export const MAX_LEVEL = 3;
 /** Chance of a second item per catch, by tool level (index = level). */
 export const TOOL_BONUS = [0, 0, 0.25, 0.5];
@@ -25,7 +26,16 @@ export const RECIPES: Record<Tool, Record<number, Record<string, number>>> = {
 const SELLER: Record<Category, string> = { wood: "woodcutter", ore: "smith", fish: "fishmonger" };
 
 export type Cost = { item: string; name: string; qty: number; merchant: string };
-export type ToolView = { tool: Tool; level: number; name: string; bonus: number; next: { level: number; name: string; bonus: number; cost: Cost[] } | null };
+/** owned: the player has this tool (their trade's tool, or one they bought); price: what buying it costs, null once owned. */
+export type ToolView = {
+  tool: Tool;
+  owned: boolean;
+  price: number | null;
+  level: number;
+  name: string;
+  bonus: number;
+  next: { level: number; name: string; bonus: number; cost: Cost[] } | null;
+};
 
 export const toolName = (t: Tool, level: number) => `${LEVEL_NAME[level]} ${TOOL_NAME[t]}`;
 
@@ -36,15 +46,41 @@ export class Forge {
   private players: Players;
   private gather: Gather;
   private now: () => number;
+  private classOf: (playerId: string) => string | null;
   private busy = new Set<string>();
 
-  constructor(db: Db, chain: Chain, queue: Queue, players: Players, gather: Gather, now: () => number = Date.now) {
+  constructor(
+    db: Db,
+    chain: Chain,
+    queue: Queue,
+    players: Players,
+    gather: Gather,
+    now: () => number = Date.now,
+    classOf: (playerId: string) => string | null = () => null,
+  ) {
     this.db = db;
     this.chain = chain;
     this.queue = queue;
     this.players = players;
     this.gather = gather;
     this.now = now;
+    this.classOf = classOf;
+  }
+
+  /** A player owns their trade's tool and every tool with a row (granted on a class pick, bought, or forged). */
+  owns(playerId: string, tool: Tool): boolean {
+    const cls = this.classOf(playerId);
+    if (cls && TOOL_OF[CLASS_CATEGORY[cls]] === tool) return true;
+    return this.db.prepare("SELECT 1 FROM player_tool WHERE player_id = ? AND tool = ?").get(playerId, tool) !== undefined;
+  }
+
+  /** Called when a player picks a trade: that trade's tool is theirs to keep, even after switching. */
+  grant(playerId: string, cls: string) {
+    const cat = CLASS_CATEGORY[cls];
+    if (!cat) return;
+    this.db
+      .prepare("INSERT INTO player_tool (player_id, tool, level, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT DO NOTHING")
+      .run(playerId, TOOL_OF[cat], this.now());
   }
 
   level(playerId: string, tool: Tool): number {
@@ -69,8 +105,11 @@ export class Forge {
     return (Object.keys(TOOLS) as Tool[]).map((tool) => {
       const level = this.level(playerId, tool);
       const recipe = RECIPES[tool][level + 1];
+      const owned = this.owns(playerId, tool);
       return {
         tool,
+        owned,
+        price: owned ? null : TOOL_PRICE,
         level,
         name: toolName(tool, level),
         bonus: TOOL_BONUS[level],
@@ -79,11 +118,37 @@ export class Forge {
     });
   }
 
+  /** Buys a tool outside the player's trade: TOOL_PRICE coin to that trade's merchant on chain, then it is theirs. */
+  async buy(playerId: string, tool: string): Promise<{ tool: Tool; name: string; price: number; txHash: string }> {
+    if (!Object.hasOwn(TOOLS, tool)) throw new HttpError(400, "bad_tool", "No such tool.");
+    const t = tool as Tool;
+    if (this.owns(playerId, t)) throw new HttpError(409, "owned", `You already have a ${TOOL_NAME[t]}.`);
+    if (this.busy.has(playerId)) throw new HttpError(429, "busy", "One moment.");
+    this.busy.add(playerId);
+    try {
+      let txHash: string;
+      try {
+        ({ txHash } = await this.queue(() => this.chain.call("buy_tool", { player_id: playerId, category: TOOLS[t] })));
+      } catch (e) {
+        if (e instanceof ChainError && e.code === "InsufficientFunds") throw new HttpError(409, "insufficient_funds", `A ${TOOL_NAME[t]} costs ${TOOL_PRICE} C.`);
+        if (e instanceof ChainError && e.code === "UnknownPlayer") throw new HttpError(409, "not_joined", "Join the game first.");
+        throw e;
+      }
+      this.db
+        .prepare("INSERT INTO player_tool (player_id, tool, level, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT DO NOTHING")
+        .run(playerId, t, this.now());
+      return { tool: t, name: toolName(t, 1), price: TOOL_PRICE, txHash };
+    } finally {
+      this.busy.delete(playerId);
+    }
+  }
+
   /** Burns the next recipe's goods on chain, then raises the level. One upgrade per player at a time. */
   async upgrade(playerId: string, tool: string): Promise<{ tool: Tool; level: number; name: string; bonus: number; txHash: string }> {
     if (!Object.hasOwn(TOOLS, tool)) throw new HttpError(400, "bad_tool", "No such tool.");
     const t = tool as Tool;
     const level = this.level(playerId, t);
+    if (!this.owns(playerId, t)) throw new HttpError(409, "no_tool", `Buy a ${TOOL_NAME[t]} first.`);
     if (level >= MAX_LEVEL) throw new HttpError(409, "max_level", `Your ${toolName(t, level)} is as good as it gets.`);
     if (this.busy.has(playerId)) throw new HttpError(429, "busy", "The forge is still hot. One moment.");
     this.busy.add(playerId);

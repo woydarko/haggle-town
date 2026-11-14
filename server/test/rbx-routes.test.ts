@@ -30,7 +30,7 @@ async function setup() {
   const gather = new Gather(db, chain, queue, () => clock.t, { rand: () => 0, classOf: (id) => classes.get(id) });
   const players = new Players(db, chain, queue, gather);
   const leaderboard = { get: () => [], rank: (id: string) => (id === "roblox:42" ? 1 : null) };
-  const forge = new Forge(db, chain, queue, players, gather, () => clock.t);
+  const forge = new Forge(db, chain, queue, players, gather, () => clock.t, (id) => classes.get(id));
   const app = buildApp({ config: loadConfig(TEST_ENV), db, routes: [rbxRoutes({ players, gather, market, classes, leaderboard, forge })] });
   return { app, chain, db, clock, wallets };
 }
@@ -159,10 +159,16 @@ test("/rbx/state returns balances and the per-item board", async () => {
 test("/rbx/forge burns the recipe and returns the new forge view; /rbx/state carries it", async () => {
   const { app, chain, wallets } = await setup();
   await post(app, "/rbx/join", { userId: "42", name: "Rina" });
+  const cls = await post(app, "/rbx/class", { userId: "42", class: "logger" });
+  assert.deepEqual(cls.json().forge.map((t: any) => t.owned), [true, false, false], "picking a trade gives its tool");
   wallets["roblox:42"].balances = { coin: "1000", ore_copper: "3", fish_sardine: "3" };
   const short = await post(app, "/rbx/forge", { userId: "42", tool: "pickaxe" });
   assert.equal(short.statusCode, 409);
-  assert.equal(short.json().error, "missing");
+  assert.equal(short.json().error, "no_tool");
+  const bought = await post(app, "/rbx/tool/buy", { userId: "42", tool: "pickaxe" });
+  assert.equal(bought.statusCode, 200);
+  assert.equal(bought.json().forge[1].owned, true);
+  assert.ok(chain.calls.some((c) => c.method === "buy_tool"));
   const r = await post(app, "/rbx/forge", { userId: "42", tool: "axe" });
   assert.equal(r.statusCode, 200);
   assert.equal(r.json().name, "Sturdy Axe");

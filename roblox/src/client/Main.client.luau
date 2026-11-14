@@ -31,6 +31,7 @@ local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
 local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
 local CastAt = remotes:WaitForChild("CastAt") :: RemoteFunction
 local ForgeRemote = remotes:WaitForChild("Forge") :: RemoteFunction
+local BuyToolRemote = remotes:WaitForChild("BuyTool") :: RemoteFunction
 local Anims = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Anims"))
 local Regions = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Regions"))
 local FishFx = require(script.Parent.fx.FishFx)
@@ -77,6 +78,9 @@ local forgePanel = ForgePanel.mount(gui, {
 	end,
 	forge = function(tool)
 		return ForgeRemote:InvokeServer(tool)
+	end,
+	buy = function(tool)
+		return BuyToolRemote:InvokeServer(tool)
 	end,
 	onFind = function(stall, text)
 		if quest then

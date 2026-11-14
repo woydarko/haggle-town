@@ -35,4 +35,8 @@ h = ForgeView.hint(forge, "logger", { ore_copper = 3, fish_sardine = 3 })
 check(h ~= nil and h.need == nil, "goods ready -> hint without need")
 check(ForgeView.hint(forge, nil, {}) == nil, "no trade yet -> no hint")
 check(ForgeView.pct(0.25) == "25%" and ForgeView.pct(0.5) == "50%", "percent text")
+local unowned = { tool("axe", 1, AXE), tool("pickaxe", 1, AXE), tool("rod", 1, ROD) }
+unowned[1].owned = false
+check(ForgeView.focus(unowned, "logger").tool == "pickaxe", "a tool you do not own is never the focus")
+check(next(ForgeView.needsFrom(unowned, "logger", {}, "fishmonger")) ~= nil, "badges follow the first owned tool")
 print("ForgeView.spec passed")

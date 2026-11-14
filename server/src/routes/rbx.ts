@@ -57,7 +57,8 @@ export function rbxRoutes(d: RbxDeps) {
       async (req) => {
         const id = pid(req.body.userId);
         const r = await d.classes.choose(id, req.body.class);
-        return { ...r, balances: await d.players.balances(id) };
+        d.forge?.grant(id, r.class);
+        return { ...r, balances: await d.players.balances(id), forge: d.forge?.view(id) };
       },
     );
 
@@ -86,6 +87,17 @@ export function rbxRoutes(d: RbxDeps) {
         const id = pid(req.query.userId);
         d.players.touch(id);
         return { balances: await d.players.balances(id), board: d.market.get(), leaderboard: d.leaderboard?.get() ?? [], forge: d.forge?.view(id) };
+      },
+    );
+
+    app.post<{ Body: { userId: string; tool: string } }>(
+      "/rbx/tool/buy",
+      body(["userId", "tool"], { userId, tool: { type: "string", enum: Object.keys(TOOLS) } }),
+      async (req, reply) => {
+        if (!d.forge) return reply.code(404).send({ error: "no_forge", message: "The forge is closed." });
+        const id = pid(req.body.userId);
+        const r = await d.forge.buy(id, req.body.tool);
+        return { ...r, balances: await d.players.balances(id), forge: d.forge.view(id) };
       },
     );
 

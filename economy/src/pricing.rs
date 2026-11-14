@@ -140,6 +140,8 @@ pub const SPECIALIST_BONUS_PCT: u128 = 10;
 pub const BURN_PCT: u32 = 10;
 pub const RESTOCK_PCT: u32 = 40;
 pub const PLAYER_GRANT: u128 = 1000;
+/// A gathering tool outside your trade (your trade's tool is free); paid to the merchant of that trade.
+pub const TOOL_PRICE: u128 = 150;
 
 const ODDS: [u32; 4] = [7000, 2200, 700, 100];
 const SPECIALIST_ODDS: [u32; 4] = [5500, 3000, 1200, 300];
