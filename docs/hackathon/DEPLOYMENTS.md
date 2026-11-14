@@ -22,6 +22,18 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 - Merchants `woodcutter|fishmonger|smith.haggletown-v2.testnet` registered by category (wood/fish/ore), 20000 coin each, every item at target stock; game relayer `game.haggletown-v2.testnet`.
 - get_market: 12 rows; asks pine 15, oak 45, maple 120, redwood 450, sardine 20, trout 60, salmon 160, koi 600, copper 30, iron 90, gold 240, crystal 900.
 
+## Backer coins (2026-11-14, Memecoins With Mechanics; docs/hackathon/MEMECOIN.md)
+| Coin | Contract | Merchant | Notes |
+| --- | --- | --- | --- |
+| $WOOD | `wood-coin.haggletown-v2.testnet` | woodcutter | sub-account, 2.15 NEAR |
+| $FISH | `fish-coin.haggletown-v2.testnet` | fishmonger | sub-account, 2.15 NEAR |
+| $SMITH | `haggletown-smith-coin.testnet` | smith | faucet account (deployer was out of testnet NEAR) |
+- Init: cap_bp 500, claim 1000 coins (6 decimals), 1000 claims. First tick (baseline): day 553/554; worth 24287 / 26590 / 29379. Server ticks all three after each day_tick (45 Tgas each).
+- Full-access keys of the coin accounts are still in the legacy keychain (contract has no admin method, but the account owner could redeploy code until the keys are deleted).
+
+## Relayer gas (2026-11-14)
+- `game.haggletown-v2.testnet` fell to 0.098 NEAR; calls reserving 100 Tgas were rejected. Calls now reserve 50 Tgas. Top the relayer up before the demo.
+
 ## Roles and keys (names only)
 | Role | Address | Key storage |
 | --- | --- | --- |
