@@ -3,7 +3,8 @@ import type { Chain } from "../chain/near.ts";
 import type { MarketCache } from "../chain/market.ts";
 import type { Balances, PlayerView } from "../types.ts";
 
-export type Row = { name: string; netWorth: number };
+/** userId: the Roblox UserId for Roblox players (boards show their headshot); absent for web players. */
+export type Row = { name: string; netWorth: number; userId?: string };
 
 const ACTIVE_MS = 24 * 3_600_000;
 const MAX_PLAYERS = 50;
@@ -31,7 +32,7 @@ export class Leaderboard {
   }
 
   get(top = 10): Row[] {
-    return this.rows.slice(0, top).map(({ name, netWorth }) => ({ name, netWorth }));
+    return this.rows.slice(0, top).map(({ id, name, netWorth }) => (id.startsWith("roblox:") ? { name, netWorth, userId: id.slice(7) } : { name, netWorth }));
   }
 
   /** 1-based rank among active players, null when not ranked yet. */

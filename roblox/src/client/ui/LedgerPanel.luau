@@ -7,6 +7,7 @@
 -- Refreshes every 10 s while open.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
+local Icons = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Icons"))
 local Ui = require(script.Parent.Ui)
 
 local LedgerPanel = {}
@@ -115,7 +116,10 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 		end
 		for i, l in v.leaders do
 			local y = 28 + (i - 1) * 28
-			Ui.text({ Parent = top, Position = UDim2.fromOffset(0, y), Size = UDim2.new(1, -80, 0, 26), Style = "small", TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = `{i}. {l.name}` })
+			Ui.new("ImageLabel", { Parent = top, Position = UDim2.fromOffset(0, y), Size = UDim2.fromOffset(26, 26), BackgroundColor3 = Theme.background, Image = if l.userId then Icons.headshot(l.userId) else "" }, {
+				Ui.new("UICorner", { CornerRadius = UDim.new(0.5, 0) }),
+			})
+			Ui.text({ Parent = top, Position = UDim2.fromOffset(32, y), Size = UDim2.new(1, -112, 0, 26), Style = "small", TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = `{i}. {l.name}` })
 			Ui.text({ Parent = top, Position = UDim2.new(1, -80, 0, y), Size = UDim2.fromOffset(80, 26), Style = "numberSmall", TextXAlignment = Enum.TextXAlignment.Right, Text = `{l.worth} C` })
 		end
 	end

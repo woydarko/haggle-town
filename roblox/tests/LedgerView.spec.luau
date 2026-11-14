@@ -23,7 +23,7 @@ local feed = { deals = {
 	{ at = NOW - 120_000, player = "Darko", merchant = "woodcutter", good = "wood_pine", qty = 1, unitPrice = 12, side = "sell" },
 	{ at = NOW - 20_000, player = "Mia", merchant = "fishmonger", good = "fish_trout", qty = 2, unitPrice = 30, side = "buy" },
 } }
-local leaders = { { name = "Mia", netWorth = 3100 }, { name = "Darko", netWorth = 2949 }, { name = "A", netWorth = 10 }, { name = "B", netWorth = 9 }, { name = "C", netWorth = 8 }, { name = "D", netWorth = 7 } }
+local leaders = { { name = "Mia", netWorth = 3100, userId = "77" }, { name = "Darko", netWorth = 2949 }, { name = "A", netWorth = 10 }, { name = "B", netWorth = 9 }, { name = "C", netWorth = 8 }, { name = "D", netWorth = 7 } }
 local config = { dayLengthMs = 300_000 }
 
 -- Loading: nothing fetched yet.
@@ -47,6 +47,7 @@ check(v.deals[2] == "Darko sold 1 Pine to the Woodcutter for 12 C, 2 min ago", `
 -- Each deal line has its item id alongside (the pop-up draws the item icon next to it).
 check(v.dealItems[1] == "fish_trout" and v.dealItems[2] == "wood_pine", "deal items line up with the lines")
 check(#v.leaders == 5 and v.leaders[1].name == "Mia" and v.leaders[1].worth == 3100, "top 5 traders")
+check(v.leaders[1].userId == "77" and v.leaders[2].userId == nil, "headshot id passes through")
 
 -- The API may list deals newest first; the board still shows newest first.
 local reversed = { deals = { feed.deals[2], feed.deals[1] } }

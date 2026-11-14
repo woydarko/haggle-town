@@ -104,7 +104,7 @@ function LedgerView.build(input: Input)
 		if i > 5 then
 			break
 		end
-		table.insert(leaders, { name = l.name, worth = l.netWorth })
+		table.insert(leaders, { name = l.name, worth = l.netWorth, userId = l.userId })
 	end
 
 	local stale = not input.ok

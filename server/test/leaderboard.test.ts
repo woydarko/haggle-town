@@ -31,8 +31,8 @@ test("ranks active players by net worth at current bid", async () => {
   const { lb } = await setup();
   await lb.refresh();
   assert.deepEqual(lb.get(), [
-    { name: "Budi", netWorth: 1032 },
-    { name: "Ana", netWorth: 1000 },
+    { name: "Budi", netWorth: 1032, userId: "2" },
+    { name: "Ana", netWorth: 1000, userId: "1" },
   ]);
 });
 

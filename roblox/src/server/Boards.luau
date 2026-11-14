@@ -145,8 +145,17 @@ function Boards.renderLeaders(board: BasePart, leaders: { any }?)
 			break
 		end
 		local row = box(f, UDim2.new(1, 0, 0, 36), i)
+		local face = Instance.new("ImageLabel") -- head and shoulders; an empty circle for web players
+		face.Size = UDim2.fromOffset(36, 36)
+		face.BackgroundColor3 = Theme.surface
+		face.Image = if r.userId then Icons.headshot(r.userId) else ""
+		face.Parent = row
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0.5, 0)
+		corner.Parent = face
 		local n = label(row, `{i}. {r.name}`, Theme.text, 26, 36)
-		n.Size = UDim2.new(1, -130, 1, 0)
+		n.Position = UDim2.fromOffset(46, 0)
+		n.Size = UDim2.new(1, -176, 1, 0)
 		n.TextWrapped, n.TextTruncate = false, Enum.TextTruncate.AtEnd
 		local v = label(row, `{r.netWorth} C`, Theme.primary, 26, 36, Theme.numeric)
 		v.TextXAlignment = Enum.TextXAlignment.Right
