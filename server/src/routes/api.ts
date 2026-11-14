@@ -87,13 +87,21 @@ export function apiRoutes(d: ApiDeps) {
     // Backer coins: each contract's info, its last 30 rebases and its mint/transfer events, cached 30 s.
     // events is null when the indexer is down: the coins work without it, only the list is missing.
     let coinCache: { at: number; body: unknown } | null = null;
+    // NearBlocks rate-limits free calls: events are fetched one coin at a time and the last good answer is kept.
+    const lastEvents = new Map<string, Awaited<ReturnType<typeof coinEvents>>>();
     app.get("/api/coins", async () => {
-      if (coinCache && Date.now() - coinCache.at < 30_000) return coinCache.body;
+      if (coinCache && Date.now() - coinCache.at < 60_000) return coinCache.body;
+      const eventsOf = new Map<string, Awaited<ReturnType<typeof coinEvents>> | null>();
+      for (const id of d.coins ?? d.config.COIN_IDS) {
+        const ev = await coinEvents(d.fetchJson ?? getJson, d.config.NEAR_NETWORK, id).catch(() => null);
+        if (ev) lastEvents.set(id, ev);
+        eventsOf.set(id, ev ?? lastEvents.get(id) ?? null);
+      }
       const body = await Promise.all(
         (d.coins ?? d.config.COIN_IDS).map(async (id) => {
           const info = await d.chain.view<{ rebases: number } & Record<string, unknown>>("info", {}, id);
           const recent = await d.chain.view("rebases", { from: Math.max(0, info.rebases - 30), limit: 30 }, id);
-          const events = await coinEvents(d.fetchJson ?? getJson, d.config.NEAR_NETWORK, id).catch(() => null);
+          const events = eventsOf.get(id) ?? null;
           // Top patrons: every account the events name, ranked by its balance now (rebases and transfers included).
           const holders = [...new Set((events ?? []).map((e) => e.account).filter(Boolean))];
           const patrons = events
