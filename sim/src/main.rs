@@ -2,6 +2,7 @@
 //! classless), using the same pricing and drop rules as the contract (economy/src/pricing.rs).
 //! Writes JSON for the dashboard. Usage: cargo run -p sim -- --days 7 --bots 10 --seed 42 --out web/public/sim/week.json
 
+use economy::coin;
 use economy::pricing::{self, Category, Item, Tier};
 
 pub const TICKS_PER_DAY: u32 = 60; // one tick = one game minute-ish (5 real seconds)
@@ -209,6 +210,54 @@ fn arg(args: &[String], name: &str, default: &str) -> String {
     args.iter().position(|a| a == name).and_then(|i| args.get(i + 1)).cloned().unwrap_or_else(|| default.to_string())
 }
 
+/// Backer-coin index per merchant (fish, wood, ore) at the end of every market day, read back from a run's
+/// series exactly as the coin contract reads get_market: net worth = purse + stock x bid, one capped step a day.
+pub fn coin_index(r: &Run, cap_bp: u32) -> Vec<[u128; 3]> {
+    let (mut index, mut last, mut out) = ([coin::INDEX_ONE; 3], [0u128; 3], Vec::new());
+    for end in r.series.chunks(12).filter(|c| (c[0].tick + 1) % TICKS_PER_DAY == 0) {
+        for (c, cat) in ["fish", "wood", "ore"].iter().enumerate() {
+            let rows: Vec<&Point> = end.iter().filter(|p| p.item.starts_with(cat)).collect();
+            let worth = coin::net_worth(rows[0].purse, &rows.iter().map(|p| (p.stock, p.bid)).collect::<Vec<_>>());
+            index[c] = coin::apply(index[c], coin::step_bp(last[c], worth, cap_bp));
+            last[c] = worth;
+        }
+        out.push(index);
+    }
+    out
+}
+
+/// 60-day coin scenarios: quiet town, normal, busy town (bot count) x daily cap. Supply = index (1.00 at launch).
+fn coin_report() {
+    println!("60 days, 3 seeds each. final = supply multiple at day 60 (fish/wood/ore); range = lowest..highest any day; capped = share of days that hit the cap");
+    for bots in [4usize, 10, 30] {
+        for cap in [300u32, 500, 1000] {
+            let (mut fin, mut lo, mut hi, mut capped, mut days) = ([0f64; 3], f64::MAX, 0f64, 0usize, 0usize);
+            for seed in [1u64, 42, 7] {
+                let idx = coin_index(&run(seed, 60, bots), cap);
+                let f = |x: u128| x as f64 / coin::INDEX_ONE as f64;
+                let mut prev = [coin::INDEX_ONE; 3];
+                for d in &idx {
+                    for c in 0..3 {
+                        lo = lo.min(f(d[c]));
+                        hi = hi.max(f(d[c]));
+                        let step = (f(d[c]) / f(prev[c]) - 1.0).abs() * 10_000.0;
+                        capped += (step + 0.5 >= cap as f64) as usize;
+                        days += 1;
+                    }
+                    prev = *d;
+                }
+                for c in 0..3 {
+                    fin[c] += f(idx[idx.len() - 1][c]) / 3.0;
+                }
+            }
+            println!(
+                "bots {bots:>2} cap {:>4.1}%/day: final {:.2}/{:.2}/{:.2} range {lo:.2}..{hi:.2} capped {:>3.0}% of days",
+                cap as f64 / 100.0, fin[0], fin[1], fin[2], capped as f64 * 100.0 / days as f64
+            );
+        }
+    }
+}
+
 /// One line per run: goods gathered, forge activity, and end-of-run price and purse health.
 pub fn report(r: &Run) -> String {
     let last = &r.series[r.series.len() - 12..];
@@ -227,6 +276,10 @@ pub fn report(r: &Run) -> String {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    if args.iter().any(|a| a == "--coins") {
+        coin_report();
+        return;
+    }
     if args.iter().any(|a| a == "--compare") {
         for (name, b) in [("no forge     ", [0.0; 4]), ("forge 25/50% ", TOOL_BONUS), ("forge 50/100%", [0.0, 0.0, 0.5, 1.0])] {
             for seed in [1u64, 42, 7] {
@@ -302,6 +355,18 @@ mod tests {
     fn no_forge_means_no_upgrades() {
         let r = run_with(42, 7, 10, [0.0; 4]);
         assert_eq!((r.forged, r.bought), (0, 0));
+    }
+
+    #[test]
+    fn coins_move_daily_but_stay_bounded() {
+        let idx = coin_index(&run(42, 60, 10), 500);
+        assert_eq!(idx.len(), 60, "one rebase per market day");
+        for c in 0..3 {
+            let moved = idx.windows(2).filter(|w| w[0][c] != w[1][c]).count();
+            assert!(moved >= 40, "coin {c} moved on only {moved} of 59 days");
+            let last = idx[59][c] as f64 / coin::INDEX_ONE as f64;
+            assert!((0.2..5.0).contains(&last), "coin {c} ended at {last}");
+        }
     }
 
     #[test]

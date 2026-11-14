@@ -32,6 +32,8 @@ export interface Config {
   DB_PATH: string;
   PORT: number;
   DAY_LENGTH_MS: number;
+  /** Backer coin contracts ($WOOD, $FISH, $SMITH); the server ticks them after each market day. */
+  COIN_IDS: string[];
 }
 
 /** Reads config from env. Throws one error naming every missing required variable. */
@@ -62,5 +64,9 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     DB_PATH: env.DB_PATH ?? "./data/haggle.sqlite",
     PORT: Number(env.PORT ?? 8080),
     DAY_LENGTH_MS: Number(env.DAY_LENGTH_MS ?? 300_000),
+    COIN_IDS: (env.COIN_IDS ?? "wood-coin.haggletown-v2.testnet,fish-coin.haggletown-v2.testnet,haggletown-smith-coin.testnet")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
   };
 }

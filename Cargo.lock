@@ -848,6 +848,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "haggle-coin"
+version = "0.1.0"
+dependencies = [
+ "economy",
+ "near-sdk",
+]
+
+[[package]]
 name = "haggle-contract"
 version = "0.1.0"
 dependencies = [

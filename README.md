@@ -2,7 +2,7 @@
 
 A Roblox market town where you gather wood, fish and ore and **haggle in plain chat with AI merchants who run their own NEAR wallets**. Prices follow supply and demand by themselves. No developer patches the economy. Players never see a wallet, seed phrase, popup or gas fee. Inside the game everything is just "Coin".
 
-NEAR HACKATHON tracks: **Games With Real Economies** (main) and **Agent Economy**.
+NEAR HACKATHON tracks: **Games With Real Economies** (main), **Agent Economy** and **Memecoins With Mechanics**.
 
 - Play: Roblox experience link _(added at publish)_
 - Dashboard (on-chain side: prices, merchant purses, deals with explorer links, guardrail, fast-forward week): https://backend-production-fccb03fb.up.railway.app
@@ -27,6 +27,10 @@ The rules only protect the merchant. If you sell under its bid or pay over its a
 - **Session:** pick a class (Fisher, Logger, Miner) for a better sell room on your goods. Climb the richest-traders board. Each game day (5 minutes) merchants restock toward their target and use up stock. Prices drift, and a merchant with an empty purse closes for buying until players buy from it.
 
 Pricing in one readable file: `economy/src/pricing.rs` (ask = base × target / stock, clamped to 0.5–3× base; bid = 80% of ask; up to 40% discount when overstocked, up to 40% premium when short). The contract, the simulator and the backend's TypeScript port (tested against 768 Rust vectors) all use it.
+
+## Backer coins: $WOOD, $FISH, $SMITH (Memecoins With Mechanics)
+
+Every AI merchant has an NEP-141 memecoin whose supply follows that merchant's on-chain net worth (purse + stock at its own bid), rebased for every holder once per market day, capped at 5% a day (chosen with a 60-day simulation). Anyone can call `tick()`; the coin reads the market contract directly, so no backend can switch it off. Parameters are fixed at launch with no admin method. Back the house, or bet on the hagglers. Web dashboard only (tab "Backer coins"), never inside Roblox. Details, simulation table and sybil limits: [docs/hackathon/MEMECOIN.md](docs/hackathon/MEMECOIN.md).
 
 ## How it works
 
@@ -65,7 +69,8 @@ All four were run on 2026-11-14 and pass. Running the full backend needs NEAR te
 | `server/` | Backend: Roblox API (HMAC), haggle engine, LLM client, relayer queue, dashboard API |
 | `web/` | Dashboard (React + Vite) |
 | `roblox/` | Roblox place (Luau, Rojo) |
-| `sim/` | Fast-forward simulator using the same pricing crate |
+| `sim/` | Fast-forward simulator using the same pricing crate (`--compare` Forge, `--coins` 60-day memecoin scenarios) |
+| `coin/` | Backer coin contract: NEP-141 memecoin that rebases on its merchant's on-chain worth |
 | `docs/` | PRD, architecture, security, design spec and plans |
 
 ## AI tools and third-party code (disclosure)

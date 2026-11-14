@@ -11,6 +11,8 @@ export interface JobDeps {
   gather: Gather;
   dayLengthMs: number;
   log: FastifyBaseLogger;
+  /** Backer coins to tick after the market day moves on (anyone may tick them; this is just a reliable caller). */
+  coins?: string[];
 }
 
 /** Gather flush every 10 s, market refresh every 5 s, day tick every game day. Returns a stop function. */
@@ -23,6 +25,9 @@ export function startJobs(d: JobDeps): () => void {
       safe("day tick", async () => {
         await d.queue(() => d.chain.call("day_tick", {}));
         await d.market.refresh();
+        for (const c of d.coins ?? []) {
+          await d.queue(() => d.chain.call("tick", {}, { gas: 60_000_000_000_000n, contractId: c })).catch((e) => d.log.warn({ err: String(e), coin: c }, "coin tick failed"));
+        }
       }),
       d.dayLengthMs,
     ),

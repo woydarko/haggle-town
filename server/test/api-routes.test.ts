@@ -34,7 +34,7 @@ async function setup() {
     db,
     routes: [apiRoutes({ db, chain, market, leaderboard: () => [{ name: "Rina", netWorth: 1200 }], config: loadConfig(TEST_ENV) })],
   });
-  return { app, db, market };
+  return { app, db, market, chain };
 }
 
 test("/api/players lists players with deal counts, newest first", async () => {
@@ -103,4 +103,19 @@ test("/api/history groups minute points by item", async () => {
   assert.equal(wood.tier, "common");
   assert.equal(wood.points.length, 2);
   assert.deepEqual(Object.keys(wood.points[0]).sort(), ["ask", "bid", "purse", "stock", "ts"]);
+});
+
+test("/api/coins returns each coin's info and its recent rebases", async () => {
+  const { app, chain } = await setup();
+  const asked: unknown[] = [];
+  chain.view = async (method: string, args: object, contractId?: string) => {
+    asked.push([method, contractId, args]);
+    return (method === "info" ? { symbol: "SMITH", rebases: 40, total_supply: "1050000000" } : [{ day: 9, worth: "29000", step_bp: 120, supply: "1050000000" }]) as any;
+  };
+  const r = await app.inject({ method: "GET", url: "/api/coins" });
+  assert.equal(r.statusCode, 200);
+  const coins = r.json();
+  assert.equal(coins.length, 3, "one per merchant (config default)");
+  assert.equal(coins[0].recent[0].step_bp, 120);
+  assert.ok(asked.some((a) => JSON.stringify(a) === JSON.stringify(["rebases", coins[0].id, { from: 10, limit: 30 }])), "last 30 rebases of that coin");
 });

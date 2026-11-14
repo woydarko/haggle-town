@@ -2,8 +2,9 @@ import { Account, FailoverRpcProvider, JsonRpcProvider, actions, teraToGas, type
 import type { Config } from "../config.ts";
 
 export interface Chain {
-  view<T>(method: string, args: object): Promise<T>;
-  call(method: string, args: object, opts?: { gas?: bigint }): Promise<{ txHash: string; result: unknown }>;
+  /** contractId defaults to the market contract (CONTRACT_ID); the backer coins are separate contracts. */
+  view<T>(method: string, args: object, contractId?: string): Promise<T>;
+  call(method: string, args: object, opts?: { gas?: bigint; contractId?: string }): Promise<{ txHash: string; result: unknown }>;
 }
 
 /** A contract panic, e.g. code "PriceOutOfRoom". Transport errors stay plain Errors. */
@@ -31,12 +32,12 @@ export function createNearChain(config: Config): Chain {
   ]);
   const game = new Account(config.GAME_ACCOUNT_ID, provider, config.GAME_PRIVATE_KEY as KeyPairString);
   return {
-    async view<T>(method: string, args: object) {
-      return (await provider.callFunction({ contractId: config.CONTRACT_ID, method, args: args as Record<string, unknown> })) as T;
+    async view<T>(method: string, args: object, contractId?: string) {
+      return (await provider.callFunction({ contractId: contractId ?? config.CONTRACT_ID, method, args: args as Record<string, unknown> })) as T;
     },
     async call(method, args, opts) {
       const res: any = await game.signAndSendTransaction({
-        receiverId: config.CONTRACT_ID,
+        receiverId: opts?.contractId ?? config.CONTRACT_ID,
         actions: [actions.functionCall(method, args, opts?.gas ?? teraToGas("100"), 0n)],
         throwOnFailure: false,
       } as any);

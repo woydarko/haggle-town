@@ -16,6 +16,8 @@ export interface ApiDeps {
   market: MarketCache;
   leaderboard: () => unknown[];
   config: Config;
+  /** Backer coin contract ids (defaults to config.COIN_IDS). */
+  coins?: string[];
 }
 
 /** Public read-only routes for the web dashboard. Never secrets. Player ids appear only on the players
@@ -61,6 +63,20 @@ export function apiRoutes(d: ApiDeps) {
       dayLengthMs: d.config.DAY_LENGTH_MS,
     }));
     app.get("/api/market", async () => d.market.get());
+    // Backer coins: each contract's info plus its last 30 rebases, cached 10 s (RPC views).
+    let coinCache: { at: number; body: unknown } | null = null;
+    app.get("/api/coins", async () => {
+      if (coinCache && Date.now() - coinCache.at < 10_000) return coinCache.body;
+      const body = await Promise.all(
+        (d.coins ?? d.config.COIN_IDS).map(async (id) => {
+          const info = await d.chain.view<{ rebases: number } & Record<string, unknown>>("info", {}, id);
+          const recent = await d.chain.view("rebases", { from: Math.max(0, info.rebases - 30), limit: 30 }, id);
+          return { id, ...info, recent };
+        }),
+      );
+      coinCache = { at: Date.now(), body };
+      return body;
+    });
     app.get("/api/leaderboard", async () => d.leaderboard());
     app.get("/api/feed", async () => ({
       deals: deals.all(),

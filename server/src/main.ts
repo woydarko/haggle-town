@@ -59,7 +59,7 @@ if (existsSync(webDist)) app.register(fastifyStatic, { root: webDist });
 market.onRefresh = (rows) => recordPrices(db, rows);
 
 await market.refresh();
-startJobs({ chain, queue, market, gather, dayLengthMs: config.DAY_LENGTH_MS, log: app.log });
+startJobs({ chain, queue, market, gather, dayLengthMs: config.DAY_LENGTH_MS, log: app.log, coins: config.COIN_IDS });
 setInterval(() => leaderboard.refresh().catch((e) => app.log.warn({ err: String(e) }, "leaderboard refresh failed")), 30_000);
 
 app.listen({ port: config.PORT, host: "0.0.0.0" }).catch((err) => {

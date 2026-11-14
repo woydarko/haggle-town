@@ -19,6 +19,20 @@ export type Guard = { at: number; merchant: string; item: string; side: string; 
 export type Forged = { at: number; player: string; tool: string; level: number; cost: Record<string, number>; txHash: string };
 export type Feed = { deals: Deal[]; chat: Chat[]; guard: { count: number; recent: Guard[] }; forges?: Forged[] };
 export type Leader = { name: string; netWorth: number };
+export type Rebase = { day: number; worth: string; step_bp: number; supply: string };
+export type CoinView = {
+  id: string;
+  symbol: string;
+  merchant: string;
+  cap_bp: number;
+  claims_left: number;
+  holders: number;
+  index: string;
+  total_supply: string;
+  last_worth: string;
+  last_day: number;
+  recent: Rebase[];
+};
 export type History = { item: string; points: { ts: number; ask: number; bid: number; stock: number; purse: number }[] }[];
 export type Config = { contractId: string; network: string; explorerBase: string };
 export type PlayerRow = { id: string; name: string; lastSeen: number; deals: number };
@@ -45,6 +59,7 @@ export const api = {
   market: () => get<Market[]>("/api/market"),
   feed: () => get<Feed>("/api/feed"),
   leaderboard: () => get<Leader[]>("/api/leaderboard"),
+  coins: () => get<CoinView[]>("/api/coins"),
   history: (minutes = 60) => get<History>(`/api/history?minutes=${minutes}`),
   players: () => get<PlayerRow[]>("/api/players"),
   player: (id: string) => get<PlayerDetail>(`/api/players/${encodeURIComponent(id)}`),

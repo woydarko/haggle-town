@@ -4,10 +4,11 @@ import { CategoryChips, PriceChart, categorySeries } from "./PriceChart.tsx";
 import { CATEGORIES, CATEGORY_MERCHANT, CATEGORY_NAME, itemName, tierColor, type Category } from "./items.ts";
 import { FastForward } from "./FastForward.tsx";
 import { Players } from "./Players.tsx";
+import { Coins } from "./Coins.tsx";
 
 type Data = { market: Market[]; feed: Feed; leaders: Leader[] };
 const RANGES: [number, string][] = [[60, "1 h"], [360, "6 h"], [1440, "24 h"]];
-const tabFromHash = () => (location.hash.startsWith("#/players") ? "players" : "market");
+const tabFromHash = () => (location.hash.startsWith("#/players") ? "players" : location.hash.startsWith("#/coins") ? "coins" : "market");
 
 const ago = (t: number) => {
   const s = Math.max(0, Math.round((Date.now() - t) / 1000));
@@ -80,12 +81,15 @@ export function App() {
       <nav className="tabs" aria-label="Views">
         <a href="#/" aria-current={tab === "market" ? "page" : undefined}>Market</a>
         <a href="#/players" aria-current={tab === "players" ? "page" : undefined}>Players & transactions</a>
+        <a href="#/coins" aria-current={tab === "coins" ? "page" : undefined}>Backer coins</a>
       </nav>
 
       {offline && <div className="banner" role="status">Can't reach the market. Retrying in 5 s.</div>}
 
       {tab === "players" ? (
         <Players config={config} />
+      ) : tab === "coins" ? (
+        <Coins config={config} />
       ) : !data ? (
         <div className="grid">
           <div className="skeleton" />
