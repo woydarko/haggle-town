@@ -1,7 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "../theme.css";
+import "./landing.css";
 import { Landing } from "./Landing.tsx";
+
+document.documentElement.classList.add("js");
 
 // Links shared before the split pointed at "/#/coins" etc.; send them to the dashboard.
 if (location.hash.startsWith("#/")) {
