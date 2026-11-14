@@ -123,16 +123,19 @@ test("/api/coins returns each coin's info and its recent rebases", async () => {
 
 test("/api/coins lists each coin's backers from the indexer's NEP-141 events", async () => {
   const chain = new FakeChain();
-  chain.view = (async (method: string) => (method === "info" ? { symbol: "SMITH", rebases: 1 } : [])) as any;
+  const balances: Record<string, string> = { "ana.testnet": "1050000000", "bo.testnet": "2100000000", "cy.testnet": "0" };
+  chain.view = (async (method: string, args: any) => (method === "info" ? { symbol: "SMITH", rebases: 1 } : method === "ft_balance_of" ? balances[args.account_id] : [])) as any;
   const db = openDb(":memory:");
   const market = new MarketCache(chain);
   const urls: string[] = [];
   const fetchJson = async (url: string) => {
     urls.push(url);
-    return { data: [{ affected_account_id: "ana.testnet", cause: "MINT", delta_amount: "1000000000", block_timestamp: "1794659931614821483", transaction_hash: "BY6n" }] };
+    const ev = (a: string, cause = "MINT") => ({ affected_account_id: a, cause, delta_amount: "1000000000", block_timestamp: "1794659931614821483", transaction_hash: "BY6n" });
+    return { data: [ev("ana.testnet"), ev("bo.testnet"), ev("cy.testnet"), ev("bo.testnet", "TRANSFER")] };
   };
   const app = buildApp({ config: loadConfig(TEST_ENV), db, routes: [apiRoutes({ db, chain, market, leaderboard: () => [], config: loadConfig(TEST_ENV), coins: ["smith-coin.testnet"], fetchJson })] });
   const coin = (await app.inject({ method: "GET", url: "/api/coins" })).json()[0];
-  assert.deepEqual(coin.events, [{ account: "ana.testnet", cause: "MINT", amount: "1000000000", at: 1794659931614, txHash: "BY6n" }]);
+  assert.deepEqual(coin.events[0], { account: "ana.testnet", cause: "MINT", amount: "1000000000", at: 1794659931614, txHash: "BY6n" });
+  assert.deepEqual(coin.patrons, [{ account: "bo.testnet", balance: "2100000000" }, { account: "ana.testnet", balance: "1050000000" }], "ranked by balance now, empty wallets left out");
   assert.equal(urls[0], "https://api-testnet.nearblocks.io/v3/fts/smith-coin.testnet/txns?per_page=25");
 });

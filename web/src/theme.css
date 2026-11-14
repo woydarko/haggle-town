@@ -88,4 +88,6 @@ h3 { font-size: var(--fs-subhead); line-height: 24px; }
 .items td, .items th { padding: var(--s1) 0 var(--s1) var(--s3); white-space: nowrap; }
 .items td:first-child, .items th:first-child { padding-left: 0; white-space: normal; }
 .items .name { font-weight: 600; }
+.patrons { margin: var(--s1) 0 var(--s3); padding-left: var(--s5); }
+.patrons li .num { float: right; margin-left: var(--s2); }
 .badge { display: inline-block; font-size: var(--fs-small); padding: 0 var(--s2); border-radius: 999px; border: 2px solid currentColor; }

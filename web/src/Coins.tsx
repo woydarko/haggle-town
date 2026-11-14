@@ -89,6 +89,20 @@ export function Coins({ config }: { config: Config | null }) {
                   </dd>
                 </dl>
                 <Spark steps={c.recent.slice(1).map((r) => r.step_bp)} />
+                <h3>Top patrons</h3>
+                {!c.patrons ? (
+                  <p className="muted">Waiting for the indexer.</p>
+                ) : c.patrons.length === 0 ? (
+                  <p className="muted">No patrons yet: back it and take first place.</p>
+                ) : (
+                  <ol className="patrons">
+                    {c.patrons.map((p) => (
+                      <li key={p.account}>
+                        <span>{p.account}</span> <span className="num">{units(p.balance).toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 <details>
                   <summary>Rebase log</summary>
                   <table className="items">

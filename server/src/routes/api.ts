@@ -94,7 +94,19 @@ export function apiRoutes(d: ApiDeps) {
           const info = await d.chain.view<{ rebases: number } & Record<string, unknown>>("info", {}, id);
           const recent = await d.chain.view("rebases", { from: Math.max(0, info.rebases - 30), limit: 30 }, id);
           const events = await coinEvents(d.fetchJson ?? getJson, d.config.NEAR_NETWORK, id).catch(() => null);
-          return { id, ...info, recent, events };
+          // Top patrons: every account the events name, ranked by its balance now (rebases and transfers included).
+          const holders = [...new Set((events ?? []).map((e) => e.account).filter(Boolean))];
+          const patrons = events
+            ? (
+                await Promise.all(
+                  holders.map(async (account) => ({ account, balance: await d.chain.view<string>("ft_balance_of", { account_id: account }, id).catch(() => "0") })),
+                )
+              )
+                .filter((p) => BigInt(p.balance) > 0n)
+                .sort((a, b) => (BigInt(b.balance) > BigInt(a.balance) ? 1 : BigInt(b.balance) < BigInt(a.balance) ? -1 : 0))
+                .slice(0, 5)
+            : null;
+          return { id, ...info, recent, events, patrons };
         }),
       );
       coinCache = { at: Date.now(), body };
