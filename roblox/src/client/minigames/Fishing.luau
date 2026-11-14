@@ -123,27 +123,30 @@ function Fishing.play(ctx: any, params: any): number?
 	end
 	local bar = Ui.new("Frame", { Parent = host, Position = UDim2.new(0.5, -70, 0, top), Size = UDim2.fromOffset(70, tall), BackgroundColor3 = Theme.fish, BackgroundTransparency = 0.6 }, { Ui.corner() })
 	local zone = Ui.new("Frame", { Parent = bar, AnchorPoint = Vector2.new(0, 1), Size = UDim2.fromScale(1, zoneH), BackgroundColor3 = Theme.success, BackgroundTransparency = 0.3 })
-	local fish = Ui.text({ Parent = bar, AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(60, 24), TextXAlignment = CENTER, Style = "heading", Text = "><>" })
+	local fish = Ui.icon("fish_mystery", 44, { Parent = bar, AnchorPoint = Vector2.new(0.5, 0.5), ZIndex = 2 })
 	local track = Ui.new("Frame", { Parent = host, Position = UDim2.new(0.5, 20, 0, top), Size = UDim2.fromOffset(20, tall), BackgroundColor3 = Theme.border }, { Ui.corner() })
 	local fill = Ui.new("Frame", { Parent = track, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Theme.success }, { Ui.corner() })
 
-	local progress, zonePos, zoneVel = M.REEL_START, 0, 0
+	local progress, zonePos, zoneVel = M.REEL_START, 0.5 - zoneH / 2, 0 -- start with the fish inside the zone
 	local fishPos, target, retarget = 0.5, 0.5, 0
+	local calm = 1 + (speed - 1) * 0.5
 	local inTime, total = 0, 0
 	while progress > 0 and progress < 1 and total < REEL_LIMIT do
 		local dt = ctx.step()
-		zoneVel = math.clamp(zoneVel + (if ctx.held() then 2.6 else -2.2) * dt, -1.2, 1.2)
+		-- The zone follows the button at once (no slide): hold = up, release = down.
+		zoneVel += ((if ctx.held() then 0.8 else -0.7) - zoneVel) * math.min(1, 8 * dt)
 		zonePos += zoneVel * dt
 		if zonePos <= 0 or zonePos >= 1 - zoneH then
 			zonePos, zoneVel = math.clamp(zonePos, 0, 1 - zoneH), 0
 		end
-		-- Fish darts to a new spot every 0.5-1.5 s, faster (and more often) for rarer rolls.
+		-- The fish drifts to a nearby spot (at most 0.3 of the bar away) every 1.2-2.4 s and eases into it;
+		-- rarer rolls are a little livelier, never twice as fast.
 		retarget -= dt
 		if retarget <= 0 then
-			target, retarget = math.random(), (0.5 + math.random()) / speed
+			target = math.clamp(fishPos + (math.random() * 2 - 1) * 0.3, 0.05, 0.95)
+			retarget = (1.2 + math.random() * 1.2) / calm
 		end
-		local d = target - fishPos
-		fishPos += math.sign(d) * math.min(math.abs(d), 0.35 * speed * dt)
+		fishPos += (target - fishPos) * math.min(1, 2.2 * calm * dt)
 		local inZone = fishPos >= zonePos and fishPos <= zonePos + zoneH
 		total += dt
 		if inZone then
@@ -152,7 +155,7 @@ function Fishing.play(ctx: any, params: any): number?
 		progress += M.catchProgress(inZone, dt, speed)
 		zone.Position = UDim2.fromScale(0, 1 - zonePos)
 		fish.Position = UDim2.fromScale(0.5, 1 - fishPos)
-		fish.TextColor3 = if inZone then Theme.success else Theme.text
+		zone.BackgroundTransparency = if inZone then 0.2 else 0.55 -- the zone lights up while the fish is inside
 		fill.Size = UDim2.fromScale(1, math.clamp(progress, 0, 1))
 	end
 	if progress < 1 then

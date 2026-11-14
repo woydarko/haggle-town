@@ -53,6 +53,9 @@ for id, def in DEFS do
 	SPRITES[id] = { rows = rows, palette = def.palette }
 end
 
+-- The fish on the reel bar: an all-black silhouette, since nobody knows what bit until it is landed.
+SPRITES.fish_mystery = { rows = SHAPES.fish, palette = { o = "050506", a = "17171C", b = "24242B", e = "D8D8DE", t = "0E0E12" } }
+
 -- Tools for the lobby how-to board (one-offs, so full rows): w handle, m metal, h edge, l line, k hook, r grip.
 SPRITES.axe = {
 	rows = { E, "......mm..w.", ".....mmmmw..", "....hmmmw...", "....hmmw....", ".....hw.....", ".....w......", "....w.......", "...w........", "..w.........", ".w..........", E },
