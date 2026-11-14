@@ -43,9 +43,9 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(14), Ui.new("UIScale", { Name = "Scale" }) })
 
 	-- Header
-	local title = Ui.text({ Parent = panel, Size = UDim2.fromOffset(170, 30), FontFace = Theme.display, TextSize = 26 })
-	local mood = Ui.text({ Parent = panel, Position = UDim2.fromOffset(176, 6), Size = UDim2.fromOffset(110, 20), FontFace = Theme.display, TextSize = 17, TextColor3 = Theme.muted })
-	Ui.text({ Parent = panel, Position = UDim2.new(1, -150, 0, 6), Size = UDim2.fromOffset(90, 20), TextSize = 14, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "patience" })
+	local title = Ui.text({ Parent = panel, Size = UDim2.fromOffset(170, 30), Style = "heading" })
+	local mood = Ui.text({ Parent = panel, Position = UDim2.fromOffset(176, 6), Size = UDim2.fromOffset(110, 20), Style = "label", TextColor3 = Theme.muted })
+	Ui.text({ Parent = panel, Position = UDim2.new(1, -150, 0, 6), Size = UDim2.fromOffset(90, 20), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "patience" })
 	local dots = {}
 	for i = 1, 3 do
 		dots[i] = Ui.new("Frame", { Parent = panel, Position = UDim2.new(1, -52 + (i - 1) * 18, 0, 9), Size = UDim2.fromOffset(12, 12), BackgroundColor3 = Theme.warning }, {
@@ -56,12 +56,12 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 
 	-- Bubble: line, then the offer row
 	local bubble = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 38), Size = UDim2.new(1, 0, 0, 92), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.pad(10) })
-	local line = Ui.text({ Parent = bubble, Size = UDim2.new(1, 0, 0, 44), TextSize = 18, TextYAlignment = Enum.TextYAlignment.Top, TextTruncate = Enum.TextTruncate.AtEnd })
+	local line = Ui.text({ Parent = bubble, Size = UDim2.new(1, 0, 0, 44), Style = "body", TextYAlignment = Enum.TextYAlignment.Top, TextTruncate = Enum.TextTruncate.AtEnd })
 	local offer = Ui.new("Frame", { Parent = bubble, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, Visible = false })
 	local offerIcon = Ui.new("Frame", { Parent = offer, Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1 })
-	local price = Ui.text({ Parent = offer, Position = UDim2.fromOffset(36, 0), Size = UDim2.fromOffset(110, 28), FontFace = Theme.numeric, TextSize = 24, TextColor3 = Theme.primary })
-	local qtyNote = Ui.text({ Parent = offer, Position = UDim2.fromOffset(150, 4), Size = UDim2.fromOffset(170, 22), FontFace = Theme.numeric, TextSize = 16, TextColor3 = Theme.muted })
-	local why = Ui.button("Why?", false, { Parent = offer, Position = UDim2.new(1, -64, 0, 0), Size = UDim2.fromOffset(64, 28), TextSize = 15, Visible = false })
+	local price = Ui.text({ Parent = offer, Position = UDim2.fromOffset(36, 0), Size = UDim2.fromOffset(110, 28), Style = "price", TextColor3 = Theme.primary })
+	local qtyNote = Ui.text({ Parent = offer, Position = UDim2.fromOffset(150, 4), Size = UDim2.fromOffset(170, 22), Style = "numberSmall", TextColor3 = Theme.muted })
+	local why = Ui.button("Why?", false, { Parent = offer, Position = UDim2.new(1, -64, 0, 0), Size = UDim2.fromOffset(64, 28), Style = "label", Visible = false })
 
 	local chips = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 138), Size = UDim2.new(1, 0, 0, 40), BackgroundTransparency = 1 }, {
 		Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
@@ -71,8 +71,8 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		Position = UDim2.fromOffset(0, 186),
 		Size = UDim2.new(1, -100, 0, 40),
 		BackgroundColor3 = Theme.surface,
-		FontFace = Theme.body,
-		TextSize = 17,
+		FontFace = Theme.type.body.font,
+		TextSize = Theme.type.body.size,
 		TextColor3 = Theme.text,
 		PlaceholderText = "Type an offer",
 		PlaceholderColor3 = Theme.muted,
@@ -83,7 +83,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local send = Ui.button("Send", false, { Parent = panel, Position = UDim2.new(1, -90, 0, 186), Size = UDim2.fromOffset(90, 40) })
 	local accept = Ui.button("Accept", true, { Parent = panel, Position = UDim2.fromOffset(0, 234), Size = UDim2.fromOffset(220, 42) })
 	local leave = Ui.button("Leave", false, { Parent = panel, Position = UDim2.new(1, -120, 0, 234), Size = UDim2.fromOffset(120, 42) })
-	local status = Ui.text({ Parent = panel, Position = UDim2.new(0, 228, 0, 234), Size = UDim2.new(1, -356, 0, 42), TextSize = 14, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center }) -- two lines between Accept and Leave
+	local status = Ui.text({ Parent = panel, Position = UDim2.new(0, 228, 0, 234), Size = UDim2.new(1, -356, 0, 42), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center }) -- two lines between Accept and Leave
 
 	local merchant: string? = nil
 	local deal: any = nil
@@ -145,7 +145,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local function renderChips()
 		clearChips()
 		for i, m in { "sell", "buy" } do
-			local tab = Ui.button(if m == "sell" then "Sell" else "Buy", mode == m, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(56, 40), TextSize = 17 })
+			local tab = Ui.button(if m == "sell" then "Sell" else "Buy", mode == m, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(56, 40), Style = "label" })
 			tab.Activated:Connect(function()
 				mode = m
 				renderChips()
@@ -158,17 +158,16 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 				local need = needs[item.id]
 				local chip = Ui.button("", false, { Parent = chips, LayoutOrder = 2 + i, Size = UDim2.fromOffset(84, 40) })
 				Ui.icon(item.id, 28, { Parent = chip, Position = UDim2.fromOffset(6, 6) })
-				Ui.text({ Parent = chip, Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -38, 1, 0), FontFace = Theme.numeric, TextSize = 14, TextWrapped = false, Text = if asks[item.id] then `{asks[item.id]}C` else "?" })
+				Ui.text({ Parent = chip, Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -38, 1, 0), Style = "numberSmall", TextWrapped = false, Text = if asks[item.id] then `{asks[item.id]}C` else "?" })
 				if need then
 					Ui.text({
 						Parent = chip,
 						AnchorPoint = Vector2.new(1, 0),
-						Position = UDim2.new(1, 6, 0, -6),
-						Size = UDim2.fromOffset(30, 16),
+						Position = UDim2.new(1, 6, 0, -9),
+						Size = UDim2.fromOffset(34, 20),
 						BackgroundTransparency = 0,
 						BackgroundColor3 = Theme.primary,
-						FontFace = Theme.numeric,
-						TextSize = 12,
+						Style = "numberSmall",
 						TextColor3 = Theme.onPrimary,
 						TextXAlignment = Enum.TextXAlignment.Center,
 						Text = `+{need}`,
@@ -189,7 +188,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 				count += 1
 				local chip = Ui.button("", false, { Parent = chips, LayoutOrder = 2 + i, Size = UDim2.fromOffset(84, 40) })
 				Ui.icon(item.id, 28, { Parent = chip, Position = UDim2.fromOffset(8, 6) })
-				Ui.text({ Parent = chip, Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -44, 1, 0), FontFace = Theme.numeric, TextSize = 16, Text = `x{qty}` })
+				Ui.text({ Parent = chip, Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -44, 1, 0), Style = "numberSmall", Text = `x{qty}` })
 				chip.Activated:Connect(function()
 					input.Text = `sell 1 {string.lower(item.name)} for `
 					input:CaptureFocus()
@@ -198,7 +197,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 			end
 		end
 		if count == 0 then
-			Ui.text({ Parent = chips, LayoutOrder = 3, Size = UDim2.new(1, -128, 1, 0), TextSize = 15, TextColor3 = Theme.muted, Text = "Nothing of theirs in your bag. Tap Buy." })
+			Ui.text({ Parent = chips, LayoutOrder = 3, Size = UDim2.new(1, -128, 1, 0), Style = "small", TextColor3 = Theme.muted, Text = "Nothing of theirs in your bag. Tap Buy." })
 		end
 	end
 
@@ -213,14 +212,14 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		local p = Suggest.prices(ctx)
 		for i, opt in { { p.meet, "fair", shown[1] }, { p.firm, "bold", shown[3] } } do
 			local chip = Ui.button("", false, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(120, 40) })
-			Ui.text({ Parent = chip, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(0, 60, 1, 0), FontFace = Theme.numeric, TextSize = 18, Text = `{opt[1]} C` })
-			Ui.text({ Parent = chip, Position = UDim2.new(1, -52, 0, 0), Size = UDim2.new(0, 44, 1, 0), TextSize = 14, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = opt[2] })
+			Ui.text({ Parent = chip, Position = UDim2.fromOffset(12, 0), Size = UDim2.new(0, 60, 1, 0), Style = "number", Text = `{opt[1]} C` })
+			Ui.text({ Parent = chip, Position = UDim2.new(1, -52, 0, 0), Size = UDim2.new(0, 44, 1, 0), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = opt[2] })
 			chip.Activated:Connect(function()
 				input.Text = opt[3]
 				submit()
 			end)
 		end
-		Ui.text({ Parent = chips, LayoutOrder = 3, Size = UDim2.new(1, -256, 1, 0), TextSize = 14, TextColor3 = Theme.muted, Text = "or type your own" })
+		Ui.text({ Parent = chips, LayoutOrder = 3, Size = UDim2.new(1, -256, 1, 0), Style = "caption", TextColor3 = Theme.muted, Text = "or type your own" })
 	end
 
 	local function showError(text: string)

@@ -67,7 +67,7 @@ function Fishing.play(ctx: any, params: any): number?
 	local bob = ctx.bobber
 
 	-- 2. Wait: clicking too soon scares the fish and restarts the wait.
-	local bobber = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 120), Size = UDim2.new(1, 0, 0, 90), TextXAlignment = CENTER, FontFace = Theme.display, TextSize = 72, TextColor3 = Theme.muted, Text = "...", Visible = bob == nil })
+	local bobber = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 120), Size = UDim2.new(1, 0, 0, 90), TextXAlignment = CENTER, Style = "hero", TextColor3 = Theme.muted, Text = "...", Visible = bob == nil })
 	task.wait(0.6)
 	ctx.hint("Wait for a bite...")
 	ctx.consume()
@@ -123,7 +123,7 @@ function Fishing.play(ctx: any, params: any): number?
 	end
 	local bar = Ui.new("Frame", { Parent = host, Position = UDim2.new(0.5, -70, 0, top), Size = UDim2.fromOffset(70, tall), BackgroundColor3 = Theme.fish, BackgroundTransparency = 0.6 }, { Ui.corner() })
 	local zone = Ui.new("Frame", { Parent = bar, AnchorPoint = Vector2.new(0, 1), Size = UDim2.fromScale(1, zoneH), BackgroundColor3 = Theme.success, BackgroundTransparency = 0.3 })
-	local fish = Ui.text({ Parent = bar, AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(60, 24), TextXAlignment = CENTER, FontFace = Theme.display, TextSize = 24, Text = "><>" })
+	local fish = Ui.text({ Parent = bar, AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.fromOffset(60, 24), TextXAlignment = CENTER, Style = "heading", Text = "><>" })
 	local track = Ui.new("Frame", { Parent = host, Position = UDim2.new(0.5, 20, 0, top), Size = UDim2.fromOffset(20, tall), BackgroundColor3 = Theme.border }, { Ui.corner() })
 	local fill = Ui.new("Frame", { Parent = track, AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.fromScale(1, 0), BackgroundColor3 = Theme.success }, { Ui.corner() })
 

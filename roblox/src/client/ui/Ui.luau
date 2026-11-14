@@ -33,35 +33,38 @@ function Ui.stroke(): UIStroke
 	return Ui.new("UIStroke", { Color = Theme.border, Thickness = 2 })
 end
 
+-- Style = a Theme.type name ("body" when absent); it sets FontFace and TextSize together.
+local function styled(base: { [string]: any }, props: { [string]: any }, default: string): { [string]: any }
+	local st = Theme.type[props.Style or default]
+	assert(st, `unknown text style {props.Style}`)
+	base.FontFace, base.TextSize = st.font, st.size
+	for k, v in props do
+		if k ~= "Style" then
+			base[k] = v
+		end
+	end
+	return base
+end
+
 function Ui.text(props: { [string]: any }): TextLabel
 	local base = {
 		BackgroundTransparency = 1,
-		FontFace = Theme.body,
-		TextSize = 18,
 		TextColor3 = Theme.text,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextWrapped = true,
 	}
-	for k, v in props do
-		base[k] = v
-	end
-	return Ui.new("TextLabel", base)
+	return Ui.new("TextLabel", styled(base, props, "body"))
 end
 
 function Ui.button(text: string, primary: boolean, props: { [string]: any }): TextButton
 	local base = {
 		Text = text,
-		FontFace = Theme.display,
-		TextSize = 20,
 		AutoButtonColor = true,
 		BackgroundColor3 = if primary then Theme.primary else Theme.surface,
 		TextColor3 = if primary then Theme.onPrimary else Theme.text,
 		Size = UDim2.fromOffset(160, 44),
 	}
-	for k, v in props do
-		base[k] = v
-	end
-	return Ui.new("TextButton", base, { Ui.corner(), Ui.stroke() })
+	return Ui.new("TextButton", styled(base, props, "label"), { Ui.corner(), Ui.stroke() })
 end
 
 -- Item icon: the item's 12x12 pixel sprite (shared/SpriteGui.luau); transparent background, the caller draws the slot.
@@ -83,8 +86,8 @@ function Ui.tierBadge(tier: string, props: { [string]: any }?): TextLabel
 		BackgroundTransparency = 0,
 		BackgroundColor3 = Theme.tiers[tier] or Theme.muted,
 		Text = string.upper(tier),
-		FontFace = Theme.display,
-		TextSize = 16,
+		FontFace = Theme.type.label.font,
+		TextSize = Theme.type.small.size, -- caps tier word inside a 26 px badge
 		TextColor3 = Theme.onPrimary,
 		TextXAlignment = Enum.TextXAlignment.Center,
 	}

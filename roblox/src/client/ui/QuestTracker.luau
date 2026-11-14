@@ -34,10 +34,10 @@ end
 function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, bagCount: number, deals: number, forge: any? })
 	local player = Players.LocalPlayer
 	local card = Ui.new("Frame", { Name = "QuestCard", Parent = gui, Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(300, 108), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(10) })
-	local count = Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 16), TextSize = 14, TextColor3 = Theme.muted, Text = "" })
-	local title = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 0, 26), FontFace = Theme.display, TextSize = 22, Text = "" })
-	local detail = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 44), TextSize = 15, TextYAlignment = Enum.TextYAlignment.Top, Text = "" })
-	local toggle = Ui.button("Guide", false, { Name = "GuideToggle", Parent = gui, Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(88, 44), TextSize = 18, Visible = false })
+	local count = Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 16), Style = "caption", TextColor3 = Theme.muted, Text = "" })
+	local title = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 0, 26), Style = "heading", Text = "" })
+	local detail = Ui.text({ Parent = card, Position = UDim2.fromOffset(0, 44), Size = UDim2.new(1, 0, 0, 44), Style = "small", TextYAlignment = Enum.TextYAlignment.Top, Text = "" })
+	local toggle = Ui.button("Guide", false, { Name = "GuideToggle", Parent = gui, Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(88, 44), Style = "label", Visible = false })
 
 	local anchor = Instance.new("Attachment")
 	anchor.Name = "QuestMarker"
@@ -48,8 +48,8 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 	marker.AlwaysOnTop = true
 	marker.Size = UDim2.fromOffset(140, 60)
 	marker.Parent = player:WaitForChild("PlayerGui")
-	Ui.text({ Parent = marker, Size = UDim2.new(1, 0, 0, 32), FontFace = Theme.display, TextSize = 30, TextColor3 = Theme.primary, TextStrokeTransparency = 0.6, TextXAlignment = Enum.TextXAlignment.Center, Text = "▼" })
-	local dist = Ui.text({ Parent = marker, Position = UDim2.fromOffset(0, 32), Size = UDim2.new(1, 0, 0, 22), FontFace = Theme.numeric, TextSize = 16, TextStrokeTransparency = 0.4, TextStrokeColor3 = Theme.surface, TextXAlignment = Enum.TextXAlignment.Center, Text = "" })
+	Ui.text({ Parent = marker, Size = UDim2.new(1, 0, 0, 32), Style = "title", TextColor3 = Theme.primary, TextStrokeTransparency = 0.6, TextXAlignment = Enum.TextXAlignment.Center, Text = "▼" })
+	local dist = Ui.text({ Parent = marker, Position = UDim2.fromOffset(0, 32), Size = UDim2.new(1, 0, 0, 22), Style = "numberSmall", TextStrokeTransparency = 0.4, TextStrokeColor3 = Theme.surface, TextXAlignment = Enum.TextXAlignment.Center, Text = "" })
 
 	local ledgerSeen, folded, doneAt = false, false, nil :: number?
 	local override: { stall: string, untilT: number }? = nil

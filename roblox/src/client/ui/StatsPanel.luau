@@ -40,18 +40,18 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 		Ui.text({ Parent = panel, LayoutOrder = nextOrder(), Size = UDim2.new(1, 0, 0, 24), Text = text, TextColor3 = color or Theme.text })
 	end
 	-- Title on the left, a right-aligned note (class, bag count) on the same row.
-	local function heading(title: string, size: number, note: string?, noteColor: Color3?)
-		local r = row(size + 6)
-		Ui.text({ Parent = r, Size = UDim2.fromScale(1, 1), FontFace = Theme.display, TextSize = size, Text = title })
+	local function heading(title: string, style: string, note: string?, noteColor: Color3?)
+		local r = row(Theme.type[style].size + 6)
+		Ui.text({ Parent = r, Size = UDim2.fromScale(1, 1), Style = style, Text = title })
 		if note then
-			Ui.text({ Parent = r, Size = UDim2.fromScale(1, 1), FontFace = Theme.display, TextSize = 18, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = noteColor or Theme.muted, Text = note })
+			Ui.text({ Parent = r, Size = UDim2.fromScale(1, 1), Style = "label", TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = noteColor or Theme.muted, Text = note })
 		end
 	end
 
 	local function tile(parent: Instance, label: string, value: string, coin: boolean)
 		local t = Ui.new("Frame", { Parent = parent, BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(6) })
-		Ui.text({ Parent = t, Size = UDim2.new(1, 0, 0, 14), TextSize = 13, TextColor3 = Theme.muted, Text = label })
-		local v = Ui.text({ Parent = t, Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 20), FontFace = Theme.numeric, TextSize = 18, Text = value })
+		Ui.text({ Parent = t, Size = UDim2.new(1, 0, 0, 14), Style = "caption", TextColor3 = Theme.muted, Text = label })
+		local v = Ui.text({ Parent = t, Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 20), Style = "number", Text = value })
 		if coin then
 			v.TextColor3 = Theme.primary
 			Ui.new("UIPadding", { Parent = v, PaddingLeft = UDim.new(0, 24) })
@@ -61,9 +61,9 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 
 	local function bag(b: { [string]: number })
 		local total = Items.bagCount(b)
-		heading("Bag", 22, if total == 1 then "1 item" else `{total} items`)
+		heading("Bag", "heading", if total == 1 then "1 item" else `{total} items`)
 		-- Caption above the grid so it stays on screen without scrolling.
-		local caption = Ui.text({ Parent = panel, LayoutOrder = nextOrder(), Size = UDim2.new(1, 0, 0, 36), TextSize = 15, RichText = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Theme.muted, Text = if total == 0 then "Empty - go fish, chop or mine to fill these slots." else "Tap a slot to see the item." })
+		local caption = Ui.text({ Parent = panel, LayoutOrder = nextOrder(), Size = UDim2.new(1, 0, 0, 36), Style = "small", RichText = true, TextYAlignment = Enum.TextYAlignment.Top, TextColor3 = Theme.muted, Text = if total == 0 then "Empty - go fish, chop or mine to fill these slots." else "Tap a slot to see the item." })
 		local grid = row(3 * SLOT + 2 * GAP)
 		Ui.new("UIGridLayout", { Parent = grid, CellSize = UDim2.fromOffset(SLOT, SLOT), CellPadding = UDim2.fromOffset(GAP, GAP), SortOrder = Enum.SortOrder.LayoutOrder, HorizontalAlignment = Enum.HorizontalAlignment.Center })
 		for i, item in Items.list do
@@ -75,7 +75,7 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 			})
 			local icon = Ui.icon(item.id, 48, { Parent = slot, Position = UDim2.fromOffset(3, 3) })
 			if owned then
-				Ui.text({ Parent = slot, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -4, 1, -1), Size = UDim2.fromOffset(44, 18), FontFace = Theme.numeric, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Right, TextStrokeColor3 = Theme.surface, TextStrokeTransparency = 0, Text = `{qty}` })
+				Ui.text({ Parent = slot, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -4, 1, -1), Size = UDim2.fromOffset(44, 18), Style = "numberSmall", TextXAlignment = Enum.TextXAlignment.Right, TextStrokeColor3 = Theme.surface, TextStrokeTransparency = 0, Text = `{qty}` })
 			else
 				for _, px in icon:GetChildren() do
 					(px :: Frame).BackgroundTransparency = 0.82 -- a faint silhouette: the item exists, you have not found it yet
@@ -99,13 +99,13 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 		end
 		n = 0
 		if s == "loading" or not s or s.error then
-			heading("Your stats", 26)
+			heading("Your stats", "title")
 			line(if s == "loading" then "Loading..." else "Market offline - try again soon.", if s == "loading" then Theme.muted else Theme.error)
 			return
 		end
 		local b = s.balances or {}
 		local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
-		heading("Your stats", 26, if s.class then Theme.classNames[s.class] else "No class", if s.class then CLASS_COLOR[s.class] else Theme.muted)
+		heading("Your stats", "title", if s.class then Theme.classNames[s.class] else "No class", if s.class then CLASS_COLOR[s.class] else Theme.muted)
 		if not s.class then
 			line("Visit the guild mentor to pick a trade.", Theme.muted)
 		end
@@ -123,7 +123,7 @@ function StatsPanel.mount(gui: ScreenGui, h: Handlers)
 				Ui.icon(best.id, 24, { Parent = r, Position = UDim2.fromOffset(0, 4) })
 				x = 30
 			end
-			Ui.text({ Parent = r, Position = UDim2.fromOffset(x, 0), Size = UDim2.new(1, -x, 1, 0), TextSize = 16, RichText = true, TextColor3 = Theme.muted, Text = `Best catch: <font color="#{(Theme.tiers[s.bestCatch.tier] or Theme.text):ToHex()}"><b>{s.bestCatch.name}</b></font> ({s.bestCatch.tier})` })
+			Ui.text({ Parent = r, Position = UDim2.fromOffset(x, 0), Size = UDim2.new(1, -x, 1, 0), Style = "small", RichText = true, TextColor3 = Theme.muted, Text = `Best catch: <font color="#{(Theme.tiers[s.bestCatch.tier] or Theme.text):ToHex()}"><b>{s.bestCatch.name}</b></font> ({s.bestCatch.tier})` })
 		end
 		bag(b)
 	end

@@ -23,6 +23,23 @@ local Theme = {
 	space = 8,
 }
 
+-- Type scale (DESIGN_SYSTEM s4): every text picks one style, never a raw size.
+--   display (Fondamento): title 30 panel titles, heading 24 names, label 20 buttons/tabs/section labels
+--   body (Merriweather): body 18 sentences, small 16 secondary lines, caption 14 badges/stamps/dense meta only
+--   numeric (Merriweather Bold): price 24 the live offer, number 20 balances/values, numberSmall 16 counts in rows
+Theme.type = {
+	hero = { font = Theme.display, size = 72 },
+	title = { font = Theme.display, size = 30 },
+	heading = { font = Theme.display, size = 24 },
+	label = { font = Theme.display, size = 20 },
+	body = { font = Theme.body, size = 18 },
+	small = { font = Theme.body, size = 16 },
+	caption = { font = Theme.body, size = 14 },
+	price = { font = Theme.numeric, size = 24 },
+	number = { font = Theme.numeric, size = 20 },
+	numberSmall = { font = Theme.numeric, size = 16 },
+} :: { [string]: { font: Font, size: number } }
+
 Theme.merchantNames = { woodcutter = "Woodcutter", fishmonger = "Fishmonger", smith = "Smith" }
 Theme.ore = Theme.iron -- item category name
 -- Rarity colors (spec: common grey, rare blue, epic purple, legendary gold), >= 4.5:1 on background and surface.

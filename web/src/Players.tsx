@@ -77,7 +77,7 @@ export function Players({ config }: { config: Config | null }) {
               . First seen {time(detail.firstSeen)}.
             </p>
             <p>
-              <span className="num" style={{ fontSize: 22, color: "var(--primary)" }}>{detail.balances.coin ?? 0} C</span>{" "}
+              <span className="num big">{detail.balances.coin ?? 0} C</span>{" "}
               {detail.class ? (
                 <span className="badge" style={{ color: `var(--${CLASS_CATEGORY[detail.class]})` }}>
                   {CLASS_NAME[detail.class] ?? detail.class}

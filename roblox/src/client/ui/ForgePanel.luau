@@ -38,20 +38,20 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16) })
 
 	Ui.icon("anvil", 34, { Parent = panel, Position = UDim2.fromOffset(0, 0) })
-	Ui.text({ Parent = panel, Position = UDim2.fromOffset(42, 0), Size = UDim2.fromOffset(200, 36), FontFace = Theme.display, TextSize = 30, Text = "Forge" })
-	local close = Ui.button("Close", false, { Parent = panel, Position = UDim2.new(1, -96, 0, 0), Size = UDim2.fromOffset(96, 34), TextSize = 18 })
+	Ui.text({ Parent = panel, Position = UDim2.fromOffset(42, 0), Size = UDim2.fromOffset(200, 36), Style = "title", Text = "Forge" })
+	local close = Ui.button("Close", false, { Parent = panel, Position = UDim2.new(1, -96, 0, 0), Size = UDim2.fromOffset(96, 34), Style = "label" })
 	Ui.text({
 		Parent = panel,
 		Position = UDim2.fromOffset(0, 40),
 		Size = UDim2.new(1, 0, 0, 38),
-		TextSize = 14,
+		Style = "small",
 		TextColor3 = Theme.muted,
 		Text = "Better tools catch more. Each one is made from the other trades' goods: buy what you lack at their stalls.",
 	})
 	local rows = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 84), Size = UDim2.new(1, 0, 1, -112), BackgroundTransparency = 1 }, {
 		Ui.new("UIListLayout", { Padding = UDim.new(0, 10), SortOrder = Enum.SortOrder.LayoutOrder }),
 	})
-	local status = Ui.text({ Parent = panel, Position = UDim2.new(0, 0, 1, -22), Size = UDim2.new(1, 0, 0, 22), TextSize = 15, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = "" })
+	local status = Ui.text({ Parent = panel, Position = UDim2.new(0, 0, 1, -22), Size = UDim2.new(1, 0, 0, 22), Style = "small", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = "" })
 
 	local open, busy = false, false
 	local render: () -> ()
@@ -88,24 +88,24 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 		end
 		local s = h.state()
 		if not s.forge then
-			Ui.text({ Parent = rows, Size = UDim2.new(1, 0, 0, 60), TextSize = 18, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = "Lighting the forge..." })
+			Ui.text({ Parent = rows, Size = UDim2.new(1, 0, 0, 60), Style = "body", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = "Lighting the forge..." })
 			return
 		end
 		for i, t in s.forge do
 			local row = Ui.new("Frame", { Parent = rows, LayoutOrder = i, Size = UDim2.new(1, 0, 0, 94), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(10) })
 			local slot = Ui.new("Frame", { Parent = row, Size = UDim2.fromOffset(72, 72), BackgroundColor3 = Theme.background }, { Ui.corner() })
 			Ui.icon(`{t.tool}_{t.level}`, 64, { Parent = slot, Position = UDim2.fromOffset(4, 4) })
-			local name = Ui.text({ Parent = row, Position = UDim2.fromOffset(84, -2), Size = UDim2.fromOffset(250, 26), FontFace = Theme.display, TextSize = 22, Text = t.name })
-			Ui.text({ Parent = row, Position = UDim2.fromOffset(84 + name.TextBounds.X + 8, 3), Size = UDim2.fromOffset(60, 20), FontFace = Theme.numeric, TextSize = 13, TextColor3 = Theme.muted, Text = `Lv {t.level}/3` })
+			local name = Ui.text({ Parent = row, Position = UDim2.fromOffset(84, -2), Size = UDim2.fromOffset(250, 26), Style = "heading", Text = t.name })
+			Ui.text({ Parent = row, Position = UDim2.fromOffset(84 + name.TextBounds.X + 8, 3), Size = UDim2.fromOffset(60, 20), Style = "numberSmall", TextColor3 = Theme.muted, Text = `Lv {t.level}/3` })
 			local nxt = t.next
 			Ui.text({
 				Parent = row,
 				Position = UDim2.fromOffset(84, 24),
 				Size = UDim2.new(1, -230, 0, 20),
-				TextSize = 13,
+				Style = "caption",
 				TextColor3 = Theme.muted,
 				Text = if not nxt then `{ForgeView.pct(t.bonus)} chance of a second {ForgeView.CATCH[t.tool]}. The best there is.`
-					elseif t.bonus > 0 then `Now {ForgeView.pct(t.bonus)}. {nxt.name}: {effect(t.tool, nxt.bonus)}.`
+					elseif t.bonus > 0 then `Now {ForgeView.pct(t.bonus)}, next {effect(t.tool, nxt.bonus)}.`
 					else `{nxt.name}: {effect(t.tool, nxt.bonus)}.`,
 			})
 			if nxt then
@@ -120,22 +120,21 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 						Parent = cell,
 						Position = UDim2.fromOffset(28, 0),
 						Size = UDim2.fromOffset(56, 26),
-						FontFace = Theme.numeric,
-						TextSize = 15,
+						Style = "numberSmall",
 						TextColor3 = if have >= c.qty then Theme.success else Theme.error,
 						Text = `{math.min(have, c.qty)}/{c.qty}`,
 					})
 				end
 				local missing = ForgeView.missing(t, s.balances)
 				if #missing == 0 then
-					local b = Ui.button("Forge", true, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), TextSize = 20 })
+					local b = Ui.button("Forge", true, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), Style = "label" })
 					b.Activated:Connect(function()
 						doForge(t.tool)
 					end)
 				else
 					local m = missing[1]
-					local b = Ui.button("Find seller", false, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), TextSize = 17, BackgroundColor3 = Theme.background })
-					Ui.text({ Parent = row, Position = UDim2.new(1, -140, 0, 58), Size = UDim2.fromOffset(148, 18), TextSize = 12, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = `{m.qty} {m.name} at the {MERCHANT[m.merchant]}` })
+					local b = Ui.button("Find seller", false, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), Style = "label", BackgroundColor3 = Theme.background })
+					Ui.text({ Parent = row, Position = UDim2.new(1, -140, 0, 58), Size = UDim2.fromOffset(148, 18), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = `{m.qty} {m.name} at the {MERCHANT[m.merchant]}` })
 					b.Activated:Connect(function()
 						h.onFind(m.merchant, `Buy {m.qty} {m.name} from the {MERCHANT[m.merchant]} (Buy tab)`)
 						open = false
@@ -143,7 +142,7 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 					end)
 				end
 			else
-				Ui.text({ Parent = row, Position = UDim2.new(1, -132, 0, 26), Size = UDim2.fromOffset(132, 22), FontFace = Theme.display, TextSize = 18, TextColor3 = Theme.tiers.legendary, TextXAlignment = Enum.TextXAlignment.Center, Text = "Master tool" })
+				Ui.text({ Parent = row, Position = UDim2.new(1, -132, 0, 26), Size = UDim2.fromOffset(132, 22), Style = "label", TextColor3 = Theme.tiers.legendary, TextXAlignment = Enum.TextXAlignment.Center, Text = "Master tool" })
 			end
 		end
 	end

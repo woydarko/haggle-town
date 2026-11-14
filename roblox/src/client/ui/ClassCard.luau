@@ -36,9 +36,9 @@ function ClassCard.mount(gui: ScreenGui, h: Handlers)
 		Size = UDim2.fromOffset(460, 430),
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16) })
-	Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 24), FontFace = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "Guild mentor" })
+	Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 24), Style = "label", TextColor3 = Theme.muted, Text = "Guild mentor" })
 	local bubble = Ui.new("Frame", { Parent = card, Position = UDim2.fromOffset(0, 28), Size = UDim2.new(1, 0, 0, 112), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(12) })
-	local speech = Ui.text({ Parent = bubble, Size = UDim2.fromScale(1, 1), TextSize = 17, TextYAlignment = Enum.TextYAlignment.Top, Text = "" })
+	local speech = Ui.text({ Parent = bubble, Size = UDim2.fromScale(1, 1), Style = "body", TextYAlignment = Enum.TextYAlignment.Top, Text = "" })
 	local body = Ui.new("Frame", { Parent = card, Position = UDim2.fromOffset(0, 152), Size = UDim2.new(1, 0, 1, -152), BackgroundTransparency = 1 })
 
 	local busy = false
@@ -53,21 +53,21 @@ function ClassCard.mount(gui: ScreenGui, h: Handlers)
 		local info, name, current = INFO[cls], Theme.classNames[cls], h.current()
 		speech.Text = info.talk
 		Ui.icon(info.icon, 36, { Parent = body })
-		Ui.text({ Parent = body, Position = UDim2.fromOffset(44, 2), Size = UDim2.new(1, -44, 0, 32), FontFace = Theme.display, TextSize = 26, TextColor3 = info.color, Text = name })
-		Ui.text({ Parent = body, Position = UDim2.fromOffset(0, 42), Size = UDim2.new(1, 0, 0, 84), TextSize = 16, TextYAlignment = Enum.TextYAlignment.Top, Text = table.concat({
+		Ui.text({ Parent = body, Position = UDim2.fromOffset(44, 2), Size = UDim2.new(1, -44, 0, 32), Style = "heading", TextColor3 = info.color, Text = name })
+		Ui.text({ Parent = body, Position = UDim2.fromOffset(0, 42), Size = UDim2.new(1, 0, 0, 84), Style = "small", TextYAlignment = Enum.TextYAlignment.Top, Text = table.concat({
 			`- Bigger {info.game}`,
 			`- Better odds of rare {info.field}`,
 			"- 15% chance to get two at once",
 			`- The {info.buyer} pays you up to 10% more`,
 		}, "\n") })
-		local status = Ui.text({ Parent = body, Position = UDim2.fromOffset(0, 128), Size = UDim2.new(1, 0, 0, 22), TextSize = 15, TextColor3 = Theme.muted, Text = if current == nil
+		local status = Ui.text({ Parent = body, Position = UDim2.fromOffset(0, 128), Size = UDim2.new(1, 0, 0, 22), Style = "small", TextColor3 = Theme.muted, Text = if current == nil
 			then "Your first pick is free."
 			elseif current == cls then "This is already your trade."
 			else "Switching costs 100 C, once every 5 minutes." })
 		local become = Ui.button(if current == cls then "Your trade" else `Become a {name}`, true, { Parent = body, Position = UDim2.new(0, 0, 1, -48), Size = UDim2.fromOffset(220, 48) })
 		become.Active, become.AutoButtonColor = current ~= cls, current ~= cls
 		become.BackgroundTransparency = if current == cls then 0.6 else 0
-		local back = Ui.button("Ask about another", false, { Parent = body, Position = UDim2.new(1, -196, 1, -48), Size = UDim2.fromOffset(196, 48), TextSize = 18 })
+		local back = Ui.button("Ask about another", false, { Parent = body, Position = UDim2.new(1, -196, 1, -48), Size = UDim2.fromOffset(196, 48), Style = "label" })
 		back.Activated:Connect(function()
 			showIntro()
 		end)
@@ -98,8 +98,8 @@ function ClassCard.mount(gui: ScreenGui, h: Handlers)
 			local info = INFO[cls]
 			local row = Ui.new("TextButton", { Parent = body, Text = "", AutoButtonColor = true, Position = UDim2.fromOffset(0, (i - 1) * 62), Size = UDim2.new(1, 0, 0, 56), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke() })
 			Ui.icon(info.icon, 36, { Parent = row, Position = UDim2.fromOffset(10, 10) })
-			Ui.text({ Parent = row, Position = UDim2.fromOffset(56, 4), Size = UDim2.new(1, -64, 0, 26), FontFace = Theme.display, TextSize = 22, TextColor3 = info.color, Text = Theme.classNames[cls] .. (if current == cls then "  (your trade)" else "") })
-			Ui.text({ Parent = row, Position = UDim2.fromOffset(56, 30), Size = UDim2.new(1, -64, 0, 20), TextSize = 15, TextColor3 = Theme.muted, Text = info.hook })
+			Ui.text({ Parent = row, Position = UDim2.fromOffset(56, 4), Size = UDim2.new(1, -64, 0, 26), Style = "heading", TextColor3 = info.color, Text = Theme.classNames[cls] .. (if current == cls then "  (your trade)" else "") })
+			Ui.text({ Parent = row, Position = UDim2.fromOffset(56, 30), Size = UDim2.new(1, -64, 0, 20), Style = "small", TextColor3 = Theme.muted, Text = info.hook })
 			row.Activated:Connect(function()
 				showClass(cls)
 			end)

@@ -19,16 +19,16 @@ function Hud.mount(gui: ScreenGui, onStats: () -> (), onLedger: () -> (), onForg
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }) })
 
-	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), FontFace = Theme.numeric, TextSize = 20, TextColor3 = Theme.primary, Text = "..." })
+	local coin = Ui.text({ Parent = bar, LayoutOrder = 1, Size = UDim2.fromOffset(130, 32), Style = "number", TextColor3 = Theme.primary, Text = "..." })
 	Ui.new("UIPadding", { Parent = coin, PaddingLeft = UDim.new(0, 34) })
 	Ui.new("ImageLabel", { Parent = coin, Name = "CoinIcon", Position = UDim2.fromOffset(-34, 2), Size = UDim2.fromOffset(28, 28), BackgroundTransparency = 1, Image = Icons.coin })
-	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), FontFace = Theme.display, TextSize = 20, TextColor3 = Theme.muted, Text = "No class" })
-	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), FontFace = Theme.numeric, TextSize = 20, Text = "Bag 0" })
-	local ledger = Ui.button("Ledger (L)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(94, 30), TextSize = 16 })
+	local badge = Ui.text({ Parent = bar, LayoutOrder = 2, Size = UDim2.fromOffset(90, 32), Style = "label", TextColor3 = Theme.muted, Text = "No class" })
+	local bag = Ui.text({ Parent = bar, LayoutOrder = 3, Size = UDim2.fromOffset(80, 32), Style = "number", Text = "Bag 0" })
+	local ledger = Ui.button("Ledger (L)", false, { Parent = bar, LayoutOrder = 4, Size = UDim2.fromOffset(94, 30), Style = "label" })
 	ledger.Activated:Connect(onLedger)
-	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 5, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
+	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 5, Size = UDim2.fromOffset(100, 30), Style = "label" })
 	stats.Activated:Connect(onStats)
-	local forge = Ui.button("Forge (F)", false, { Parent = bar, LayoutOrder = 6, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
+	local forge = Ui.button("Forge (F)", false, { Parent = bar, LayoutOrder = 6, Size = UDim2.fromOffset(100, 30), Style = "label" })
 	forge.Activated:Connect(onForge)
 	local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
 

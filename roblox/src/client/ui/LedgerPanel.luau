@@ -32,8 +32,7 @@ local function stamp(parent: Instance, text: string, x: UDim): TextLabel
 		Size = UDim2.fromOffset(46, 22),
 		BackgroundTransparency = 0,
 		BackgroundColor3 = Theme.background,
-		FontFace = Theme.numeric,
-		TextSize = 14,
+		Style = "numberSmall",
 		TextXAlignment = Enum.TextXAlignment.Center,
 		TextWrapped = false,
 		Text = text,
@@ -51,10 +50,10 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(16) })
 
-	Ui.text({ Parent = panel, Size = UDim2.fromOffset(300, 36), FontFace = Theme.display, TextSize = 30, Text = "Market Ledger" })
-	local header = Ui.text({ Parent = panel, Position = UDim2.fromOffset(300, 8), Size = UDim2.new(1, -410, 0, 22), TextSize = 16, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "" })
-	local close = Ui.button("Close", false, { Parent = panel, Position = UDim2.new(1, -96, 0, 0), Size = UDim2.fromOffset(96, 34), TextSize = 18 })
-	local note = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 40), Size = UDim2.new(1, 0, 0, 18), TextSize = 14, TextColor3 = Theme.error, Text = "" })
+	Ui.text({ Parent = panel, Size = UDim2.fromOffset(300, 36), Style = "title", Text = "Market Ledger" })
+	local header = Ui.text({ Parent = panel, Position = UDim2.fromOffset(300, 8), Size = UDim2.new(1, -410, 0, 22), Style = "small", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "" })
+	local close = Ui.button("Close", false, { Parent = panel, Position = UDim2.new(1, -96, 0, 0), Size = UDim2.fromOffset(96, 34), Style = "label" })
+	local note = Ui.text({ Parent = panel, Position = UDim2.fromOffset(0, 40), Size = UDim2.new(1, 0, 0, 18), Style = "caption", TextColor3 = Theme.error, Text = "" })
 	local body = Ui.new("Frame", { Parent = panel, Position = UDim2.fromOffset(0, 62), Size = UDim2.new(1, 0, 1, -62), BackgroundTransparency = 1 })
 
 	local function render(v: any)
@@ -62,7 +61,7 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 		header.Text = if v then v.header or "" else ""
 		note.Text = if v and v.note then v.note else ""
 		if not v or v.state == "loading" or #(v.merchants or {}) == 0 then
-			Ui.text({ Parent = body, Size = UDim2.fromScale(1, 1), TextSize = 20, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = if v then "Opening the ledger..." else "Can't reach the market. Try again soon." })
+			Ui.text({ Parent = body, Size = UDim2.fromScale(1, 1), Style = "body", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = if v then "Opening the ledger..." else "Can't reach the market. Try again soon." })
 			return
 		end
 
@@ -73,16 +72,16 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 		for i, m in v.merchants do
 			local color = CATEGORY_COLOR[m.id] or Theme.text
 			local c = card(row, { LayoutOrder = i, Size = UDim2.new(1 / 3, -8, 1, 0) })
-			Ui.text({ Parent = c, Size = UDim2.new(1, 0, 0, 24), FontFace = Theme.display, TextSize = 20, TextColor3 = color, Text = m.name })
-			Ui.text({ Parent = c, Size = UDim2.new(1, 0, 0, 24), FontFace = Theme.numeric, TextSize = 13, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = `purse {m.purse} C` })
+			Ui.text({ Parent = c, Size = UDim2.new(1, 0, 0, 24), Style = "label", TextColor3 = color, Text = m.name })
+			Ui.text({ Parent = c, Size = UDim2.new(1, 0, 0, 24), Style = "numberSmall", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = `purse {m.purse} C` })
 			for j, label in { "Buy", "Sell" } do
-				Ui.text({ Parent = c, Position = UDim2.new(1, -98 + (j - 1) * 50, 0, 24), Size = UDim2.fromOffset(46, 16), TextSize = 12, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = label })
+				Ui.text({ Parent = c, Position = UDim2.new(1, -98 + (j - 1) * 50, 0, 24), Size = UDim2.fromOffset(46, 16), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = label })
 			end
 			for k, it in m.items do
 				local y = 42 + (k - 1) * 28
 				local r = Ui.new("Frame", { Parent = c, Position = UDim2.fromOffset(0, y), Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1 })
 				Ui.icon(it.id, 20, { Parent = r, Position = UDim2.fromOffset(0, 3) })
-				Ui.text({ Parent = r, Position = UDim2.fromOffset(26, 0), Size = UDim2.new(1, -128, 0, 18), TextSize = 13, TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, TextColor3 = Theme.tiers[it.tier] or Theme.text, Text = it.name .. (TREND[it.trend] or "") })
+				Ui.text({ Parent = r, Position = UDim2.fromOffset(26, 0), Size = UDim2.new(1, -128, 0, 18), Style = "caption", TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, TextColor3 = Theme.tiers[it.tier] or Theme.text, Text = it.name .. (TREND[it.trend] or "") })
 				local bar = Ui.new("Frame", { Parent = r, Position = UDim2.fromOffset(26, 20), Size = UDim2.new(1, -128, 0, 3), BorderSizePixel = 0, BackgroundColor3 = Theme.border })
 				Ui.new("Frame", { Parent = bar, Size = UDim2.fromScale(math.clamp((it.stockPct or 0) / 200, 0, 1), 1), BorderSizePixel = 0, BackgroundColor3 = color })
 				stamp(r, `{it.buy}`, UDim.new(1, -98))
@@ -92,7 +91,7 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 
 		-- Recent deals
 		local deals = card(body, { Position = UDim2.fromOffset(0, 186), Size = UDim2.new(0.62, -6, 1, -186) })
-		Ui.text({ Parent = deals, Size = UDim2.new(1, 0, 0, 22), FontFace = Theme.display, TextSize = 18, Text = "Recent deals" })
+		Ui.text({ Parent = deals, Size = UDim2.new(1, 0, 0, 22), Style = "label", Text = "Recent deals" })
 		for i, line in v.deals do
 			if i > 5 then
 				break
@@ -104,20 +103,20 @@ function LedgerPanel.mount(gui: ScreenGui, h: Handlers)
 				Ui.icon(id, 20, { Parent = deals, Position = UDim2.fromOffset(0, y + 4) })
 				x = 26
 			end
-			Ui.text({ Parent = deals, Position = UDim2.fromOffset(x, y), Size = UDim2.new(1, -x, 0, 28), TextSize = 13, TextColor3 = if i == 1 then Theme.text else Theme.muted, Text = line })
+			Ui.text({ Parent = deals, Position = UDim2.fromOffset(x, y), Size = UDim2.new(1, -x, 0, 28), Style = "caption", TextColor3 = if i == 1 then Theme.text else Theme.muted, Text = line })
 		end
 
 		-- Top traders
 		local top = card(body, { Position = UDim2.new(0.62, 6, 0, 186), Size = UDim2.new(0.38, -6, 1, -186) })
-		Ui.text({ Parent = top, Size = UDim2.new(1, 0, 0, 22), FontFace = Theme.display, TextSize = 18, Text = "Top traders" })
-		Ui.text({ Parent = top, Size = UDim2.new(1, 0, 0, 22), TextSize = 12, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "coin + goods" })
+		Ui.text({ Parent = top, Size = UDim2.new(1, 0, 0, 22), Style = "label", Text = "Top traders" })
+		Ui.text({ Parent = top, Size = UDim2.new(1, 0, 0, 22), Style = "caption", TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Right, Text = "coin + goods" })
 		if #v.leaders == 0 then
-			Ui.text({ Parent = top, Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 22), TextSize = 14, TextColor3 = Theme.muted, Text = "No traders yet" })
+			Ui.text({ Parent = top, Position = UDim2.fromOffset(0, 30), Size = UDim2.new(1, 0, 0, 22), Style = "caption", TextColor3 = Theme.muted, Text = "No traders yet" })
 		end
 		for i, l in v.leaders do
 			local y = 28 + (i - 1) * 28
-			Ui.text({ Parent = top, Position = UDim2.fromOffset(0, y), Size = UDim2.new(1, -80, 0, 26), TextSize = 15, TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = `{i}. {l.name}` })
-			Ui.text({ Parent = top, Position = UDim2.new(1, -80, 0, y), Size = UDim2.fromOffset(80, 26), FontFace = Theme.numeric, TextSize = 15, TextColor3 = Theme.primary, TextXAlignment = Enum.TextXAlignment.Right, Text = `{l.worth} C` })
+			Ui.text({ Parent = top, Position = UDim2.fromOffset(0, y), Size = UDim2.new(1, -80, 0, 26), Style = "small", TextWrapped = false, TextTruncate = Enum.TextTruncate.AtEnd, Text = `{i}. {l.name}` })
+			Ui.text({ Parent = top, Position = UDim2.new(1, -80, 0, y), Size = UDim2.fromOffset(80, 26), Style = "numberSmall", TextXAlignment = Enum.TextXAlignment.Right, Text = `{l.worth} C` })
 		end
 	end
 

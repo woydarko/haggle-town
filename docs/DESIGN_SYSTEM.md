@@ -50,7 +50,7 @@ Every interactive component defines default, hover, focus, disabled, loading, su
 
 ## Accessibility
 - Web: full keyboard navigation, visible focus ring, semantic headings, chart has a data table alternative, `prefers-reduced-motion` stops chart animation (shows final state + step buttons). Contrast checked with a contrast checker in Phase 5.
-- Roblox: text min 18 px, no information by color alone (arrows + labels), chat works with keyboard Enter; gamepad selection for Accept/Leave.
+- Roblox: text min 18 px for sentences; secondary lines 16 px and caption 14 px only for badges, stamps and dense meta; no information by color alone (arrows + labels), chat works with keyboard Enter; gamepad selection for Accept/Leave.
 
 ## Screen states
 | Screen | Empty | Loading | Error | Populated |
@@ -126,8 +126,8 @@ W4 Web dashboard (desktop)
 W5 Web game (stretch): HUD row, three gather buttons, merchant picker, haggle panel identical to W3.
 
 ### 4. Type scale
-Web: h1 40/48 Fraunces 600, h2 28/36, h3 22/28, h4 18/24, body 16/24 Plex Sans, small 14/20, caption 12/16; numbers Plex Mono 500; max line length 70ch. Fallbacks: Georgia, system-ui, ui-monospace. Fonts from Google Fonts (OFL).
-Roblox: titles FredokaOne 28 px, body BuilderSans 18-20 px, numbers RobotoMono 20 px; TextScaled off, sizes fixed with UIScale for small screens.
+Web (CSS tokens `--fs-*` in web/src/theme.css): title 40/48 Fraunces 600 (h1), heading 22/28 (h2, card titles), subhead 18/24 (h3, merchant names), body 16/24 Plex Sans, small 14/20 (chips, legends, badges), caption 12/16 (tags); numbers Plex Mono 500, big numbers at heading size; max line length 70ch. Fallbacks: Georgia, system-ui, ui-monospace. Fonts from Google Fonts (OFL).
+Roblox (`Theme.type`, every text sets `Style`, never a raw size; updated 2026-11-14): display Fondamento: title 30 (panel titles), heading 24 (names), label 20 (buttons, tabs, section labels); body Merriweather: body 18 (sentences, chat), small 16 (secondary lines), caption 14 (badges, stamps, dense meta only); numeric Merriweather Bold: price 24 (live offer), number 20 (balances, values), numberSmall 16 (counts in rows); hero 72 only for the fishing bobber. Colors: text for content, muted for secondary, primary only for the player's coin and the live offer, success/warning/error for status, class/category/tier colors only where they carry meaning. TextScaled off, sizes fixed with UIScale for small screens.
 
 ### 5. Color roles
 Background #F4ECDD, surface #FFF9EE, border #D9C7A6, text #2B2118, muted #6E5D4A, primary #B4471F, accents wood #965A16 / fish #1B7270 / iron #4F5D6B, success #2F7A3B, warning #8C5F07, error #A12C2C, focus #1F5FBF. Light theme only. Contrast ratios (antislop-contrast, 2026-11-13): text 13.4, muted 5.4, primary 4.6, wood 4.7, fish 4.9, iron 5.8, warning 4.8 on background; light text on primary 5.2, on tiers 5.4-5.9.

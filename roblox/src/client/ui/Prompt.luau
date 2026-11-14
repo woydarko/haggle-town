@@ -39,12 +39,12 @@ function Prompt.start()
 			Size = UDim2.fromOffset(44, 40),
 			BackgroundColor3 = Theme.primary,
 			Text = keyText(prompt, input),
-			TextScaled = true,
-			FontFace = Theme.display,
+			FontFace = Theme.type.heading.font,
+			TextSize = Theme.type.heading.size,
 			TextColor3 = Theme.onPrimary,
 		}, { Ui.corner(), Ui.pad(6) })
-		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 6), Size = UDim2.new(1, -66, 0, 24), FontFace = Theme.display, TextSize = 20, Text = prompt.ActionText })
-		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 30), Size = UDim2.new(1, -66, 0, 20), TextSize = 15, TextColor3 = Theme.muted, Text = prompt.ObjectText })
+		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 6), Size = UDim2.new(1, -66, 0, 24), Style = "label", Text = prompt.ActionText })
+		Ui.text({ Parent = card, Position = UDim2.fromOffset(60, 30), Size = UDim2.new(1, -66, 0, 20), Style = "small", TextColor3 = Theme.muted, Text = prompt.ObjectText })
 		card.Activated:Connect(function()
 			prompt:InputHoldBegin()
 			task.wait()
