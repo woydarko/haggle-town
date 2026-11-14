@@ -1,195 +1,196 @@
-import { useEffect, useState, type CSSProperties } from "react";
-import { MERCHANT_NAME, type Market } from "../api.ts";
-import { itemName } from "../items.ts";
+import type { Chat, Config, Deal } from "../api.ts";
+import { MERCHANT_NAME } from "../api.ts";
+import { CATEGORY_MERCHANT, itemName, ITEMS, type Category } from "../items.ts";
 import { reveal } from "./reveal.ts";
 import { Sprite, type SpriteName } from "./Sprites.tsx";
-import { merchantStats, type MerchantKey } from "./stats.ts";
+import { ago, latestLines, merchantStats, priceMoves, type MerchantKey } from "./stats.ts";
+import type { Live } from "./useLive.ts";
 
-const i = (n: number) => ({ "--i": n }) as CSSProperties;
-const reduced = () => typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-const STEPS: { title: string; text: string; icons: SpriteName[] }[] = [
-  { title: "Gather", text: "Chop wood, fish the lake and mine ore around the valley.", icons: ["axe", "rod", "pickaxe"] },
-  { title: "Haggle in chat", text: "Type an offer the way you would at a stall. The merchant answers in character and counters.", icons: ["wood", "fish", "ore"] },
-  { title: "The merchant signs the deal", text: "Each merchant holds its own testnet account and signs the deal. The contract checks it before it settles.", icons: [] },
-  { title: "Prices move", text: "Stock and purses change, so tomorrow's price follows what everyone traded today.", icons: [] },
-];
-
-export function HowItWorks() {
-  return (
-    <section id="how" className="section">
-      <h2 ref={reveal} className="reveal">How a deal happens</h2>
-      <ol className="steps stagger">
-        {STEPS.map((s, n) => (
-          <li key={s.title} ref={reveal} className="reveal lcard step" style={i(n)}>
-            <span className="step-n">{n + 1}</span>
-            <div className="step-icons">
-              {s.icons.length ? s.icons.map((ic) => <Sprite key={ic} name={ic} size={36} />) : <img src="/brand/coin.webp" alt="" width={36} height={36} />}
-            </div>
-            <h3>{s.title}</h3>
-            <p className="muted">{s.text}</p>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-const MERCHANTS: Record<MerchantKey, { trade: string; persona: string; icon: SpriteName; lines: string[] }> = {
+/** Per-merchant facts. tool: the pixel tool players gather that merchant's goods with (shown as the portrait badge). */
+const STALLS: Record<MerchantKey, { trade: string; persona: string; tool: SpriteName; coin: string; fallback: string }> = {
   woodcutter: {
-    trade: "Trades wood",
-    persona: "Gruff, few words, proud of honest work.",
-    icon: "wood",
-    lines: [
-      "Twenty for oak? My axe would laugh at you. Thirty, and I'll throw in a splinter for free.",
-      "Pile's taller than me today. Take five at twenty-four and help an old man out.",
-      "Wood's thin this week. Thirty-five, not a coin less.",
-    ],
+    trade: "Buys and sells wood",
+    persona: "Gruff and short with words. Jokes about his axe, never about the price.",
+    tool: "axe",
+    coin: "$WOOD",
+    fallback: "Wood's thin this week. Thirty-five, not a coin less.",
   },
   fishmonger: {
-    trade: "Trades fish",
-    persona: "Cheerful, chatty, knows every harbour rumour.",
-    icon: "fish",
-    lines: [
-      "Ooh, cheeky! The gulls tried that price this morning too. Eighty-five and it's yours, love.",
-      "Boats came in heavy today, I'm drowning in mackerel! Seventy each, quick before they start smelling.",
-      "Nets came back empty, darling. Ninety-six, and that's me being generous.",
-    ],
+    trade: "Buys and sells fish",
+    persona: "Talks more than she sells. Knows which boats came in heavy today.",
+    tool: "rod",
+    coin: "$FISH",
+    fallback: "Boats came in heavy today, I'm drowning in mackerel! Seventy each, quick before they start smelling.",
   },
   smith: {
-    trade: "Trades ore",
-    persona: "Proud and terse. Respects good iron.",
-    icon: "ore",
-    lines: ["Ten? This is iron, not pebbles. One fifty.", "Forge is cold, ore is scarce. Four hundred. Final.", "You sell good ore. One thirty each. Fair."],
+    trade: "Buys and sells ore",
+    persona: "Respects good iron and players who don't waste his time.",
+    tool: "pickaxe",
+    coin: "$SMITH",
+    fallback: "Forge is cold, ore is scarce. Four hundred. Final.",
   },
 };
 
-function MerchantCard({ k, n, purse, from }: { k: MerchantKey; n: number; purse: number | null; from: string | null }) {
-  const m = MERCHANTS[k];
-  const [active, setActive] = useState(false);
-  const [line, setLine] = useState(0);
-  useEffect(() => {
-    if (!active || reduced()) return;
-    const id = setInterval(() => setLine((l) => (l + 1) % m.lines.length), 2500);
-    return () => clearInterval(id);
-  }, [active, m.lines.length]);
-  const on = () => setActive(true);
-  const off = () => setActive(false);
+const KEYS: MerchantKey[] = ["woodcutter", "fishmonger", "smith"];
+const CATEGORY_OF: Record<MerchantKey, Category> = { woodcutter: "wood", fishmonger: "fish", smith: "ore" };
+
+function Said({ c, fallback, now }: { c: Chat | null; fallback: string; now: number }) {
+  if (!c) {
+    return (
+      <figure className="said">
+        <blockquote>{fallback}</blockquote>
+        <figcaption>No haggling at this stall yet today. A line from earlier days.</figcaption>
+      </figure>
+    );
+  }
   return (
-    <article
-      ref={reveal}
-      className={`reveal lcard merchant-card${active ? " talking" : ""}`}
-      style={i(n)}
-      tabIndex={0}
-      onMouseEnter={on}
-      onMouseLeave={off}
-      onFocus={on}
-      onBlur={off}
-      aria-label={`${MERCHANT_NAME[k]}, ${m.trade.toLowerCase()}`}
-    >
-      <p className="bubble" aria-live="polite">
-        {m.lines[line]}
-      </p>
-      <div className="portrait">
-        <img src={`/brand/${k}.webp`} alt={`${MERCHANT_NAME[k]}, merchant`} width={160} height={160} loading="lazy" />
-        <span className="portrait-badge">
-          <Sprite name={m.icon} size={28} />
-        </span>
+    <figure className="said">
+      <blockquote>{c.line}</blockquote>
+      <figcaption>
+        Said to a player {ago(c.at, now)}, {c.mood}
+      </figcaption>
+    </figure>
+  );
+}
+
+export function Stalls({ live }: { live: Live }) {
+  const now = live.at ?? Date.now();
+  const lines = live.feed ? latestLines(live.feed.chat) : null;
+  const stats = live.market ? merchantStats(live.market) : null;
+  return (
+    <section id="merchants" className="stalls">
+      <div className="stalls-head" ref={reveal}>
+        <h2>The three stalls</h2>
+        <p className="muted">The quote under each merchant is the last thing they said to a real player in the game.</p>
       </div>
-      <h3>{MERCHANT_NAME[k]}</h3>
-      <p className="trade">{m.trade}</p>
-      <p className="muted">{m.persona}</p>
-      {purse !== null && (
-        <dl className="live">
-          <div>
-            <dt>Purse</dt>
-            <dd className="num">{purse.toLocaleString("en-US")} C</dd>
-          </div>
-          {from && (
-            <div>
-              <dt>Cheapest</dt>
-              <dd className="num">{from}</dd>
+      {KEYS.map((k, n) => {
+        const s = STALLS[k];
+        const stat = stats?.find((x) => x.key === k);
+        return (
+          <article key={k} className={`stall${n % 2 ? " flip" : ""}`}>
+            <div className="portrait">
+              <img src={`/brand/${k}.webp`} alt={`${MERCHANT_NAME[k]}, as seen in the game`} width={200} height={200} loading="lazy" />
+              <span className="badge-tool" title={`Gathered with the ${s.tool}`}>
+                <Sprite name={s.tool} size={30} />
+              </span>
             </div>
+            <div className="stall-body">
+              <h3>{MERCHANT_NAME[k]}</h3>
+              <p className="trade">{s.trade}</p>
+              <p className="muted">{s.persona}</p>
+              {lines ? <Said c={lines[k]} fallback={s.fallback} now={now} /> : <p className="state">{live.failed ? "Can't load what the merchants said right now." : "Listening at the stall..."}</p>}
+              <p className="stall-meta">
+                <span>
+                  Purse{" "}
+                  <strong className="num">{stat ? `${stat.purse.toLocaleString("en-US")} C` : live.failed ? "unavailable" : "checking..."}</strong>
+                </span>
+                <a href="/app/#/coins">Back the {MERCHANT_NAME[k]} with {s.coin}</a>
+              </p>
+            </div>
+          </article>
+        );
+      })}
+    </section>
+  );
+}
+
+function DealTape({ deals, config, now }: { deals: Deal[]; config: Config | null; now: number }) {
+  const recent = [...deals].sort((a, b) => b.at - a.at).slice(0, 6);
+  if (!recent.length) return <p className="state">No deals settled yet. The first one shows up here within ten seconds.</p>;
+  return (
+    <ol className="tape">
+      {recent.map((d) => (
+        <li key={d.txHash}>
+          <span className="tape-what">
+            {MERCHANT_NAME[d.merchant.split(".")[0]] ?? d.merchant} {d.side === "buy" ? "sold" : "bought"} {d.qty} {itemName(d.good)}
+          </span>
+          <span className="num">{d.unitPrice} C</span>
+          <span className="tape-when">{ago(d.at, now)}</span>
+          {config && (
+            <a href={`${config.explorerBase}/txns/${d.txHash}`} target="_blank" rel="noreferrer" aria-label={`Transaction for ${itemName(d.good)}, opens the explorer`}>
+              tx
+            </a>
           )}
-        </dl>
-      )}
-      <p className="hint muted">Hover or focus to hear a line</p>
-    </article>
+        </li>
+      ))}
+    </ol>
   );
 }
 
-export function Merchants({ market }: { market: Market[] | null }) {
-  const stats = market ? merchantStats(market) : null;
+export function PriceBoard({ live }: { live: Live }) {
+  const now = live.at ?? Date.now();
+  const moves = live.market ? priceMoves(live.prevMarket, live.market) : {};
+  const ask = new Map(live.market?.map((r) => [r.item, r]));
   return (
-    <section id="merchants" className="section">
-      <h2 ref={reveal} className="reveal">Meet the merchants</h2>
-      <p ref={reveal} className="reveal lead muted">
-        Three AI merchants, each with a purse, a stall and a temper. Numbers below are live from the market.
-      </p>
-      <div className="merchant-grid">
-        {(["woodcutter", "fishmonger", "smith"] as const).map((k, n) => {
-          const s = stats?.find((x) => x.key === k);
-          return (
-            <MerchantCard
-              key={k}
-              k={k}
-              n={n}
-              purse={s ? s.purse : null}
-              from={s?.cheapest ? `${itemName(s.cheapest.item)} ${s.cheapest.ask} C` : null}
-            />
-          );
-        })}
+    <section id="board" className="board-band">
+      <div className="board-in">
+        <div className="board-head" ref={reveal}>
+          <h2>Today's board</h2>
+          <p>
+            Asking prices for all 12 goods, read from the market contract every ten seconds. A price that moves while you watch gets a ▲ or ▼.
+            {live.failed && live.market && <strong> Numbers paused, retrying.</strong>}
+          </p>
+        </div>
+        <div className="board">
+          {!live.market ? (
+            <p className="state">{live.failed ? "Can't reach the market right now. The board fills in as soon as it answers." : "Chalking up today's prices..."}</p>
+          ) : (
+            KEYS.map((k) => (
+              <div key={k} className="board-col">
+                <h3>
+                  <Sprite name={CATEGORY_OF[k] as SpriteName} size={26} /> {CATEGORY_MERCHANT[CATEGORY_OF[k]]}
+                </h3>
+                <dl>
+                  {ITEMS.filter((i) => i.category === CATEGORY_OF[k]).map((i) => {
+                    const r = ask.get(i.id);
+                    const m = moves[i.id];
+                    return (
+                      <div key={i.id} className="board-row">
+                        <dt>{i.name}</dt>
+                        <dd>
+                          {m && <span className={`move ${m}`} aria-label={m === "up" ? "went up" : "went down"}>{m === "up" ? "▲" : "▼"}</span>}
+                          <span key={r?.ask} className={`num price${m ? " flash" : ""}`}>{r ? `${r.ask} C` : "n/a"}</span>
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+              </div>
+            ))
+          )}
+        </div>
+        <div className="tape-wrap">
+          <h3>Last deals settled</h3>
+          {live.feed ? <DealTape deals={live.feed.deals} config={live.config} now={now} /> : <p className="state">{live.failed ? "Can't load the deal list right now." : "Fetching the last deals..."}</p>}
+        </div>
       </div>
     </section>
   );
 }
 
-export function WhyItMatters() {
-  const cols = [
-    { title: "For players", items: ["No wallet, no seed phrase, no fee popups.", "Prices react to what you gather and sell.", "Every merchant haggles in its own voice."] },
-    { title: "For game devs", items: ["No hand-tuned price tables to patch.", "The AI proposes a price; the contract enforces the room.", "Every deal is signed by the merchant and visible on chain."] },
-  ];
+export function WhoSetsThePrice({ guarded }: { guarded: number | null }) {
   return (
-    <section className="section">
-      <h2 ref={reveal} className="reveal">Why a living market</h2>
-      <div className="why stagger">
-        {cols.map((c, n) => (
-          <div key={c.title} ref={reveal} className="reveal lcard" style={i(n)}>
-            <h3>{c.title}</h3>
-            <ul className="ticks">
-              {c.items.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+    <section id="rules" className="rules">
+      <div className="rules-figure" ref={reveal}>
+        {guarded !== null ? (
+          <>
+            <span className="big num">{guarded.toLocaleString("en-US")}</span>
+            <span>offers pulled back into the allowed price room so far</span>
+          </>
+        ) : (
+          <span className="state">The pulled-back count shows here when the market answers.</span>
+        )}
       </div>
-    </section>
-  );
-}
-
-export function BackerCoins() {
-  const coins = [
-    { sym: "$WOOD", who: "Woodcutter" },
-    { sym: "$FISH", who: "Fishmonger" },
-    { sym: "$SMITH", who: "Smith" },
-  ];
-  return (
-    <section className="section">
-      <h2 ref={reveal} className="reveal">Back a merchant</h2>
-      <p ref={reveal} className="reveal lead muted">
-        Supply follows the merchant's net worth, rebased once per market day, at most 5%. Web only, never inside the game.
-      </p>
-      <div className="coin-row">
-        {coins.map((c, n) => (
-          <a key={c.sym} ref={reveal} className="reveal lcard coin-card" style={i(n)} href="/app/#/coins">
-            <img src="/brand/coin.webp" alt="" width={56} height={56} />
-            <span>
-              <strong className="num">{c.sym}</strong>
-              <span className="muted"> backs the {c.who}</span>
-            </span>
-          </a>
-        ))}
+      <div className="rules-text">
+        <h2>Who sets the price</h2>
+        <p>
+          The merchant's AI writes what it says and proposes a number. It doesn't get the last word. Fixed pricing rules give each item a floor and a
+          ceiling for the day, an offer outside that room is pulled back before the player sees it, and the contract refuses any deal that still slips
+          through.
+        </p>
+        <p>
+          Players never deal with any of this. There is no wallet to connect and no fee to pay; a game account submits every deal on their behalf.
+        </p>
       </div>
     </section>
   );
@@ -197,20 +198,20 @@ export function BackerCoins() {
 
 const FAQ: [string, string][] = [
   ["Is this real money?", "No. Everything runs on NEAR testnet. Coin is the in-game currency and can never be exchanged for money or Robux."],
-  ["Do players need a wallet?", "No. You play with your Roblox account. A game relayer submits each deal and pays the fees, so you never see a wallet, seed phrase or fee."],
-  ["What does the AI actually decide?", "Only what the merchant says and the price it proposes. The price room comes from fixed pricing rules, offers outside it are pulled back, and the contract rejects any deal that slips through."],
-  ["How do prices move?", "Each of the 12 goods has its own supply and demand. Sell a pile of oak and the Woodcutter pays less for it; buy the shelf empty and the price climbs. Nobody patches the table."],
-  ["What are backer coins?", "Each merchant has a memecoin ($WOOD, $FISH, $SMITH) whose supply follows that merchant's net worth, rebased for every holder once per market day, capped at 5%."],
-  ["Can I play now?", "Open the market to watch prices, merchant purses and every deal as it settles. The Roblox link goes up here once the experience is public."],
+  ["Do players need a wallet?", "No. You play with your Roblox account. A game account submits each deal and pays the fee, so you never see a wallet, a seed phrase or a fee."],
+  ["What does the AI actually decide?", "What the merchant says and the price it proposes. The price room comes from fixed rules, and the contract rejects any deal outside it."],
+  ["Why do prices change?", "Each of the 12 goods has its own supply and demand. Sell a pile of oak and the Woodcutter pays less for it; buy the shelf empty and the price climbs."],
+  ["What are backer coins?", "Each merchant has a coin ($WOOD, $FISH, $SMITH) whose supply follows that merchant's net worth. It is rebased for every holder once per market day, by at most 5%, and only exists on this website, never inside the game."],
+  ["Where is the game?", "On Roblox. The public link goes here once the experience is published; until then the dashboard shows the same market live."],
 ];
 
 export function Faq() {
   return (
-    <section id="faq" className="section narrow">
-      <h2 ref={reveal} className="reveal">Questions at the stall</h2>
+    <section id="faq" className="faq-sec">
+      <h2 ref={reveal}>Questions people ask at the stall</h2>
       <div className="faq">
-        {FAQ.map(([q, a], n) => (
-          <details key={q} ref={reveal} className="reveal" style={i(n)}>
+        {FAQ.map(([q, a]) => (
+          <details key={q}>
             <summary>{q}</summary>
             <div className="answer">
               <p>{a}</p>

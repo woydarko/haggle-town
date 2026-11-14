@@ -1,4 +1,4 @@
-import { MERCHANT_NAME, merchantKey, type Deal, type Market } from "../api.ts";
+import { MERCHANT_NAME, merchantKey, type Chat, type Deal, type Market } from "../api.ts";
 import { itemName } from "../items.ts";
 
 export type MerchantKey = "woodcutter" | "fishmonger" | "smith";
@@ -26,4 +26,25 @@ export function lastDealLine(deals: Deal[], now: number): string {
   if (!d) return "Market just opened";
   const key = merchantKey(d.merchant);
   return `${MERCHANT_NAME[key] ?? key} ${d.side === "buy" ? "sold" : "bought"} ${d.qty} ${itemName(d.good)} @ ${d.unitPrice} C, ${ago(d.at, now)}`;
+}
+
+/** The newest chat line each merchant said, or null when it has said nothing yet. */
+export function latestLines(chat: Chat[]): Record<MerchantKey, Chat | null> {
+  const out: Record<MerchantKey, Chat | null> = { woodcutter: null, fishmonger: null, smith: null };
+  for (const c of chat) {
+    const k = merchantKey(c.merchant) as MerchantKey;
+    if (k in out && (!out[k] || c.at > out[k]!.at)) out[k] = c;
+  }
+  return out;
+}
+
+/** Items whose ask moved since the previous poll; unchanged and new items are left out. */
+export function priceMoves(prev: Market[] | null, next: Market[]): Record<string, "up" | "down"> {
+  const before = new Map(prev?.map((r) => [r.item, r.ask]));
+  const out: Record<string, "up" | "down"> = {};
+  for (const r of next) {
+    const b = before.get(r.item);
+    if (b !== undefined && b !== r.ask) out[r.item] = r.ask > b ? "up" : "down";
+  }
+  return out;
 }

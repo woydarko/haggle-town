@@ -19,6 +19,12 @@
   --warning: #b07a12;
   --error: #a12c2c;
   --focus: #1f5fbf;
+  /* Landing palette B: dusk teal from the village sky, lamplight gold as the one accent (all pairs >= 5.9:1). */
+  --night: #1f3b42;
+  --night-2: #284a52;
+  --on-night: #f4ecdd;
+  --on-night-muted: #d8c9ac;
+  --lamp: #f2c66b;
   --font-display: "Fraunces", Georgia, serif;
   --font-body: "IBM Plex Sans", system-ui, sans-serif;
   --font-num: "IBM Plex Mono", ui-monospace, monospace;
