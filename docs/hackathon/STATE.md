@@ -42,8 +42,8 @@ Single source of truth for `/hackaton`. Update at every phase change and checkpo
 - AI: provider ai.sumopod.com OpenAI-compatible gateway, model deepseek-v4.1-flash-1017 (~0.5-0.9 s; LLM_TIMEOUT_MS 6000, LLM_THINKING on; glm-5.3-flash took 6-11 s), key from user, set in .env + Railway 2026-11-14 (kenari.id minimax-m2-7-highspeed returned 503 all_providers_failed on 2026-11-13). NEAR AI Cloud not used (sign-in failed); switchable via env.
 
 ## Phase cursor and clock
-Current phase: 4 build v2 (plan docs/superpowers/plans/2026-11-11-haggle-town-v2.md, ledger .superpowers/sdd/2026-11-11-haggle-town-v2/progress.md)
-Last updated: 2026-11-10 20:14 +0700 (design + docs approved by user)
+Current phase: 5-6 verify + submit (plan docs/superpowers/plans/2026-11-14-final-fixes.md; feature freeze)
+Last updated: 2026-11-14 19:40 +0700
 
 | Phase | Status | Budget | Planned start -> end | Actual end | Notes |
 | --- | --- | --- | --- | --- | --- |
@@ -75,7 +75,7 @@ Over-budget warnings sent: none
 - Testnet deploys pre-approved: Yes (user, 2026-11-10) (mainnet always needs per-action approval)
 - Sponsor protocols or bounty tracks: none required; hints AGENT NPCS, SOCIAL LOGIN, NEAR INTENTS, NEP-245
 - Contract language: Rust (near-sdk-rs)
-- Audit gate: x-ray Not run | solidity-auditor n/a (Rust) | fizz Not run | tests Not run
+- Audit gate: x-ray Not run | solidity-auditor n/a (Rust) | fizz Not run | tests pass 2026-11-14 (cargo 47, server 130, web build, sim)
 - Deployments file: docs/hackathon/DEPLOYMENTS.md
 
 ## Scope
@@ -98,6 +98,7 @@ Over-budget warnings sent: none
 | 2026-11-11 15:11 +0700 | ~64 h | v2 plan 5 / 12 (backend v2: items, gather sessions, classes, stats, haggle items; smoke on v2 testnet) | none; Roblox v2 (Tasks 6-9) next; production still v1 |
 | 2026-11-12 (v3) | ~2.5 days | v3 plan 9 / 12 (map, nodes + respawn, real chop/mine/fish with animations, sfx/vfx, Creator Store trees/rocks/houses, catch card, custom prompts); user playtested chop/mine/fish OK | stretch T10/T11 pending user call; T12 perf + full playtest, final review, then v2 Task 12 deploy + publish (user OK) |
 | 2026-11-13 (v3) | ~1.7 days | v3 plan 10 / 12 core done (T1-T9 + T12); stretch T10/T11 cut by user; golden path on testnet passes; haggle lock-out bug fixed (dd2e047); 10-min soak clean, 60 fps avg focused | next: final review, then v2 Task 12 deploy (Railway v2 + publish, user OK) |
+| 2026-11-14 19:40 +0700 (final) | ~11 h | final-fixes T1 guardrail log, T2 on-chain PriceOutOfRoom proof, W3 merchants take better-than-room offers (contract redeployed with --cfg near: panics had lost their error codes), T3 README + LICENSE | next: T4 Railway redeploy + Roblox publish (user OK), repo public (user OK), demo, post, form |
 | 2026-11-13 16:40 +0700 (v4) | ~38 h | v4 plan 9 / 9 (quarter-area village map, fonts, varied merchant lines + sentence chips, in-world Market Ledger from the web API, first-session guide, ForgeGUI coin icon; items keep tier tiles after ForgeGUI credits ran out; phone scaling + contrast fixes; antislop Delivery Gate PASS) | next: final whole-branch review, then v2 Task 12 deploy (Railway v2 + Roblox publish, user OK) |
 
 ## Unresolved
