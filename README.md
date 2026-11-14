@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://www.roblox.com/games/87878138386141/Haggle-Town">Play on Roblox</a> ·
+  <a href="https://x.com/woydarko/status/2121681819477422418">Demo video</a> ·
   <a href="https://backend-production-fccb03fb.up.railway.app">Website</a> ·
   <a href="https://backend-production-fccb03fb.up.railway.app/app/">Live dashboard</a> ·
   <a href="https://testnet.nearblocks.io/address/haggletown-v2.testnet">Contract on nearblocks</a> ·
@@ -98,13 +99,15 @@
 The player types; the model talks; the rules and the contract decide. Every arrow below exists in the code.
 
 ```mermaid
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','actorBkg':'#1F3B42','actorBorder':'#284A52','actorTextColor':'#F4ECDD','actorLineColor':'#A8661C','signalColor':'#8A3415','signalTextColor':'#2B2118','sequenceNumberColor':'#FFF9EE','labelBoxBkgColor':'#1F3B42','labelTextColor':'#F4ECDD'}}}%%
 sequenceDiagram
     autonumber
-    actor P as Player
+    participant P as Player
     participant G as Roblox server
     participant B as Backend (Fastify)
     participant L as LLM
     participant C as Market contract (NEAR testnet)
+    rect rgb(244, 236, 221)
     P->>G: types "can u do 16?" at the Woodcutter
     G->>B: POST /rbx/haggle (HMAC signed)
     B->>B: parse the offer, read stock and purse, compute the price room (pricing.rs)
@@ -119,6 +122,7 @@ sequenceDiagram
     C->>C: verify merchant signature, nonce, expiry and the price room again
     C-->>B: settled (or refused with PriceOutOfRoom)
     B-->>G: new balances, shown in game as Coin
+    end
 ```
 
 ## Architecture
@@ -126,40 +130,37 @@ sequenceDiagram
 Three trust boundaries: the Roblox server can only ask, the backend holds the keys, and the contract has the last word on every price.
 
 ```mermaid
-flowchart LR
+%%{init: {'theme':'base','themeVariables':{'fontFamily':'Georgia, serif','primaryColor':'#FFF9EE','primaryTextColor':'#2B2118','primaryBorderColor':'#A8661C','lineColor':'#A8661C','clusterBkg':'#1F3B42','clusterBorder':'#284A52','titleColor':'#F4ECDD','edgeLabelBackground':'#F4ECDD'}}}%%
+flowchart TB
     subgraph RB["Roblox (public experience)"]
         RC["Game client<br/>no keys, no chain words"]
-        RS["Game server<br/>HMAC secret only"]
+        RS["Game server<br/>holds one HMAC secret"]
     end
-    subgraph BE["Backend on Railway (TypeScript, Fastify)"]
-        HE["Haggle engine<br/>personas + offer parser"]
-        PR["pricing port<br/>tested on 768 Rust vectors"]
-        KS["Merchant keys<br/>woodcutter / fishmonger / smith"]
+    subgraph BE["Backend on Railway (TypeScript)"]
+        HE["Haggle engine<br/>personas, offer parser,<br/>pricing port (768 vectors)"]
+        KS["Merchant keys<br/>woodcutter, fishmonger, smith"]
         RQ["Relayer queue<br/>pays gas, submits txs"]
-        API["/api for the website"]
     end
-    LLM["LLM endpoint<br/>OpenAI-compatible"]
-    FB["Deterministic fallback<br/>same personas"]
+    LLM["LLM<br/>deterministic fallback<br/>if slow or down"]
     subgraph NR["NEAR testnet (Rust)"]
-        MC["Market contract<br/>haggletown-v2.testnet<br/>NEP-245 items, purses, settle_deal, day_tick"]
-        CO["Backer coins<br/>$WOOD $FISH $SMITH, NEP-141"]
+        MC["Market contract<br/>haggletown-v2.testnet<br/>settle_deal, day_tick"]
+        CO["Backer coins<br/>$WOOD $FISH $SMITH"]
     end
-    WEB["Website + dashboard<br/>React"]
-    ECO["economy/src/pricing.rs<br/>the one rules file"]
+    WEB["Website + dashboard<br/>React, GET /api/*"]
+    ECO["pricing.rs<br/>the one rules file"]
 
     RC -- "chat, gather, accept" --> RS
     RS -- "HMAC-signed POST /rbx/*" --> HE
     HE -- "persona + price room" --> LLM
-    HE -. "slow or down" .-> FB
-    HE -- "clamp proposed price" --> PR
-    HE -- "sign accepted deal" --> KS
+    HE -- "sign the clamped deal" --> KS
     KS -- "signed deal" --> RQ
     RQ -- "settle_deal, use_items, buy_tool" --> MC
-    MC -- "views: stock, purses, balances" --> API
-    API -- "GET /api/*" --> WEB
     CO -- "tick() reads merchant worth" --> MC
+    MC -- "views via /api" --> WEB
     ECO -. "compiled into" .-> MC
-    ECO -. "ported and vector-tested" .-> PR
+    ECO -. "ported to" .-> HE
+    classDef decides fill:#F2C66B,stroke:#8A3415,stroke-width:2px,color:#2B2118
+    class MC decides
 ```
 
 - **Players are not accounts.** A player is a contract-internal id (`roblox:<UserId>`). One game relayer account pays every fee, so nobody has to own NEAR to play.
