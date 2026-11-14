@@ -12,7 +12,7 @@ local Ui = require(script.Parent.Ui)
 
 local ForgePanel = {}
 
-local W, H = 560, 430
+local W, H = 560, 448 -- three 94 px rows + header + the status line under them
 local MERCHANT = Theme.merchantNames
 
 export type Handlers = {

@@ -37,6 +37,7 @@ Judges and teammates read this to reproduce the on-chain demo. Testnet only unle
 - Seed data already on-chain: 3 merchants registered (woodcutter/wood, fishmonger/fish, smith/iron), 10000 coin, stock 100, target 100; get_market shows ask 50/80/150, bid 40/64/120
 - Reference transactions for the demo script:
   - Guardrail proof (2026-11-14): a deal the Woodcutter really signed, pine at 1 coin (under the floor), refused with `PriceOutOfRoom`: [FLb7YA38r3r1ESFuHoapirMX5bFsbGteK8mTVfVgN2zN](https://testnet.nearblocks.io/txns/FLb7YA38r3r1ESFuHoapirMX5bFsbGteK8mTVfVgN2zN). Re-run: `cd server && node --env-file=../.env scripts/guardrail-proof.ts`.
+  - v2 code redeploy (2026-11-14 18:40, `use_items` for the Forge): [J9HJt49ARMaWbCUjC5piHSk1ZLQuSAVcQP5Nnxu6bsDz](https://testnet.nearblocks.io/txns/J9HJt49ARMaWbCUjC5piHSk1ZLQuSAVcQP5Nnxu6bsDz). First prod forge (Sturdy Axe, burned 3 Copper + 3 Sardine): [CdK2vq3c...](https://testnet.nearblocks.io/txns/CdK2vq3cNoQ34xJbZnCosBAC2Q4yJpTygARm4gdc3qHk).
   - v2 code redeploy (2026-11-14, `price_ok` rule + `--cfg near` build so panics keep their error codes): [AD3fESQnVrLEgGczFzNfJaWF8hCq8zrFAg6EkmJYn961](https://testnet.nearblocks.io/txns/AD3fESQnVrLEgGczFzNfJaWF8hCq8zrFAg6EkmJYn961). Smoke after redeploy: SMOKE OK.
 - Fallback if RPC or chain is down: switch to fallback RPC; recorded demo video; LLM replay mode for merchant replies
 
