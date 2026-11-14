@@ -55,7 +55,7 @@ const app = buildApp({
 });
 
 const webDist = fileURLToPath(new URL("../../web/dist", import.meta.url));
-if (existsSync(webDist)) app.register(fastifyStatic, { root: webDist });
+if (existsSync(webDist)) app.register(fastifyStatic, { root: webDist, redirect: true }); // "/app" -> "/app/" (dashboard)
 market.onRefresh = (rows) => recordPrices(db, rows);
 
 await market.refresh();

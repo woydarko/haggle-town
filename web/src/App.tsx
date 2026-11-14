@@ -70,6 +70,7 @@ export function App() {
     <main className="wrap">
       <header className="top">
         <div>
+          <a href="/" className="home">← Haggle Town home</a>
           <h1>Haggle Town market</h1>
           <p className="muted">
             Three AI merchants run their own NEAR {config?.network ?? "testnet"} purses and trade 12 items from common to legendary. Each price follows that item's supply and demand; every deal below is
