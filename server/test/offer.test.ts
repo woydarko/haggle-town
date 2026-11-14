@@ -16,3 +16,8 @@ test("plural and indonesian names", () => {
   assert.equal(parseOffer("jual emas 2").item, "ore_gold");
   assert.equal(parseOffer("ancient redwood please").item, "wood_redwood");
 });
+test("a number right before the goods is a count, not a price", () => {
+  assert.deepEqual(parseOffer("buy 3 sardine"), { side: "buy", item: "fish_sardine", qty: 3 });
+  assert.deepEqual(parseOffer("buy 1 golden koi"), { side: "buy", item: "fish_koi", qty: 1 });
+  assert.deepEqual(parseOffer("sardine 30"), { item: "fish_sardine", unitPrice: 30 }, "a number after the goods is still a price");
+});

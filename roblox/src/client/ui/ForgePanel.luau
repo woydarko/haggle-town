@@ -104,7 +104,9 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 				Size = UDim2.new(1, -230, 0, 20),
 				TextSize = 13,
 				TextColor3 = Theme.muted,
-				Text = if nxt then `Now {effect(t.tool, t.bonus)}. {nxt.name}: {ForgeView.pct(nxt.bonus)}.` else `{effect(t.tool, t.bonus)}. The best there is.`,
+				Text = if not nxt then `{ForgeView.pct(t.bonus)} chance of a second {ForgeView.CATCH[t.tool]}. The best there is.`
+					elseif t.bonus > 0 then `Now {ForgeView.pct(t.bonus)}. {nxt.name}: {effect(t.tool, nxt.bonus)}.`
+					else `{nxt.name}: {effect(t.tool, nxt.bonus)}.`,
 			})
 			if nxt then
 				local costs = Ui.new("Frame", { Parent = row, Position = UDim2.fromOffset(84, 46), Size = UDim2.new(1, -230, 0, 26), BackgroundTransparency = 1 }, {
@@ -132,7 +134,7 @@ function ForgePanel.mount(gui: ScreenGui, h: Handlers)
 					end)
 				else
 					local m = missing[1]
-					local b = Ui.button("Find seller", false, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), TextSize = 17 })
+					local b = Ui.button("Find seller", false, { Parent = row, Position = UDim2.new(1, -132, 0, 16), Size = UDim2.fromOffset(132, 40), TextSize = 17, BackgroundColor3 = Theme.background })
 					Ui.text({ Parent = row, Position = UDim2.new(1, -140, 0, 58), Size = UDim2.fromOffset(148, 18), TextSize = 12, TextColor3 = Theme.muted, TextXAlignment = Enum.TextXAlignment.Center, Text = `{m.qty} {m.name} at the {MERCHANT[m.merchant]}` })
 					b.Activated:Connect(function()
 						h.onFind(m.merchant, `Buy {m.qty} {m.name} from the {MERCHANT[m.merchant]} (Buy tab)`)
