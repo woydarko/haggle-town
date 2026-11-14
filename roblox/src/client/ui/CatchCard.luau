@@ -14,7 +14,7 @@ local CatchCard = {}
 local SHOWN = UDim2.new(0.5, 0, 0, 64)
 local HIDDEN = UDim2.new(0.5, 0, 0, -160)
 
-export type Catch = { item: string, name: string, tier: string, qty: number }
+export type Catch = { item: string, name: string, tier: string, qty: number, bonus: string? }
 
 function CatchCard.mount(gui: ScreenGui)
 	local card = Ui.new("TextButton", {
@@ -63,7 +63,10 @@ function CatchCard.mount(gui: ScreenGui)
 		holder:ClearAllChildren()
 		Ui.icon(c.item, 72, { Parent = holder, Position = UDim2.fromOffset(4, 4) })
 		name.Text = c.name
-		qty.Text = if c.qty > 1 then `x{c.qty} - added to your bag` else "Added to your bag"
+		qty.Text = if c.qty > 1 and c.bonus == "trade" then `x{c.qty} - your trade's bonus`
+			elseif c.qty > 1 and c.bonus then `x{c.qty} - {c.bonus} bonus!`
+			elseif c.qty > 1 then `x{c.qty} - added to your bag`
+			else "Added to your bag"
 		if badge then
 			badge:Destroy()
 		end

@@ -18,7 +18,15 @@ check(s.index == 3 and s.target == "market", "something in the bag -> market")
 s = Quest.step({ class = "logger", bagCount = 0, deals = 1, ledgerSeen = false })
 check(s.index == 4 and s.target == "ledger", "first deal done -> ledger")
 s = Quest.step({ class = "logger", bagCount = 0, deals = 2, ledgerSeen = true })
-check(s.index == 5 and s.target == nil, "all done")
+check(s.index == 6 and s.target == nil, "forge state unknown -> all done (never blocks)")
+local need = { name = "Copper", qty = 2, stall = "smith" }
+s = Quest.step({ class = "logger", bagCount = 0, deals = 2, ledgerSeen = true, forge = { tool = "Axe", level = 1, need = need } })
+check(s.index == 5 and s.target == "market" and s.stall == "smith", "Worn axe, copper missing -> go to the smith")
+check(string.find(s.detail, "2 more Copper", 1, true) ~= nil, "forge step names what to buy")
+s = Quest.step({ class = "logger", bagCount = 0, deals = 2, ledgerSeen = true, forge = { tool = "Axe", level = 1 } })
+check(s.index == 5 and s.target == nil, "goods ready -> forge it")
+s = Quest.step({ class = "logger", bagCount = 0, deals = 2, ledgerSeen = true, forge = { tool = "Axe", level = 2 } })
+check(s.index == 6, "Sturdy axe -> all done")
 s = Quest.step({ class = nil, bagCount = 5, deals = 3, ledgerSeen = true })
 check(s.index == 1 and s.target == "guild", "out of order: first unmet step, never blocks")
 
@@ -34,8 +42,8 @@ check(Quest.step({ class = "fisher", bagCount = 0, deals = 0, ledgerSeen = false
 check(Quest.step({ class = "miner", bagCount = 2, deals = 0, ledgerSeen = false }).stall == "smith", "miner sells to the smith")
 
 local BANNED = { "crypto", "blockchain", "nft", "token", "wallet", "near", "gas", "transaction" }
-for i = 1, 5 do
-	local st = Quest.step({ class = if i > 1 then "fisher" else nil, bagCount = if i == 3 then 1 else 0, deals = if i >= 4 then 1 else 0, ledgerSeen = i == 5 })
+for i = 1, 6 do
+	local st = Quest.step({ class = if i > 1 then "fisher" else nil, bagCount = if i == 3 then 1 else 0, deals = if i >= 4 then 1 else 0, ledgerSeen = i >= 5, forge = if i == 5 then { tool = "Rod", level = 1, need = { name = "Pine", qty = 3, stall = "woodcutter" } } else nil })
 	for _, text in { st.title, st.detail } do
 		local lower = string.lower(text)
 		for _, w in BANNED do

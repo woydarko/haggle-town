@@ -3,11 +3,12 @@
 -- not done yet, so doing things out of order never locks anyone out. client/ui/QuestTracker.luau shows it and puts a
 -- marker on the target (positions from shared/Village.luau).
 
-export type State = { class: string?, bagCount: number, deals: number, ledgerSeen: boolean }
+-- forge: shared/ForgeView.hint for the trade tool (nil while unknown: the step is skipped, never blocks).
+export type State = { class: string?, bagCount: number, deals: number, ledgerSeen: boolean, forge: { tool: string, level: number, need: { name: string, qty: number, stall: string }? }? }
 export type Step = { index: number, title: string, detail: string, target: string?, gate: string?, stall: string? }
 
 local Quest = {}
-Quest.COUNT = 4
+Quest.COUNT = 5
 
 local BY_CLASS = {
 	logger = { gate = "Woods", stall = "woodcutter", detail = "Take the west gate to the woods. Press 1 for the axe and click a tree." },
@@ -36,7 +37,21 @@ function Quest.step(s: State): Step
 	if not s.ledgerSeen then
 		return { index = 4, title = "Check the Market Ledger", detail = "Tap Ledger in the top bar (or press L) to see every price. Your deal just moved one.", target = "ledger" }
 	end
-	return { index = 5, title = "You know the market", detail = "Gather rarer goods, sell where the price is high, climb the top traders.", target = nil }
+	local f = s.forge
+	if f and f.level < 2 then
+		local need = f.need
+		if need then
+			return {
+				index = 5,
+				title = "Forge a better tool",
+				detail = `A Sturdy {f.tool} needs {need.qty} more {need.name}. Buy it from the {MERCHANT[need.stall]} (Buy tab), then press F to forge.`,
+				target = "market",
+				stall = need.stall,
+			}
+		end
+		return { index = 5, title = "Forge a better tool", detail = `You have the goods. Press F (Forge in the top bar) and upgrade your {f.tool}.`, target = nil }
+	end
+	return { index = 6, title = "You know the market", detail = "Gather rarer goods, forge better tools, sell where the price is high.", target = nil }
 end
 
 return Quest

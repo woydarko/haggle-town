@@ -1,5 +1,5 @@
 --!strict
--- Top bar: coin, class badge, bag count, Ledger and Stats buttons; toast line + offline banner (DESIGN_SYSTEM W2).
+-- Top bar: coin, class badge, bag count, Ledger, Stats and Forge buttons; toast line + offline banner (DESIGN_SYSTEM W2).
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local Theme = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Theme"))
@@ -9,13 +9,13 @@ local Icons = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Ico
 
 local Hud = {}
 
-function Hud.mount(gui: ScreenGui, onStats: () -> (), onLedger: () -> ())
+function Hud.mount(gui: ScreenGui, onStats: () -> (), onLedger: () -> (), onForge: () -> ())
 	local bar = Ui.new("Frame", {
 		Name = "Hud",
 		Parent = gui,
 		AnchorPoint = Vector2.new(0.5, 0),
 		Position = UDim2.new(0.5, 0, 0, 8),
-		Size = UDim2.fromOffset(590, 44), -- 130+90+80+94+100 + 4x16 gaps + padding
+		Size = UDim2.fromOffset(700, 44), -- 130+90+80+94+100+100 + 5x16 gaps + padding
 		BackgroundColor3 = Theme.background,
 	}, { Ui.corner(), Ui.stroke(), Ui.pad(8), Ui.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 16), VerticalAlignment = Enum.VerticalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }) })
 
@@ -28,6 +28,8 @@ function Hud.mount(gui: ScreenGui, onStats: () -> (), onLedger: () -> ())
 	ledger.Activated:Connect(onLedger)
 	local stats = Ui.button("Stats (Tab)", false, { Parent = bar, LayoutOrder = 5, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
 	stats.Activated:Connect(onStats)
+	local forge = Ui.button("Forge (F)", false, { Parent = bar, LayoutOrder = 6, Size = UDim2.fromOffset(100, 30), TextSize = 16 })
+	forge.Activated:Connect(onForge)
 	local CLASS_COLOR = { fisher = Theme.fish, logger = Theme.wood, miner = Theme.iron }
 
 	local toast = Ui.text({ Parent = gui, AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 58), Size = UDim2.fromOffset(440, 28), TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Theme.muted, Text = "", TextStrokeTransparency = 0.8 })

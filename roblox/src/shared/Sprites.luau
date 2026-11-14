@@ -67,6 +67,29 @@ SPRITES.rod = {
 	palette = { w = "7A4E24", l = "5B626C", k = "5B626C", r = "B4471F" },
 }
 
+-- Forge levels recolour the tools: 1 Worn (grey iron), 2 Sturdy (copper), 3 Master (bright steel, gold trim).
+local LEVEL_PALETTE = {
+	{ m = "6F7880", h = "C9D0D6", w = "7A4E24", l = "5B626C", k = "5B626C", r = "B4471F" },
+	{ m = "C86A34", h = "F6AE78", w = "6B3F1C", l = "5B626C", k = "C86A34", r = "2A5FB4" },
+	{ m = "B9C3CC", h = "FFFFFF", w = "4A2C14", l = "8A5E00", k = "F3C232", r = "8A3FC2" },
+}
+for _, tool in { "axe", "pickaxe", "rod" } do
+	local base = SPRITES[tool]
+	for level, pal in LEVEL_PALETTE do
+		local p = {}
+		for ch, hex in base.palette do
+			p[ch] = pal[ch] or hex
+		end
+		SPRITES[`{tool}_{level}`] = { rows = base.rows, palette = p }
+	end
+end
+
+-- Anvil for the Forge button and panel: o outline, h face highlight, a body.
+SPRITES.anvil = {
+	rows = { E, E, "oooooooooooo", "ohhhhhhhhhho", ".oaaaaaaaao.", "..ooaaaaoo..", "...oaaaao...", "...oaaaao...", "..oaaaaaao..", ".oaaaaaaaao.", ".oooooooooo.", E },
+	palette = { o = "2C3036", h = "C9D0D6", a = "6F7880" },
+}
+
 local Sprites = { SIZE = 12 }
 
 function Sprites.get(id: string): Sprite?

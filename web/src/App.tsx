@@ -209,6 +209,32 @@ export function App() {
             </section>
 
             <section className="card">
+              <h2>Forge</h2>
+              <p className="muted">
+                Players upgrade their tools with goods from the other trades, so every class buys from every merchant. Forged goods are burned on
+                chain.
+              </p>
+              {data.feed.forges?.length ? (
+                <ul className="feed">
+                  {data.feed.forges.map((f) => (
+                    <li key={f.txHash}>
+                      <strong>{f.player}</strong> forged a {f.level === 3 ? "Master" : "Sturdy"} {f.tool[0].toUpperCase() + f.tool.slice(1)}, burning{" "}
+                      {Object.entries(f.cost)
+                        .map(([id, n]) => `${n} ${itemName(id)}`)
+                        .join(" + ")}{" "}
+                      <span className="muted">{ago(f.at)}</span>{" "}
+                      <a href={tx(f.txHash)} target="_blank" rel="noreferrer">
+                        tx
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="muted">No tools forged yet.</p>
+              )}
+            </section>
+
+            <section className="card">
               <h2>Guardrail</h2>
               <p className="muted">
                 The AI picks the words and proposes a price. Prices outside the rules in pricing.rs are pulled back before a deal is offered, and the

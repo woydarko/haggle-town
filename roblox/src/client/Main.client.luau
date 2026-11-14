@@ -12,6 +12,8 @@ local Hud = require(script.Parent.ui.Hud)
 local HagglePanel = require(script.Parent.ui.HagglePanel)
 local ClassCard = require(script.Parent.ui.ClassCard)
 local StatsPanel = require(script.Parent.ui.StatsPanel)
+local ForgePanel = require(script.Parent.ui.ForgePanel)
+local ForgeView = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ForgeView"))
 local Run = require(script.Parent.minigames.Run)
 
 local remotes = ReplicatedStorage:WaitForChild("Remotes", math.huge) -- created after the map build (a few seconds)
@@ -28,6 +30,7 @@ local GetLedger = remotes:WaitForChild("GetLedger") :: RemoteFunction
 local OpenClassCard = remotes:WaitForChild("OpenClassCard") :: RemoteEvent
 local GatherFx = remotes:WaitForChild("GatherFx") :: RemoteEvent
 local CastAt = remotes:WaitForChild("CastAt") :: RemoteFunction
+local ForgeRemote = remotes:WaitForChild("Forge") :: RemoteFunction
 local Anims = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Anims"))
 local Regions = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Regions"))
 local FishFx = require(script.Parent.fx.FishFx)
@@ -48,6 +51,8 @@ end)
 
 local balances: { [string]: number } = {}
 local class: string? = nil
+local forge: { any }? = nil -- tool levels + next recipes from /rbx/state
+local board: { [string]: number } = {} -- item id -> ask, for the haggle panel's Buy tab
 
 local stats = StatsPanel.mount(gui, {
 	fetch = function()
@@ -65,7 +70,25 @@ local ledgerPanel = require(script.Parent.ui.LedgerPanel).mount(gui, {
 		end
 	end,
 })
-local hud = Hud.mount(gui, stats.toggle, ledgerPanel.toggle)
+local hud: any = nil
+local forgePanel = ForgePanel.mount(gui, {
+	state = function()
+		return { forge = forge, balances = balances, class = class }
+	end,
+	forge = function(tool)
+		return ForgeRemote:InvokeServer(tool)
+	end,
+	onFind = function(stall, text)
+		if quest then
+			quest.point(stall)
+		end
+		hud.toast(text)
+	end,
+	onForged = function(r)
+		hud.toast(`{r.name} forged!`)
+	end,
+})
+hud = Hud.mount(gui, stats.toggle, ledgerPanel.toggle, forgePanel.toggle)
 local catchCard = require(script.Parent.ui.CatchCard).mount(gui)
 -- Guide: the tracker needs class, bag and deal count; deals come from the stats remote every 8 s.
 local dealCount = 0
@@ -81,13 +104,14 @@ task.spawn(function()
 	end
 end)
 quest = require(script.Parent.ui.QuestTracker).mount(gui, function()
-	return { class = class, bagCount = Items.bagCount(balances), deals = dealCount }
+	return { class = class, bagCount = Items.bagCount(balances), deals = dealCount, forge = ForgeView.hint(forge, class, balances) }
 end)
 require(script.Parent.ui.Prompt).start()
 
 local function setBalances(b: { [string]: number })
 	balances = b
 	hud.balances(b)
+	forgePanel.refresh()
 end
 
 local panel = HagglePanel.mount(gui, {
@@ -100,6 +124,12 @@ local panel = HagglePanel.mount(gui, {
 	onBalances = setBalances,
 	bag = function()
 		return balances
+	end,
+	board = function()
+		return board
+	end,
+	needs = function(merchant)
+		return ForgeView.needsFrom(forge, class, balances, merchant)
 	end,
 })
 
@@ -132,8 +162,18 @@ workspace.CurrentCamera:GetPropertyChangedSignal("ViewportSize"):Connect(fit)
 
 StateChanged.OnClientEvent:Connect(function(state)
 	hud.offline(state.offline == true)
+	if state.forge then
+		forge = state.forge -- before balances, so the refresh below draws both
+	end
+	if state.board then
+		for _, r in state.board do
+			board[r.item] = r.ask
+		end
+	end
 	if state.balances then
 		setBalances(state.balances)
+	elseif state.forge then
+		forgePanel.refresh()
 	end
 	if state.class then
 		class = state.class
@@ -158,6 +198,8 @@ UserInputService.InputBegan:Connect(function(input, processed)
 		stats.toggle()
 	elseif not processed and input.KeyCode == Enum.KeyCode.L then
 		ledgerPanel.toggle()
+	elseif not processed and input.KeyCode == Enum.KeyCode.F then
+		forgePanel.toggle()
 	end
 end)
 

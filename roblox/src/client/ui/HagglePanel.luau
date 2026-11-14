@@ -2,7 +2,9 @@
 -- Bottom-center haggle panel (DESIGN_SYSTEM W3), kept short so a player reads it at a glance:
 --   header: merchant name, mood tag, patience as three dots
 --   bubble: the merchant's line, then the offer (item icon + stamped price); "Why?" swaps in the reasoning
---   chips: before a counter, one per bag item this merchant buys (icon + count); after a counter, two price chips
+--   chips: before a counter, Sell / Buy tabs: Sell = one chip per bag item this merchant buys (icon + count),
+--          Buy = the merchant's goods (icon + ask; +N badge = what the Forge still needs), one tap asks for them;
+--          after a counter, two price chips
 --          (fair = meet in the middle, bold = push back, shared/Suggest.luau) that send a sentence in one tap
 --   input + Send for free text, Accept / Leave.
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,6 +24,8 @@ export type Handlers = {
 	accept: (dealId: string) -> any,
 	onBalances: (b: any) -> (),
 	bag: () -> { [string]: number },
+	board: () -> { [string]: number }, -- item id -> current ask
+	needs: (merchant: string) -> { [string]: number }, -- item id -> how many the Forge still needs
 }
 
 local WIDTH, HEIGHT = 520, 304
@@ -86,6 +90,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 	local busy = false
 	local saidLine, reason, showingWhy = "", "", false
 	local submit: () -> ()
+	local mode = "sell" -- chip tab before a counter: "sell" or "buy"
 
 	local function setCounter(c: any)
 		deal = c
@@ -134,16 +139,55 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		end
 	end
 
-	-- Before a counter: one chip per item of this merchant's category in the bag; tap fills "sell 1 <item> for ".
+	-- Before a counter: Sell / Buy tabs, then the chips of that tab.
+	--   Sell: one chip per item of this merchant's category in the bag; tap fills "sell 1 <item> for ".
+	--   Buy: the merchant's four goods with their ask; a +N badge marks what the Forge still needs; tap asks for N (or 1).
 	local function renderChips()
 		clearChips()
+		for i, m in { "sell", "buy" } do
+			local tab = Ui.button(if m == "sell" then "Sell" else "Buy", mode == m, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(56, 40), TextSize = 17 })
+			tab.Activated:Connect(function()
+				mode = m
+				renderChips()
+			end)
+		end
+		local goods = Items.ofCategory(Items.MERCHANT_CATEGORY[merchant :: string] or "")
+		if mode == "buy" then
+			local asks, needs = h.board(), h.needs(merchant :: string)
+			for i, item in goods do
+				local need = needs[item.id]
+				local chip = Ui.button("", false, { Parent = chips, LayoutOrder = 2 + i, Size = UDim2.fromOffset(84, 40) })
+				Ui.icon(item.id, 28, { Parent = chip, Position = UDim2.fromOffset(6, 6) })
+				Ui.text({ Parent = chip, Position = UDim2.fromOffset(36, 0), Size = UDim2.new(1, -38, 1, 0), FontFace = Theme.numeric, TextSize = 14, TextWrapped = false, Text = if asks[item.id] then `{asks[item.id]}C` else "?" })
+				if need then
+					Ui.text({
+						Parent = chip,
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.new(1, 6, 0, -6),
+						Size = UDim2.fromOffset(30, 16),
+						BackgroundTransparency = 0,
+						BackgroundColor3 = Theme.primary,
+						FontFace = Theme.numeric,
+						TextSize = 12,
+						TextColor3 = Theme.onPrimary,
+						TextXAlignment = Enum.TextXAlignment.Center,
+						Text = `+{need}`,
+					}).ZIndex = 2
+				end
+				chip.Activated:Connect(function()
+					input.Text = `buy {need or 1} {string.lower(item.name)}`
+					submit()
+				end)
+			end
+			return
+		end
 		local b = h.bag()
 		local count = 0
-		for i, item in Items.ofCategory(Items.MERCHANT_CATEGORY[merchant :: string] or "") do
+		for i, item in goods do
 			local qty = b[item.id] or 0
 			if qty > 0 then
 				count += 1
-				local chip = Ui.button("", false, { Parent = chips, LayoutOrder = i, Size = UDim2.fromOffset(84, 40) })
+				local chip = Ui.button("", false, { Parent = chips, LayoutOrder = 2 + i, Size = UDim2.fromOffset(84, 40) })
 				Ui.icon(item.id, 28, { Parent = chip, Position = UDim2.fromOffset(8, 6) })
 				Ui.text({ Parent = chip, Position = UDim2.fromOffset(40, 0), Size = UDim2.new(1, -44, 1, 0), FontFace = Theme.numeric, TextSize = 16, Text = `x{qty}` })
 				chip.Activated:Connect(function()
@@ -154,7 +198,7 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 			end
 		end
 		if count == 0 then
-			Ui.text({ Parent = chips, Size = UDim2.fromScale(1, 1), TextSize = 15, TextColor3 = Theme.muted, Text = "Nothing to sell here yet. You can still buy." })
+			Ui.text({ Parent = chips, LayoutOrder = 3, Size = UDim2.new(1, -128, 1, 0), TextSize = 15, TextColor3 = Theme.muted, Text = "Nothing of theirs in your bag. Tap Buy." })
 		end
 	end
 
@@ -292,7 +336,18 @@ function HagglePanel.mount(gui: ScreenGui, h: Handlers)
 		setPatience(3)
 		setBusy(false)
 		round, shown = 0, {}
+		-- Open on Buy when the Forge needs this merchant's goods or there is nothing to sell here.
+		local needs = h.needs(name)
+		local sellable = false
+		for _, item in Items.ofCategory(Items.MERCHANT_CATEGORY[name] or "") do
+			sellable = sellable or (h.bag()[item.id] or 0) > 0
+		end
+		mode = if next(needs) ~= nil or not sellable then "buy" else "sell"
 		renderChips()
+		if next(needs) ~= nil then
+			status.TextColor3 = Theme.primary
+			status.Text = "+N: goods your forge needs"
+		end
 		panel.Visible = true
 		panel.Size = UDim2.fromOffset(WIDTH, 0)
 		TweenService:Create(panel, TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = UDim2.fromOffset(WIDTH, HEIGHT) }):Play()

@@ -46,6 +46,7 @@ end
 local Haggle, Accept, GatherFinish = rf("Haggle"), rf("Accept"), rf("GatherFinish")
 local CastAt = rf("CastAt")
 local ChooseClass, GetStats = rf("ChooseClass"), rf("GetStats")
+local ForgeRF = rf("Forge")
 -- Market Ledger pop-up: the latest public market view (prices, recent deals, top traders); no player data.
 rf("GetLedger").OnServerInvoke = function()
 	return ledger.latest()
@@ -102,6 +103,7 @@ local function letGo(p: Player)
 end
 
 local hinted: { [Player]: number } = {}
+local lastForge: { [Player]: number } = {} -- Forge rate limit
 local lastFx: { [Player]: number } = {} -- GatherFx rate limit
 local function hint(p: Player, text: string) -- at most one hint every 3 s, swings repeat fast
 	if os.clock() - (hinted[p] or 0) > 3 then
@@ -155,8 +157,55 @@ local function onToolUse(p: Player, toolName: string)
 	PlayMinigame:FireClient(p, n.node, r.params, n.id)
 end
 
+-- Forge level on the tools: a copper (Sturdy) or gold (Master) outline and the tool's name in its tooltip.
+local toolLevels: { [Player]: { [string]: any } } = {}
+local GLOW = { [2] = Color3.fromHex("C86A34"), [3] = Color3.fromHex("F3C232") }
+local TOOL_NAME = { axe = "Axe", pickaxe = "Pickaxe", rod = "Rod" }
+local function applyLook(p: Player, t: Instance)
+	local info = if t:IsA("Tool") then Tools[t.Name] else nil
+	local v = info and toolLevels[p] and toolLevels[p][t.Name]
+	if not (info and v) then
+		return
+	end
+	(t :: Tool).ToolTip = `{v.name} - {info.tip}`
+	local glow = t:FindFirstChild("ForgeGlow") :: Highlight?
+	local color = GLOW[v.level]
+	if not color then
+		if glow then
+			glow:Destroy()
+		end
+		return
+	end
+	local g = glow or Instance.new("Highlight")
+	g.Name = "ForgeGlow"
+	g.FillColor, g.OutlineColor = color, color
+	g.FillTransparency, g.OutlineTransparency = 0.8, 0.1
+	g.DepthMode = Enum.HighlightDepthMode.Occluded
+	g.Parent = t
+end
+local function setForge(p: Player, forge: any)
+	if type(forge) ~= "table" then
+		return
+	end
+	local byTool = {}
+	for _, v in forge do
+		if type(v) == "table" and TOOL_NAME[v.tool] then
+			byTool[TOOL_NAME[v.tool]] = v
+		end
+	end
+	toolLevels[p] = byTool
+	for _, holder in { p:FindFirstChild("Backpack"), p.Character } do
+		if holder then
+			for _, t in holder:GetChildren() do
+				applyLook(p, t)
+			end
+		end
+	end
+end
+
 local function hookTools(p: Player)
 	local function hook(t: Instance)
+		applyLook(p, t)
 		if t:IsA("Tool") and Tools[t.Name] and not t:GetAttribute("Hooked") then
 			t:SetAttribute("Hooked", true)
 			t.Activated:Connect(function()
@@ -191,7 +240,10 @@ local function onJoin(p: Player)
 	issued[p] = {}
 	task.spawn(spawnLoop, p)
 	local ok, r = Backend.post("/rbx/join", { userId = uid(p), name = p.DisplayName })
-	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board } else { offline = true })
+	if ok then
+		setForge(p, r.forge)
+	end
+	StateChanged:FireClient(p, if ok then { balances = r.balances, class = r.class, board = lastState and lastState.board, forge = r.forge } else { offline = true })
 	if ok and r.class == nil then
 		Toast:FireClient(p, "Talk to the mentor in the guild yard to pick a trade")
 	end
@@ -207,6 +259,8 @@ Players.PlayerRemoving:Connect(function(p)
 	hinted[p] = nil
 	lastFx[p] = nil
 	statsCache[p] = nil
+	toolLevels[p] = nil
+	lastForge[p] = nil
 end)
 
 -- One guild mentor: the prompt opens the class conversation (ClassCard) where the player picks a trade.
@@ -384,6 +438,25 @@ Accept.OnServerInvoke = function(p: Player, dealId: any)
 	return r
 end
 
+-- Forge: the backend burns the next recipe's goods and raises the tool's level; the client gets fresh balances + levels.
+ForgeRF.OnServerInvoke = function(p: Player, tool: any)
+	if not (tool == "axe" or tool == "pickaxe" or tool == "rod") then
+		return { error = "invalid" }
+	end
+	if os.clock() - (lastForge[p] or 0) < 1 then
+		return { error = "slow_down", message = "One moment, the forge is still hot." }
+	end
+	lastForge[p] = os.clock()
+	local ok, r = Backend.post("/rbx/forge", { userId = uid(p), tool = tool })
+	if not ok then
+		return { error = r.error or "offline", message = r.message or "Market offline - try again soon." }
+	end
+	statsCache[p] = nil
+	setForge(p, r.forge)
+	StateChanged:FireClient(p, { balances = r.balances, forge = r.forge })
+	return { tool = r.tool, level = r.level, name = r.name, bonus = r.bonus }
+end
+
 -- One state poll per player every 5 s keeps HUD and boards fresh (well under Roblox's 500 req/min).
 task.spawn(function()
 	while true do
@@ -393,6 +466,7 @@ task.spawn(function()
 				local ok, r = Backend.get("/rbx/state?userId=" .. uid(p))
 				if ok then
 					lastState = r
+					setForge(p, r.forge)
 					StateChanged:FireClient(p, r)
 				else
 					StateChanged:FireClient(p, { offline = true })

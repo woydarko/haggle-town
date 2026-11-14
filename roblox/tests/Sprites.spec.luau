@@ -9,7 +9,12 @@ local function check(cond, name)
 	print("ok", name)
 end
 
-local ids = { "axe", "pickaxe", "rod" } -- board illustrations (Lobby how-to)
+local ids = { "axe", "pickaxe", "rod", "anvil" } -- board illustrations (Lobby how-to) + Forge
+for _, tool in { "axe", "pickaxe", "rod" } do
+	for level = 1, 3 do
+		table.insert(ids, `{tool}_{level}`) -- Forge level icons
+	end
+end
 for _, item in Items.list do
 	table.insert(ids, item.id)
 end

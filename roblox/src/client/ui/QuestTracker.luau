@@ -30,7 +30,8 @@ end
 
 -- getState returns { class, bagCount, deals } as the client knows them.
 -- Returns { ledgerOpened } for the Ledger pop-up: the guide's last step completes when the player opens it.
-function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, bagCount: number, deals: number })
+-- forge: shared/ForgeView.hint for the trade tool. point(stall) aims the marker at a stall for 90 s (Forge's Find seller).
+function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, bagCount: number, deals: number, forge: any? })
 	local player = Players.LocalPlayer
 	local card = Ui.new("Frame", { Name = "QuestCard", Parent = gui, Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(300, 108), BackgroundColor3 = Theme.surface }, { Ui.corner(), Ui.stroke(), Ui.pad(10) })
 	local count = Ui.text({ Parent = card, Size = UDim2.new(1, 0, 0, 16), TextSize = 14, TextColor3 = Theme.muted, Text = "" })
@@ -51,6 +52,7 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 	local dist = Ui.text({ Parent = marker, Position = UDim2.fromOffset(0, 32), Size = UDim2.new(1, 0, 0, 22), FontFace = Theme.numeric, TextSize = 16, TextStrokeTransparency = 0.4, TextStrokeColor3 = Theme.surface, TextXAlignment = Enum.TextXAlignment.Center, Text = "" })
 
 	local ledgerSeen, folded, doneAt = false, false, nil :: number?
+	local override: { stall: string, untilT: number }? = nil
 	toggle.Activated:Connect(function()
 		folded = false
 		doneAt = os.clock() -- show the final card again for a while
@@ -59,10 +61,14 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 	task.spawn(function()
 		while gui.Parent do
 			local s = getState()
-			local step = Quest.step({ class = s.class, bagCount = s.bagCount, deals = s.deals, ledgerSeen = ledgerSeen })
+			local step = Quest.step({ class = s.class, bagCount = s.bagCount, deals = s.deals, ledgerSeen = ledgerSeen, forge = s.forge })
 			count.Text = if step.index <= Quest.COUNT then `Step {step.index} of {Quest.COUNT}` else "Guide"
 			title.Text, detail.Text = step.title, step.detail
 			local at = targetPos(step)
+			local o = override
+			if o and os.clock() < o.untilT then
+				at = targetPos({ target = "market", stall = o.stall })
+			end
 			local hrp = player.Character and player.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if at and hrp then
 				local d = ((hrp.Position - at) * Vector3.new(1, 0, 1)).Magnitude
@@ -79,7 +85,7 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 			end
 			-- Step aside while a panel (haggle, trade, stats) is open so it never peeks out from behind it.
 			local busy = false
-			for _, n in { "HagglePanel", "ClassCard", "StatsPanel", "LedgerPanel" } do
+			for _, n in { "HagglePanel", "ClassCard", "StatsPanel", "LedgerPanel", "ForgePanel" } do
 				local f = gui:FindFirstChild(n) :: GuiObject?
 				busy = busy or (f ~= nil and f.Visible)
 			end
@@ -98,6 +104,10 @@ function QuestTracker.mount(gui: ScreenGui, getState: () -> { class: string?, ba
 	return {
 		ledgerOpened = function()
 			ledgerSeen = true
+		end,
+		point = function(stall: string)
+			override = { stall = stall, untilT = os.clock() + 90 }
+			folded, doneAt = false, os.clock()
 		end,
 	}
 end
