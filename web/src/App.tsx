@@ -5,15 +5,13 @@ import { CATEGORIES, CATEGORY_MERCHANT, CATEGORY_NAME, itemName, tierColor, type
 import { FastForward } from "./FastForward.tsx";
 import { Players } from "./Players.tsx";
 import { Coins } from "./Coins.tsx";
+import { ago as agoAt } from "./landing/stats.ts";
 
 type Data = { market: Market[]; feed: Feed; leaders: Leader[] };
 const RANGES: [number, string][] = [[60, "1 h"], [360, "6 h"], [1440, "24 h"]];
 const tabFromHash = () => (location.hash.startsWith("#/players") ? "players" : location.hash.startsWith("#/coins") ? "coins" : "market");
 
-const ago = (t: number) => {
-  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
-  return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)}m ago` : `${Math.round(s / 3600)}h ago`;
-};
+const ago = (t: number) => agoAt(t, Date.now());
 
 export function App() {
   const [config, setConfig] = useState<Config | null>(null);
